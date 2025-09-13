@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cards  # Главная база данных
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cards"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "0.0.0.0:5433:5432"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app:rw
+      - frontend_node_modules:/app/node_modules
+      - card_images:/usr/share/nginx/html/user_avatars:ro # Монтируем том с аватарками для Nginx
+    environment:
+      NODE_ENV: development
+    command: sh -c "chown -R node:node /app/node_modules && npm run dev"
+
+  web:
+    build: ./backend
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./frontend/public:/app/public
+      # - card_images:/app/card_imgs
+      - /root/CARDSWOOS/db:/app/db:ro
+      - /root/CARDSWOOS/photos:/app/card_imgs
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:      
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://postgres:postgres@db:5432/cards
+      BOT_TOKEN_HASH: 7505659847:AAHkYpqOlCBlenERMIS3lDlefyrbC98eedk
+      SECRET_KEY: VUPSENPUPSENROSTIC)
+      FLASK_APP: wsgi:app
+    command: >      
+      sh -c "gunicorn --bind 0.0.0.0:8000 --worker-class gevent --timeout 120 wsgi:app"
+    # flask --app wsgi db init &&
+    # flask --app wsgi db migrate  &&
+    # flask --app wsgi db upgrade &&
+      
+volumes:
+  postgres_data: {}
+  frontend_node_modules: {}
+  card_images: {}
+  # cardswoos_db:
+  #   driver: local
+  #   driver_opts:
+  #     type: none
+  #     o: bind
+  #     device: /root/CARDSWOOS/db
+  # cardswoos_photos:
+  #   driver: local
+  #   driver_opts:
+  #     type: none
+  #     o: bind
+  #     device: /root/CARDSWOOS/photos
