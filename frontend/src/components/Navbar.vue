@@ -30,7 +30,9 @@ export default {
   gap: 30px;
   margin: 30px 0 50px 0;
   padding: 0;
-  position: relative;
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 100;
   background-color: transparent;
 }
