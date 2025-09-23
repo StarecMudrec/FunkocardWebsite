@@ -1,7 +1,7 @@
 <template>
   <div class="menu">
     <router-link to="/" class="nav-btn">CARDS</router-link>
-    <router-link to="/termins" class="nav-btn">TERMINS</router-link>
+    <router-link to="/about" class="nav-btn">ABOUT</router-link>
     <a v-if="isAuthenticated" href="/auth/logout" class="nav-btn" @click.prevent="logout">LOGOUT</a>
     <router-link v-else to="/login" class="nav-btn">LOGIN</router-link>
   </div>

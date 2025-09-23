@@ -1,18 +1,18 @@
 <template>
-  <div class="termins-view">
-    <h1>Termins Page</h1>
-    <p>This is the termins page content.</p>
+  <div class="about-view">
+    <h1>About Page</h1>
+    <p>This is the about page content.</p>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'TerminsView'
+  name: 'AboutView'
 }
 </script>
 
 <style scoped>
-.termins-view {
+.about-view {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;

@@ -3,17 +3,16 @@
     <!-- Hero section with background and scroll arrow -->
     <div class="hero-section">
       <div class="background-container"></div>
-      <img src="/logo_noph.png" alt="Logo" class="background-logo">
+      <div class="logo-text">
+        <h1 class="funko-text">FUNKO CARDS</h1>
+      </div>
       <div class="cover-arrow" @click="scrollToContent">
         <div class="cover-arrow__inner">
-          <svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="7.5 11 9 4" fill="white" width="24px" height="24px">
-            <defs>
-              <filter id="arrowShadow" x="-20%" y="-20%" width="140%" height="150%">
-                <feDropShadow dx="0" dy="0.5" stdDeviation="0.5" flood-color="rgba(0,0,0,0.3)"/>
-                <feDropShadow dx="0" dy="0" stdDeviation="0.2" flood-color="rgba(0,0,0,0.15)"/>
-              </filter>
-            </defs>
-            <path class="arrow-path" fill="white" filter="url(#arrowShadow)" d="M9 11l3 3 3-3c.2-.2.5-.2.7 0 .2.2.2.5 0 .7l-3.5 3.5c-.2.2-.5.2-.7 0L8.3 11.7c-.2-.2-.2-.5 0-.7.2-.2.5-.2.7 0z"/>
+          <!-- <svg class="arrow-icon" viewBox="0 0 16 16" fill="white">
+            <path d="M8 12L3 7l1.5-1.5L8 9l3.5-3.5L13 7l-5 5z" style="fill:white;"/>
+          </svg> -->
+          <svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 106 65" fill="none">
+            <path xmlns="http://www.w3.org/2000/svg" d="M54.4142 39.1858C53.6332 39.9669 52.3668 39.9669 51.5858 39.1858L13.7809 1.38091C12.9998 0.59986 11.7335 0.59986 10.9525 1.38091L1.41421 10.9192C0.633164 11.7002 0.633165 12.9665 1.41421 13.7476L51.5858 63.9192C52.3668 64.7002 53.6332 64.7002 54.4142 63.9192L104.586 13.7476C105.367 12.9665 105.367 11.7002 104.586 10.9192L95.0475 1.38091C94.2665 0.599859 93.0002 0.59986 92.2191 1.38091L54.4142 39.1858Z" fill="#FFFFFF"/>
           </svg>
         </div>
       </div>
@@ -75,19 +74,37 @@
   width: 100%;
   height: 100%;
   background-image: url('/background.jpg');
+  filter: blur(10px);
   background-size: cover;
   background-position: center 57%;
   z-index: -1;
 }
 
-.background-logo {
+.logo-text {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  max-width: 250px;
-  max-height: 250px;
+  text-align: center;
   z-index: 1;
+}
+
+.funko-text {
+  font-family: 'Afacad', sans-serif;
+  font-size: 6rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.7);
+  letter-spacing: 3px;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .funko-text {
+    font-size: 4rem;
+    letter-spacing: 2px;
+  }
 }
 
 .separator-line {
@@ -159,8 +176,8 @@
   transform: translateX(-50%);
   cursor: pointer;
   z-index: 10;
-  width: 85px;
-  height: 67px;
+  width: 80px;
+  height: 80px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -176,17 +193,19 @@
 }
 
 .arrow-icon {
-  width: 100%;
-  height: 100%;
+  width: 144px;
+  height: 144px;
   shape-rendering: geometricPrecision;
   transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform;
   pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)); /* Добавляем тень */
 }
 
 .cover-arrow:hover .arrow-icon {
   transform: scale(0.85);
   opacity: 0.9;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5)); /* Усиливаем тень при hover */
 }
 
 .cover-arrow:hover .cover-arrow__inner {
@@ -218,9 +237,14 @@
   }
   
   .cover-arrow {
-    width: 70px;
-    height: 55px;
+    width: 210px; /* 70px * 3 */
+    height: 165px; /* 55px * 3 */
     bottom: 20px;
+  }
+  
+  .arrow-icon {
+    width: 108px; /* 36px * 3 */
+    height: 108px;
   }
 }
 </style>
