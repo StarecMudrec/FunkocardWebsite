@@ -50,7 +50,7 @@ export default {
 /* Глобальные стили */
 :root {
   --bg-color: #121212;
-  --card-bg: #1e1e1e;
+  --card-bg: rgb(30, 30, 30, 0.92);
   --text-color: #e0e0e0;
   --accent-color: #ffffff;
   --hover-color: #898989;

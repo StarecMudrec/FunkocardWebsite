@@ -1,7 +1,7 @@
 <template>
   <div class="login-background">
     <div class="login-container">
-      <h1>Please log in</h1>
+      <h1>Please Log in</h1>
       <p></p>
       <div ref="telegramWidget"></div>
 
@@ -53,30 +53,49 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
+  font-family: 'Afacad', sans-serif;
+}
+
+.login-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background-image: url('/background.jpg');
   background-size: cover;
-  background-position: center 95%; /* Position the vertical center 80% down from the top, center horizontally */
-  z-index: 1; /* Ensure it's behind the content */
+  background-position: center 95%;
+  filter: blur(10px); /* Blur only the background */
+  z-index: 1;
 }
+
 .login-container {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 100%;
-  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  box-sizing: border-box;
   max-width: 400px;
-  padding: 40px;
+  padding: 30px 40px;
   background-color: var(--card-bg);
-  border-radius: 17px;
+  border-radius: 20px;
   border: 1px solid var(--border-color);
   text-align: center;
+  box-shadow: 2px 4px 5px rgba(0, 0, 0, 0.24);
+  z-index: 2; /* Ensure it's above the blurred background */
 }
 h1 {
   color: var(--accent-color);
   font-weight: 500;
   margin-bottom: 15px;
-  font-size: 28px;
+  margin-top: 10px;
+  font-size: 38px;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: #2C2C2C;
+  padding-bottom: 12px;
 }
 
 .back-link {
@@ -87,21 +106,29 @@ h1 {
   font-size: 17px;
   position: relative;
   padding-bottom: 2px;
+  transition: all 0.3s ease; /* Added transition for smooth scaling */
 }
 
 .back-link::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 0;
+  left: 50%; /* Start from center */
   width: 0;
   height: 1px;
   background-color: var(--accent-color);
-  transition: width 0.3s ease;
+  transition: all 0.3s ease;
+  transform: translateX(-50%); /* Center the underline */
+}
+
+.back-link:hover {
+  transform: scale(1.05); /* Expand size on hover */
+  color: var(--accent-color); /* Ensure color stays consistent */
 }
 
 .back-link:hover::after {
-  width: 100%;
+  width: 100%; /* Expand from center to full width */
+  left: 50%; /* Maintain center origin */
 }
 
 @media (max-width: 480px) {

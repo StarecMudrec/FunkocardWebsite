@@ -86,8 +86,8 @@ export default {
 }
 
 .logo {
-  width: 350px;
-  height: 350px;
+  width: 500px;
+  height: 500px;
   /* background-color: rgba(255, 255, 255, 0.9); */
   /* border-radius: 50%; */
   display: flex;
