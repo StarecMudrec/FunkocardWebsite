@@ -37,15 +37,12 @@ services:
     volumes:
       - ./backend:/app
       - ./frontend/public:/app/public
-      # - card_images:/app/card_imgs
-      - /root/CARDSWOOS/db:/app/db:ro
-      - /root/CARDSWOOS/photos:/app/card_imgs
     depends_on:
       db:
         condition: service_healthy
     environment:      
       SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://postgres:postgres@db:5432/cards
-      BOT_TOKEN_HASH: 7505659847:AAHkYpqOlCBlenERMIS3lDlefyrbC98eedk
+      BOT_TOKEN_HASH: 8485908900:AAHE4pT7ziUt7jdNxdP3Pvvw0K-YDWcP0UU
       SECRET_KEY: VUPSENPUPSENROSTIC)
       FLASK_APP: wsgi:app
     command: >      
@@ -58,15 +55,3 @@ volumes:
   postgres_data: {}
   frontend_node_modules: {}
   card_images: {}
-  # cardswoos_db:
-  #   driver: local
-  #   driver_opts:
-  #     type: none
-  #     o: bind
-  #     device: /root/CARDSWOOS/db
-  # cardswoos_photos:
-  #   driver: local
-  #   driver_opts:
-  #     type: none
-  #     o: bind
-  #     device: /root/CARDSWOOS/photos
