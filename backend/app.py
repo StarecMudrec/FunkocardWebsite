@@ -16,6 +16,9 @@ from sqlalchemy import create_engine, select, and_, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlite3 import connect
 
+import pymysql
+from sshtunnel import SSHTunnelForwarder
+
 app = Flask(__name__)
 app.config.from_object(Config)
 
@@ -31,8 +34,15 @@ with app.app_context():
     db.create_all()
 
 
-def get_sqlite_conn():
-    return connect(Config.SQLITE_DB_PATH, uri=True)  # uri=True enables ?mode=ro
+
+def get_db_conn():
+    """Get MySQL database connection"""
+    try:
+        connection = pymysql.connect(**Config.MYSQL_CONFIG)
+        return connection
+    except Exception as e:
+        logging.error(f"Error creating MySQL connection: {e}")
+        return None
 
 @app.route('/placeholder.jpg')
 def serve_placeholder():
@@ -203,22 +213,35 @@ def home():
 
 @app.route("/db-status")
 def db_status():
-    # PostgreSQL check
-    pg_version = db.session.execute(text("SELECT version()")).scalar()
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'MySQL connection failed'}), 500
     
-    # SQLite check
     try:
-        with get_sqlite_conn() as conn:
-            sqlite_version = conn.execute("SELECT sqlite_version()").fetchone()[0]
-            cards_count = conn.execute("SELECT COUNT(*) FROM cards").fetchone()[0]
+        # PostgreSQL check (keep existing if you still need it)
+        pg_version = None
+        try:
+            pg_version = db.session.execute(text("SELECT version()")).scalar()
+        except:
+            pg_version = "PostgreSQL not available"
+        
+        # MySQL check
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT VERSION() as version")
+            mysql_version = cursor.fetchone()['version']
+            
+            cursor.execute("SELECT COUNT(*) as count FROM cards")
+            cards_count = cursor.fetchone()['count']
+        
+        return jsonify({
+            "postgres_version": pg_version,
+            "mysql_version": mysql_version,
+            "cards_count": cards_count
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-    return jsonify({
-        "postgres_version": pg_version,
-        "sqlite_version": sqlite_version,
-        "cards_count": cards_count
-    })
+    finally:
+        connection.close()
 
 @app.route('/card_imgs/<filename>')
 def serve_card_image(filename):
@@ -228,95 +251,27 @@ def serve_card_image(filename):
 
 @app.route("/api/seasons")
 def get_seasons():
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
     try:
-        with get_sqlite_conn() as conn:
-            # Must use text() wrapper for raw SQL
-            result = conn.execute("SELECT DISTINCT season FROM cards WHERE season IS NOT NULL")
-            seasons = [row[0] for row in result]
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT DISTINCT season FROM cards WHERE season IS NOT NULL")
+            seasons = [row['season'] for row in cursor.fetchall()]
             return jsonify(sorted(seasons)), 200
     except Exception as e:
         logging.error(f"Database error: {str(e)}")
         return jsonify({'error': 'Failed to fetch seasons'}), 500
-
-@app.route("/api/seasons", methods=["POST"])
-def add_season():
-    is_auth, user_id = is_authenticated(request, session)
-    if not is_auth:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    # Check if the current user is allowed to add seasons (same logic as adding cards)
-    current_user_username = session.get('telegram_username') # Assuming username is stored in session
-    logging.debug(f"Attempting to add season. User: {current_user_username}")
-    allowed_user = AllowedUser.query.filter_by(username=current_user_username).first()
-    logging.debug(f"AllowedUser query result: {allowed_user}")
-
-    if not current_user_username or not allowed_user:
-        return jsonify({'error': 'You are not allowed to add seasons'}), 403
-
-    # Generate a UUID for the new season
-    new_season_uuid = str(uuid.uuid4())
-
-    # Create a new Season entry with the UUID as both id and name
-    new_season = Season(uuid=new_season_uuid, name="_")
-    db.session.add(new_season)
-    db.session.commit()
-    return jsonify({'message': 'Season added successfully', 'uuid': new_season.uuid, 'name': new_season.name}), 201
-
-@app.route("/api/seasons/<season_uuid>", methods=["PUT"])
-def update_season(season_uuid):
-    is_auth, user_id = is_authenticated(request, session)
-    if not is_auth:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    # Check if the current user is allowed to update seasons
-    current_user_username = session.get('telegram_username') # Assuming username is stored in session
-    if not current_user_username or not AllowedUser.query.filter_by(username=current_user_username).first():
-        return jsonify({'error': 'You are not allowed to update seasons'}), 403
-
-    season = Season.query.filter_by(uuid=season_uuid).first()
-    if not season:
-        return jsonify({'error': 'Season not found'}), 404
-
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
-
-    try:
-        if 'name' in data:
-            season.name = data['name']
-        db.session.commit()
-        return jsonify({'message': 'Season updated successfully', 'uuid': season.uuid, 'name': season.name}), 200
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Error updating season: {e}")
-        return jsonify({'error': 'Error updating season'}), 500
-
-@app.route("/api/seasons/<season_uuid>", methods=["DELETE"])
-def delete_season(season_uuid):
-    is_auth, user_id = is_authenticated(request, session)
-    if not is_auth:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    # Check if the current user is allowed to delete seasons
-    current_user_username = session.get('telegram_username')
-    if not current_user_username or not AllowedUser.query.filter_by(username=current_user_username).first():
-        return jsonify({'error': 'You are not allowed to delete seasons'}), 403
-
-    season = Season.query.filter_by(uuid=season_uuid).first()
-    if not season:
-        return jsonify({'error': 'Season not found'}), 404
-
-    try:
-        db.session.delete(season)
-        db.session.commit()
-        return jsonify({'message': 'Season deleted successfully'}), 200
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Error deleting season: {e}")
-        return jsonify({'error': 'Error deleting season'}), 500
+    finally:
+        connection.close()
 
 @app.route("/api/cards/<season_id>")
 def get_cards(season_id):  
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
     try:
         sort_field = request.args.get('sort', 'id')
         sort_direction = request.args.get('direction', 'asc')
@@ -331,48 +286,42 @@ def get_cards(season_id):
             'ACHIEVEMENTS': 7
         }
         
-        with get_sqlite_conn() as conn:
+        with connection.cursor() as cursor:
             if sort_field == 'rarity':
-                # For rarity sorting, we need to get all cards first
-                result = conn.execute(
-                    "SELECT id, photo, name, rarity, points FROM cards WHERE season = ?",
+                cursor.execute(
+                    "SELECT id, photo, name, rarity, points FROM cards WHERE season = %s",
                     (int(season_id),)
                 )
-                cards = [dict(zip(['id', 'img', 'name', 'rarity', 'points'], row)) for row in result]
+                cards = [dict(row) for row in cursor.fetchall()]
                 
-                # Sort in Python using our custom order
                 cards.sort(key=lambda x: RARITY_ORDER.get(x['rarity'], 0))
-                
                 if sort_direction.lower() == 'desc':
                     cards.reverse()
                 
                 return jsonify(cards), 200
             elif sort_field == 'amount':
-                # For amount sorting, we need to join with filmstrips table
                 query = """
                     SELECT c.id, c.photo, c.name, c.rarity, c.points, COUNT(f.card_id) as amount 
                     FROM cards c
                     LEFT JOIN filmstrips f ON c.id = f.card_id
-                    WHERE c.season = ?
+                    WHERE c.season = %s
                     GROUP BY c.id, c.photo, c.name, c.rarity, c.points
                     ORDER BY amount {}
                 """.format(sort_direction)
                 
-                result = conn.execute(query, (int(season_id),))
-                cards = [dict(zip(['id', 'img', 'name', 'rarity', 'points', 'amount'], row)) for row in result]
+                cursor.execute(query, (int(season_id),))
+                cards = [dict(row) for row in cursor.fetchall()]
                 return jsonify(cards), 200
             else:
-                # Make sure your query selects all required fields
                 query = """
                     SELECT id, id as uuid, photo as img, name, rarity, points 
                     FROM cards 
-                    WHERE season = ?
+                    WHERE season = %s
                     ORDER BY {} {}
                 """.format(sort_field, sort_direction)
                 
-                result = conn.execute(query, (int(season_id),))
-                cards = [dict(zip(['id', 'uuid', 'img', 'name', 'rarity', 'points'], row)) for row in result]
-                
+                cursor.execute(query, (int(season_id),))
+                cards = [dict(row) for row in cursor.fetchall()]
                 return jsonify(cards), 200
             
     except ValueError:
@@ -380,81 +329,8 @@ def get_cards(season_id):
     except Exception as e:
         logging.error(f"Error fetching cards: {str(e)}")
         return jsonify({'error': 'Failed to fetch cards'}), 500
-
-@app.route("/api/cards", methods=["POST"])
-def add_card():
-    is_auth, user_id = is_authenticated(request, session)
-    if not is_auth:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    # Check if the current user is allowed to add cards
-    current_user_username = session.get('telegram_username') # Assuming username is stored in session
-    if not current_user_username or not AllowedUser.query.filter_by(username=current_user_username).first():
-        return jsonify({'error': 'You are not allowed to add cards'}), 403
-
-
-
-    uuid = request.form.get('uuid')
-    category = request.form.get('category')
-    name = request.form.get('name')
-    description = request.form.get('description')
-    season_id = request.form.get('season_id')
-    img_file = request.files.get('img')
-
-    img = None
-    if img_file:
-        # Save the image file
-        # Check if the file is an allowed image type
-        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
-        if '.' not in img_file.filename or img_file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
-            return jsonify({'error': 'Unsupported file type'}), 400
-
-        img_filename = str(uuid) + os.path.splitext(img_file.filename)[1]  # Use card UUID as filename
-        img_path = os.path.join('card_imgs', img_filename)
-        img_file.save(img_path)
-        img = img_filename # Store just the filename in the database
-    if not all([uuid, img, category, name, description, season_id]):
-        return jsonify({'error': 'Missing required fields'}), 400
-
-    new_card = Card(uuid=uuid, img=img, category=category, name=name, description=description, season_id=season_id)
-    try:
-        db.session.add(new_card)
-        db.session.commit()
-        return jsonify({'message': 'Card added successfully', 'uuid': new_card.uuid}), 201
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Error adding card: {e}")
-        return jsonify({'error': 'Error adding card'}), 500
-
-@app.route("/api/cards/<card_id>", methods=["DELETE"])
-def delete_card(card_id):
-    is_auth, user_id = is_authenticated(request, session)
-    if not is_auth:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    # Check if the current user is allowed to delete cards
-    current_user_username = session.get('telegram_username') # Assuming username is stored in session
-    if not current_user_username or not AllowedUser.query.filter_by(username=current_user_username).first():
-        return jsonify({'error': 'You are not allowed to delete cards'}), 403
-
-
-    card = Card.query.filter_by(uuid=card_id).first()
-
-    if card is None:
-        return jsonify({'error': 'Card not found'}), 404
-
-    try:
-        # Optionally delete the associated image file
-        if card.img and os.path.exists(os.path.join('card_imgs', card.img)):
-            os.remove(os.path.join('card_imgs', card.img))
-
-        db.session.delete(card)
-        db.session.commit()
-        return jsonify({'message': 'Card deleted successfully'}), 200
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Error deleting card: {e}")
-        return jsonify({'error': 'Error deleting card'}), 500
+    finally:
+        connection.close()
 
 @app.route('/api/check_permission', methods=['GET'])
 def check_permission():
@@ -469,126 +345,46 @@ def check_permission():
     
 @app.route("/api/card_info/<card_id>")
 def get_card_info(card_id):  
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
     try:
-        with get_sqlite_conn() as conn:
-            row = conn.execute(
-                "SELECT photo, name, rarity, points, number, [drop], event, season FROM cards WHERE id = ?", 
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT photo, name, rarity, points, number, `drop`, event, season FROM cards WHERE id = %s", 
                 (int(card_id),)
-            ).fetchone()
+            )
+            row = cursor.fetchone()
             
             if not row:
                 return jsonify({'error': 'Card not found'}), 404
                 
-            card_count = conn.execute(
-                "SELECT COUNT(*) FROM filmstrips WHERE card_id = ?",
+            cursor.execute(
+                "SELECT COUNT(*) as count FROM filmstrips WHERE card_id = %s",
                 (card_id,)
-            ).fetchone()[0]
+            )
+            card_count = cursor.fetchone()['count']
 
             return jsonify({
                 'id': card_id,
                 'uuid': card_id,
-                'season_id': row[7],
-                'img': row[0],
-                'category': row[2],
-                'name': row[1],
+                'season_id': row['season'],
+                'img': row['photo'],
+                'category': row['rarity'],
+                'name': row['name'],
                 'description': f"Amount: {card_count}"
             }), 200
             
     except ValueError:
         return jsonify({'error': 'Invalid card ID'}), 400
     except Exception as e:
-        logging.error(f"SQLite error: {str(e)}")
+        logging.error(f"MySQL error: {str(e)}")
         return jsonify({'error': 'Failed to fetch card info'}), 500
+    finally:
+        connection.close()
 
-@app.route("/api/cards/<card_id>", methods=["PUT"])
-def update_card(card_id):
-    is_auth, user_id = is_authenticated(request, session)
-    if not is_auth:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    card = Card.query.filter_by(id=card_id).first()
-    if not card:
-        return jsonify({'error': 'Card not found'}), 404
-
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
-
-    try:
-        if 'name' in data:
-            card.name = data['name']
-        if 'description' in data:
-            card.description = data['description']
-        if 'category' in data:
-            card.category = data['category']
-        if 'season_uuid' in data:
-            season = Season.query.filter_by(uuid=data['season_uuid']).first()
-            if not season:
-                return jsonify({'error': 'Season not found'}), 404
-            card.season_id = season.id
-
-        db.session.commit()
-        return jsonify({'message': 'Card updated successfully'}), 200
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Error updating card: {e}")
-        return jsonify({'error': 'Error updating card'}), 500
-        
-@app.route("/api/cards/<card_uuid>/image", methods=["PUT"])
-def update_card_image(card_uuid):
-    is_auth, user_id = is_authenticated(request, session)
-
-    if request.method != 'PUT':
-        return jsonify({'error': 'Method Not Allowed'}), 405
-
-    if not is_auth:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    # Check if the current user is allowed to update cards
-    current_user_username = session.get('telegram_username')
-    if not current_user_username or not AllowedUser.query.filter_by(username=current_user_username).first():
-        return jsonify({'error': 'You are not allowed to update card images'}), 403
-
-    card = Card.query.filter_by(uuid=card_uuid).first()
-    if not card:
-        return jsonify({'error': 'Card not found'}), 404
-
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image file provided'}), 400
-
-    img_file = request.files['image']
-
-    # Check if the file is an allowed image type
-    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
-    if '.' not in img_file.filename or img_file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
-        return jsonify({'error': 'Unsupported file type'}), 400
-
-    # Generate a unique filename using the card UUID
-    img_filename = str(card.uuid) + os.path.splitext(img_file.filename)[1].lower()
-    img_path = os.path.join('card_imgs', img_filename)
-
-    try:
-        # Delete the old image file if it exists and is not the new one
-        if card.img and os.path.exists(os.path.join('card_imgs', card.img)) and card.img != img_filename:
-            os.remove(os.path.join('card_imgs', card.img))
-            logging.debug(f"Deleted old image: {card.img}")
-
-        # Save the new image file
-        img_file.save(img_path)
-        logging.debug(f"Saved new image: {img_filename}")
-
-        # Update the card's image field in the database
-        card.img = img_filename
-        db.session.commit()
-        logging.debug(f"Updated card {card.uuid} with new image: {img_filename}")
-
-        return jsonify({'message': 'Card image updated successfully', 'img': img_filename}), 200
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Error updating card image: {e}")
-        return jsonify({'error': 'Error updating card image'}), 500
-
-@app.route("/api/season_info/<int:season_id>")
+@app.route("/api/season_info/<int:season_id>")  #yep
 def get_season_info(season_id):  
     try:
         season_num = int(season_id)
@@ -606,15 +402,6 @@ def get_season_info(season_id):
     except Exception as e:
         logging.error(f"Error fetching season info: {e}")
         return jsonify({'error': 'Failed to fetch season info'}), 500
-
-@app.route("/api/comments/<card_id>")
-def get_comments(card_id):
-    # Get all comments for a specific card_id
-    comments = Comment.query.filter_by(card_id=card_id).order_by(Comment.id).all()
-
-    # If you want them in the presented format (as dictionaries)
-    comments_data = [comment.present() for comment in comments]
-    return jsonify(comments_data), 200
 
 @app.route("/api/check_auth")
 def check_auth():

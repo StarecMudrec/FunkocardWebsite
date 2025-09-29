@@ -10,6 +10,17 @@ class Config:
     SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres:postgres@db:5432/cards"  # SQLite database
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get("SECRET_KEY")
+
+    
+    MYSQL_CONFIG = {
+        'host': 'localhost',  # Changed from public IP to localhost
+        'user': 'bot',
+        'password': 'xMdAUTiD',
+        'database': 'bot',
+        'charset': 'utf8mb4',
+        'cursorclass': pymysql.cursors.DictCursor,
+        'port': 3306
+    }
     
     # For SQLite over TCP proxy
     SQLITE_DB_PATH = "/app/db/offcardswood.db"  # Mounted path in container
