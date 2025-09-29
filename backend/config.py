@@ -14,7 +14,7 @@ class Config:
 
     
     MYSQL_CONFIG = {
-        'host': 'host.docker.internal',
+        'host': '172.17.0.1',  # Default Docker bridge gateway
         'user': 'bot',
         'password': 'xMdAUTiD',
         'database': 'bot',
