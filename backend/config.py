@@ -14,7 +14,7 @@ class Config:
 
     
     MYSQL_CONFIG = {
-        'host': 'localhost',  # Changed from public IP to localhost
+        'host': 'host.docker.internal',  # Special DNS name to access host from Docker
         'user': 'bot',
         'password': 'xMdAUTiD',
         'database': 'bot',
