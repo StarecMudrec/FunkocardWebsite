@@ -14,7 +14,7 @@ class Config:
 
     
     MYSQL_CONFIG = {
-        'host': 'host.docker.internal',  # Special DNS name to access host from Docker
+        'host': '45.153.189.127',  # Your server's public IP
         'user': 'bot',
         'password': 'xMdAUTiD',
         'database': 'bot',
