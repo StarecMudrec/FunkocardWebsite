@@ -37,6 +37,8 @@ services:
     volumes:
       - ./backend:/app
       - ./frontend/public:/app/public
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Add this
     depends_on:
       db:
         condition: service_healthy

@@ -14,7 +14,7 @@ class Config:
 
     
     MYSQL_CONFIG = {
-        'host': '45.153.189.127',  # Your server's public IP
+        'host': 'host.docker.internal',
         'user': 'bot',
         'password': 'xMdAUTiD',
         'database': 'bot',
