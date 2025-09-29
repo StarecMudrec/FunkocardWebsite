@@ -34,11 +34,11 @@ services:
     working_dir: /app
     ports:
       - "8000:8000"
+    network_mode: "host"  # Add this line
     volumes:
       - ./backend:/app
       - ./frontend/public:/app/public
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # Add this
+    # Remove extra_hosts since we're using host network
     depends_on:
       db:
         condition: service_healthy

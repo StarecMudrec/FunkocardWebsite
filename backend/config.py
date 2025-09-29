@@ -14,7 +14,7 @@ class Config:
 
     
     MYSQL_CONFIG = {
-        'host': 'host.docker.internal',
+        'host': 'localhost',  # Changed from 'host.docker.internal'
         'user': 'bot',
         'password': 'xMdAUTiD',
         'database': 'bot',
