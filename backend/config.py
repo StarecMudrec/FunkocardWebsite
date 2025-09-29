@@ -14,13 +14,12 @@ class Config:
 
     
     MYSQL_CONFIG = {
-        'host': '45.153.189.127',  # Your server's public IP
+        'unix_socket': '/var/run/mysqld/mysqld.sock',  # Use socket file
         'user': 'bot',
         'password': 'xMdAUTiD',
         'database': 'bot',
         'charset': 'utf8mb4',
-        'cursorclass': pymysql.cursors.DictCursor,
-        'port': 3306
+        'cursorclass': pymysql.cursors.DictCursor
     }
     
     # For SQLite over TCP proxy

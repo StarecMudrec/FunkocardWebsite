@@ -35,7 +35,7 @@ with app.app_context():
 
 
 def get_db_conn():
-    """Get MySQL database connection"""
+    """Get MySQL database connection via socket"""
     try:
         connection = pymysql.connect(**Config.MYSQL_CONFIG)
         return connection
