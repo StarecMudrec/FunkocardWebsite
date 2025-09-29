@@ -229,7 +229,8 @@ def db_status():
             cursor.execute("SELECT VERSION() as version")
             mysql_version = cursor.fetchone()['version']
             
-            cursor.execute("SELECT COUNT(*) as count FROM cards")
+            # Count cards from files table (since cards table doesn't exist)
+            cursor.execute("SELECT COUNT(*) as count FROM files")
             cards_count = cursor.fetchone()['count']
         
         return jsonify({
@@ -250,20 +251,14 @@ def serve_card_image(filename):
 
 @app.route("/api/seasons")
 def get_seasons():
-    connection = get_db_conn()
-    if not connection:
-        return jsonify({'error': 'Database connection failed'}), 500
-    
+    """Get seasons - since we don't have a seasons table, return default seasons"""
     try:
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT DISTINCT season FROM cards WHERE season IS NOT NULL")
-            seasons = [row['season'] for row in cursor.fetchall()]
-            return jsonify(sorted(seasons)), 200
+        # Return some default seasons since we don't have a seasons table
+        seasons = [1, 2, 3, 4, 5]  # Adjust based on your actual seasons
+        return jsonify(seasons), 200
     except Exception as e:
-        logging.error(f"Database error: {str(e)}")
+        logging.error(f"Error fetching seasons: {str(e)}")
         return jsonify({'error': 'Failed to fetch seasons'}), 500
-    finally:
-        connection.close()
 
 @app.route("/api/cards/<season_id>")
 def get_cards(season_id):  
@@ -275,56 +270,33 @@ def get_cards(season_id):
         sort_field = request.args.get('sort', 'id')
         sort_direction = request.args.get('direction', 'asc')
 
-        RARITY_ORDER = {
-            'EPISODICAL': 1,
-            'SECONDARY': 2,
-            'FAMOUS': 3,
-            'MAINCHARACTER': 4,
-            'MOVIE': 5,
-            'SERIES': 6,
-            'ACHIEVEMENTS': 7
-        }
-        
-        with connection.cursor() as cursor:
-            if sort_field == 'rarity':
-                cursor.execute(
-                    "SELECT id, photo, name, rarity, points FROM cards WHERE season = %s",
-                    (int(season_id),)
-                )
-                cards = [dict(row) for row in cursor.fetchall()]
-                
-                cards.sort(key=lambda x: RARITY_ORDER.get(x['rarity'], 0))
-                if sort_direction.lower() == 'desc':
-                    cards.reverse()
-                
-                return jsonify(cards), 200
-            elif sort_field == 'amount':
-                query = """
-                    SELECT c.id, c.photo, c.name, c.rarity, c.points, COUNT(f.card_id) as amount 
-                    FROM cards c
-                    LEFT JOIN filmstrips f ON c.id = f.card_id
-                    WHERE c.season = %s
-                    GROUP BY c.id, c.photo, c.name, c.rarity, c.points
-                    ORDER BY amount {}
-                """.format(sort_direction)
-                
-                cursor.execute(query, (int(season_id),))
-                cards = [dict(row) for row in cursor.fetchall()]
-                return jsonify(cards), 200
-            else:
-                query = """
-                    SELECT id, id as uuid, photo as img, name, rarity, points 
-                    FROM cards 
-                    WHERE season = %s
-                    ORDER BY {} {}
-                """.format(sort_field, sort_direction)
-                
-                cursor.execute(query, (int(season_id),))
-                cards = [dict(row) for row in cursor.fetchall()]
-                return jsonify(cards), 200
+        # Map your database columns to expected frontend fields
+        # Using 'files' table instead of 'cards' table
+        if sort_field == 'id':
+            query = """
+                SELECT id, tg_id as photo, name, rare as rarity, fame as points 
+                FROM files 
+                ORDER BY {} {}
+            """.format('id', sort_direction)
             
-    except ValueError:
-        return jsonify({'error': 'Invalid season ID'}), 400
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                cards = [dict(row) for row in cursor.fetchall()]
+                
+                # Transform to match frontend expectations
+                transformed_cards = []
+                for card in cards:
+                    transformed_cards.append({
+                        'id': card['id'],
+                        'uuid': card['id'],
+                        'img': card['photo'],
+                        'name': card['name'],
+                        'rarity': card['rarity'],
+                        'points': card['points']
+                    })
+                
+                return jsonify(transformed_cards), 200
+            
     except Exception as e:
         logging.error(f"Error fetching cards: {str(e)}")
         return jsonify({'error': 'Failed to fetch cards'}), 500
@@ -350,29 +322,24 @@ def get_card_info(card_id):
     
     try:
         with connection.cursor() as cursor:
+            # Query the files table instead of cards table
             cursor.execute(
-                "SELECT photo, name, rarity, points, number, `drop`, event, season FROM cards WHERE id = %s", 
+                "SELECT tg_id as photo, name, rare as rarity, fame as points FROM files WHERE id = %s", 
                 (int(card_id),)
             )
             row = cursor.fetchone()
             
             if not row:
                 return jsonify({'error': 'Card not found'}), 404
-                
-            cursor.execute(
-                "SELECT COUNT(*) as count FROM filmstrips WHERE card_id = %s",
-                (card_id,)
-            )
-            card_count = cursor.fetchone()['count']
 
             return jsonify({
                 'id': card_id,
                 'uuid': card_id,
-                'season_id': row['season'],
+                'season_id': 1,  # Default season since we don't have season data
                 'img': row['photo'],
                 'category': row['rarity'],
                 'name': row['name'],
-                'description': f"Amount: {card_count}"
+                'description': f"Points: {row['points']}"
             }), 200
             
     except ValueError:
