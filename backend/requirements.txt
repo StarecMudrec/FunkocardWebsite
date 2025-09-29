@@ -8,5 +8,3 @@ datetime
 psycopg2-binary
 requests
 pymysql
-sshtunnel
-paramiko
