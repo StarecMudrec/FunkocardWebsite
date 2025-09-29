@@ -11,7 +11,7 @@ export default defineConfig({
   },
   server: {
     host: true,
-    allowedHosts: ['cardswood.ru'],
+    allowedHosts: ['dahole.ru'],
     proxy: {
       '/api': {
         target: 'http://web:8000',
