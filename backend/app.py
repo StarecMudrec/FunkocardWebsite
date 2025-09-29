@@ -17,7 +17,6 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlite3 import connect
 
 import pymysql
-from sshtunnel import SSHTunnelForwarder
 
 app = Flask(__name__)
 app.config.from_object(Config)

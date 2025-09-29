@@ -1,6 +1,7 @@
 import os
 from hashlib import sha256
 from sqlalchemy import create_engine
+import pymysql
 
 
 class Config:
