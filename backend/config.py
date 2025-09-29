@@ -17,7 +17,7 @@ class Config:
         'host': 'localhost',  # Changed from 'host.docker.internal'
         'user': 'bot',
         'password': 'xMdAUTiD',
-        'database': 'bot',
+        'database': 'database',
         'charset': 'utf8mb4',
         'cursorclass': pymysql.cursors.DictCursor,
         'port': 3306
