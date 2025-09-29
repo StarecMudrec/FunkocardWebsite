@@ -16,7 +16,6 @@ from sqlalchemy import create_engine, select, and_, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlite3 import connect
 
-import subprocess
 import pymysql
 
 app = Flask(__name__)
@@ -36,18 +35,9 @@ with app.app_context():
 
 
 def get_db_conn():
-    """Get MySQL connection by using MySQL client as proxy"""
+    """Get MySQL database connection"""
     try:
-        # This approach uses the fact that MySQL client can connect locally
-        connection = pymysql.connect(
-            host='localhost',
-            user='bot',
-            password='xMdAUTiD',
-            database='bot',
-            charset='utf8mb4',
-            cursorclass=pymysql.cursors.DictCursor,
-            unix_socket='/var/run/mysqld/mysqld.sock'  # Use socket connection
-        )
+        connection = pymysql.connect(**Config.MYSQL_CONFIG)
         return connection
     except Exception as e:
         logging.error(f"Error creating MySQL connection: {e}")
