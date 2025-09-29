@@ -210,7 +210,7 @@ def home():
 
 #API ROUTES
 
-@app.route("/db-status")
+@app.route("/api/db-status")
 def db_status():
     connection = get_db_conn()
     if not connection:
