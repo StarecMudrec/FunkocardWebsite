@@ -124,7 +124,7 @@
   left: 0;
   top: 4px;
   flex: 1;
-  background: linear-gradient(to bottom, #f0e9e100 0%, #e7e2dc 100%);
+  /*background: linear-gradient(to bottom, #f0e9e100 0%, #e7e2dc 100%);*/
 }
 
 #seasons-container {
