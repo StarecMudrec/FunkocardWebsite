@@ -37,7 +37,6 @@ services:
     volumes:
       - ./backend:/app
       - ./frontend/public:/app/public
-      - /var/run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock  # Add this line
     depends_on:
       db:
         condition: service_healthy
