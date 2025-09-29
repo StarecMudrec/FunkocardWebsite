@@ -16,7 +16,6 @@ from sqlalchemy import create_engine, select, and_, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlite3 import connect
 
-import pymysql
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -33,15 +32,38 @@ with app.app_context():
     db.create_all()
 
 
+import paramiko
+import sshtunnel
+from sshtunnel import SSHTunnelForwarder
+import pymysql
 
 def get_db_conn():
-    """Get MySQL database connection"""
+    """Get MySQL connection via SSH tunnel"""
     try:
-        connection = pymysql.connect(**Config.MYSQL_CONFIG)
-        return connection
+        # Create SSH tunnel
+        tunnel = SSHTunnelForwarder(
+            ('45.153.189.127', 22),
+            ssh_username="root",
+            ssh_password="qnN3ln%K!PGx",
+            remote_bind_address=('127.0.0.1', 3306),
+            local_bind_address=('127.0.0.1', 3307)  # Local port in container
+        )
+        tunnel.start()
+        
+        # Connect to MySQL through the tunnel
+        connection = pymysql.connect(
+            host='127.0.0.1',
+            port=3307,
+            user='bot',
+            password='xMdAUTiD',
+            database='bot',
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        return connection, tunnel
     except Exception as e:
-        logging.error(f"Error creating MySQL connection: {e}")
-        return None
+        logging.error(f"Error creating SSH tunnel: {e}")
+        return None, None
 
 @app.route('/placeholder.jpg')
 def serve_placeholder():
@@ -250,7 +272,7 @@ def serve_card_image(filename):
 
 @app.route("/api/seasons")
 def get_seasons():
-    connection = get_db_conn()
+    connection, tunnel = get_db_conn()
     if not connection:
         return jsonify({'error': 'Database connection failed'}), 500
     
@@ -264,6 +286,8 @@ def get_seasons():
         return jsonify({'error': 'Failed to fetch seasons'}), 500
     finally:
         connection.close()
+        if tunnel:
+            tunnel.close()
 
 @app.route("/api/cards/<season_id>")
 def get_cards(season_id):  
