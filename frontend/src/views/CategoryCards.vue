@@ -1,5 +1,8 @@
 <template>
   <div class="category-cards-page">
+    <!-- Background container -->
+    <div class="background-container"></div>
+    
     <div class="page-header">
       <button @click="$router.back()" class="back-button">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -105,6 +108,20 @@ export default {
   background: var(--bg-color);
   padding: 20px;
   font-family: 'Afacad', sans-serif;
+  position: relative;
+}
+
+.background-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/background.jpg');
+  filter: blur(10px);
+  background-size: cover;
+  background-position: center 57%;
+  z-index: -1;
 }
 
 .page-header {
@@ -115,6 +132,7 @@ export default {
   border-radius: 12px;
   border: 1px solid #333;
   position: relative;
+  backdrop-filter: blur(5px);
 }
 
 .back-button {
