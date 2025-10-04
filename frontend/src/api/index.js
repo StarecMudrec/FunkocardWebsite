@@ -49,6 +49,18 @@ export const fetchCategories = async () => {
   }
 }
 
+// Fetch cards by category
+export const fetchCardsByCategory = async (categoryId, sortField = 'id', sortDirection = 'asc') => {
+  try {
+    const response = await fetch(`/api/cards/by-category/${encodeURIComponent(categoryId)}?sort=${sortField}&direction=${sortDirection}`);
+    if (!response.ok) throw new Error('Failed to fetch cards by category');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching cards by category:', error);
+    throw error;
+  }
+}
+
 // Fetch comments for a card
 export const fetchComments = async (cardId) => {
   const response = await fetch(`/api/comments/${cardId}`)

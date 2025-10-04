@@ -303,8 +303,9 @@ def get_categories():
     finally:
         connection.close()
 
-@app.route("/api/cards/<season_id>")
-def get_cards(season_id):  
+@app.route("/api/cards/by-category/<category_id>")
+def get_cards_by_category(category_id):
+    """Get cards filtered by category (all cards, shop, or specific rarity)"""
     connection = get_db_conn()
     if not connection:
         return jsonify({'error': 'Database connection failed'}), 500
@@ -312,36 +313,68 @@ def get_cards(season_id):
     try:
         sort_field = request.args.get('sort', 'id')
         sort_direction = request.args.get('direction', 'asc')
-
-        # Map your database columns to expected frontend fields
-        # Using 'files' table instead of 'cards' table
-        if sort_field == 'id':
-            query = """
-                SELECT id, tg_id as photo, name, rare as rarity, fame as points 
-                FROM files 
-                ORDER BY {} {}
-            """.format('id', sort_direction)
-            
-            with connection.cursor() as cursor:
+        
+        with connection.cursor() as cursor:
+            # Handle different category types
+            if category_id == 'all':
+                # Get all cards
+                query = f"""
+                    SELECT id, tg_id as photo, name, rare as rarity, fame as points 
+                    FROM files 
+                    ORDER BY {sort_field} {sort_direction}
+                """
                 cursor.execute(query)
-                cards = [dict(row) for row in cursor.fetchall()]
                 
-                # Transform to match frontend expectations
-                transformed_cards = []
-                for card in cards:
-                    transformed_cards.append({
-                        'id': card['id'],
-                        'uuid': card['id'],
-                        'img': card['photo'],
-                        'name': card['name'],
-                        'rarity': card['rarity'],
-                        'points': card['points']
-                    })
+            elif category_id == 'shop':
+                # Get only cards available in shop
+                query = f"""
+                    SELECT id, tg_id as photo, name, rare as rarity, fame as points 
+                    FROM files 
+                    WHERE shop != '-' AND shop IS NOT NULL
+                    ORDER BY {sort_field} {sort_direction}
+                """
+                cursor.execute(query)
                 
-                return jsonify(transformed_cards), 200
+            elif category_id.startswith('rarity_'):
+                # Get cards by specific rarity
+                rarity_name = category_id.replace('rarity_', '')
+                # Handle URL encoding for special characters
+                import urllib.parse
+                rarity_name = urllib.parse.unquote(rarity_name)
+                
+                query = f"""
+                    SELECT id, tg_id as photo, name, rare as rarity, fame as points 
+                    FROM files 
+                    WHERE rare = %s
+                    ORDER BY {sort_field} {sort_direction}
+                """
+                cursor.execute(query, (rarity_name,))
+                
+            else:
+                return jsonify({'error': 'Invalid category ID'}), 400
+            
+            cards = [dict(row) for row in cursor.fetchall()]
+            
+            # Transform to match frontend expectations
+            transformed_cards = []
+            for card in cards:
+                transformed_cards.append({
+                    'id': card['id'],
+                    'uuid': card['id'],
+                    'img': card['photo'],
+                    'name': card['name'],
+                    'rarity': card['rarity'],
+                    'points': card['points']
+                })
+            
+            return jsonify({
+                'cards': transformed_cards,
+                'total_count': len(transformed_cards),
+                'category_id': category_id
+            }), 200
             
     except Exception as e:
-        logging.error(f"Error fetching cards: {str(e)}")
+        logging.error(f"Error fetching cards by category: {str(e)}")
         return jsonify({'error': 'Failed to fetch cards'}), 500
     finally:
         connection.close()
