@@ -249,16 +249,59 @@ def serve_card_image(filename):
     # os.makedirs('card_imgs', exist_ok=True)
     return send_from_directory('card_imgs', filename)
 
-@app.route("/api/seasons")
-def get_seasons():
-    """Get seasons - since we don't have a seasons table, return default seasons"""
+@app.route("/api/categories")
+def get_categories():
+    """Get all categories: all cards, available at shop, and rarities"""
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
     try:
-        # Return some default seasons since we don't have a seasons table
-        seasons = [1, 2, 3, 4, 5]  # Adjust based on your actual seasons
-        return jsonify(seasons), 200
+        with connection.cursor() as cursor:
+            # Get total card count
+            cursor.execute("SELECT COUNT(*) as total FROM files")
+            total_cards = cursor.fetchone()['total']
+            
+            # Get shop available count
+            cursor.execute("SELECT COUNT(*) as shop_count FROM files WHERE shop != '-' AND shop IS NOT NULL")
+            shop_count = cursor.fetchone()['shop_count']
+            
+            # Get all rarities with counts
+            cursor.execute("SELECT rare, COUNT(*) as count FROM files GROUP BY rare ORDER BY count DESC")
+            rarities_data = cursor.fetchall()
+            
+            # Build categories list
+            categories = [
+                {
+                    'id': 'all',
+                    'name': 'All Cards',
+                    'type': 'general',
+                    'count': total_cards
+                },
+                {
+                    'id': 'shop',
+                    'name': 'Available at Shop', 
+                    'type': 'shop',
+                    'count': shop_count
+                }
+            ]
+            
+            # Add rarities as categories
+            for rarity_data in rarities_data:
+                categories.append({
+                    'id': f"rarity_{rarity_data['rare']}",
+                    'name': rarity_data['rare'],
+                    'type': 'rarity',
+                    'count': rarity_data['count']
+                })
+            
+            return jsonify(categories), 200
+            
     except Exception as e:
-        logging.error(f"Error fetching seasons: {str(e)}")
-        return jsonify({'error': 'Failed to fetch seasons'}), 500
+        logging.error(f"Error fetching categories: {str(e)}")
+        return jsonify({'error': 'Failed to fetch categories'}), 500
+    finally:
+        connection.close()
 
 @app.route("/api/cards/<season_id>")
 def get_cards(season_id):  

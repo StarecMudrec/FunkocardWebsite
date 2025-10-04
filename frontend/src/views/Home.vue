@@ -8,9 +8,6 @@
       </div>
       <div class="cover-arrow" @click="scrollToContent">
         <div class="cover-arrow__inner">
-          <!-- <svg class="arrow-icon" viewBox="0 0 16 16" fill="white">
-            <path d="M8 12L3 7l1.5-1.5L8 9l3.5-3.5L13 7l-5 5z" style="fill:white;"/>
-          </svg> -->
           <svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 106 65" fill="none">
             <path xmlns="http://www.w3.org/2000/svg" d="M54.4142 39.1858C53.6332 39.9669 52.3668 39.9669 51.5858 39.1858L13.7809 1.38091C12.9998 0.59986 11.7335 0.59986 10.9525 1.38091L1.41421 10.9192C0.633164 11.7002 0.633165 12.9665 1.41421 13.7476L51.5858 63.9192C52.3668 64.7002 53.6332 64.7002 54.4142 63.9192L104.586 13.7476C105.367 12.9665 105.367 11.7002 104.586 10.9192L95.0475 1.38091C94.2665 0.599859 93.0002 0.59986 92.2191 1.38091L54.4142 39.1858Z" fill="#FFFFFF"/>
           </svg>
@@ -23,27 +20,30 @@
     
     <!-- Основной контент -->
     <div id="content-section" class="content">
-      <div id="seasons-container">
-        <div v-if="loading" class="loading">Loading cards...</div>
+      <div id="categories-container" class="categories-grid">
+        <div v-if="loading" class="loading">Loading categories...</div>
         <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
-        <div v-else-if="seasons.length === 0" class="loading">No seasons found</div>
-        <Season 
-          v-for="season in seasons" 
-          :key="season.uuid" 
-          :season="season" 
-          @card-clicked="navigateToCard" deprecated
-          @add-card="navigateToAddCard"
-          @emitUserAllowedStatus="updateUserAllowedStatus"
-          @season-deleted="handleSeasonDeleted"
-        />
-      </div>
-      <div v-if="isUserAllowed" class="add-season-footer">
-        <div class="add-new-season-btn" @click="navigateToAddSeason">
-          + Add New Season
+        <div v-else-if="categories.length === 0" class="loading">No categories found</div>
+        
+        <!-- Category Cards -->
+        <div 
+          v-for="category in categories" 
+          :key="category.id"
+          class="category-card"
+          @click="navigateToCategory(category)"
+        >
+          <div class="category-card__content">
+            <div class="category-card__header">
+              <h3 class="category-card__title">{{ category.name }}</h3>
+              <span class="category-card__count">{{ category.count }}</span>
+            </div>
+            <div class="category-card__type">
+              <span class="category-badge" :class="getCategoryTypeClass(category.type)">
+                {{ formatCategoryType(category.type) }}
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
-      <div>
-        <h2>.</h2>
       </div>
     </div>
   </div>
@@ -124,49 +124,103 @@
   left: 0;
   top: 4px;
   flex: 1;
-  /*background: linear-gradient(to bottom, #f0e9e100 0%, #e7e2dc 100%);*/
 }
 
-#seasons-container {
-  position: relative;
-  margin-top: 30px;
-  z-index: 2;
-  padding-bottom: 50px;
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 30px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.category-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.category-card__content {
+  padding: 20px;
+}
+
+.category-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.category-card__title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+  flex: 1;
+  margin-right: 10px;
+}
+
+.category-card__count {
+  background: var(--accent-color);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: center;
+}
+
+.category-card__type {
+  margin-top: 10px;
+}
+
+.category-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.category-badge.general {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.category-badge.shop {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.category-badge.rarity {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
 }
 
 .error-message {
   text-align: center;
   margin: 50px 0;
   color: #ff5555;
+  grid-column: 1 / -1;
 }
 
-.add-season-footer {
-  padding: 20px 0 50px;
+.loading {
   text-align: center;
-}
-
-.add-new-season-btn {
-  background: var(--card-bg);
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
+  margin: 50px 0;
   color: var(--text-color);
-  font-size: 1.1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-height: 60px;
-  padding: 0 30px;
-  border: 2px dashed #555;
-  margin: 0 auto;
-}
-
-.add-new-season-btn:hover {
-  transform: translateY(-5px);
-  border-color: var(--accent-color);
-  color: var(--accent-color);
+  grid-column: 1 / -1;
 }
 
 .cover-arrow {
@@ -199,22 +253,17 @@
   transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform;
   pointer-events: none;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)); /* Добавляем тень */
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
 }
 
 .cover-arrow:hover .arrow-icon {
   transform: scale(0.85);
   opacity: 0.9;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5)); /* Усиливаем тень при hover */
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
 }
 
 .cover-arrow:hover .cover-arrow__inner {
   animation-play-state: paused;
-}
-
-.arrow-path {
-  transition: fill 0.3s ease;
-  transform-origin: center;
 }
 
 @keyframes bounce {
@@ -231,71 +280,68 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .background-logo {
-    max-width: 200px;
-    max-height: 200px;
+  .categories-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    padding: 20px 15px;
+    gap: 15px;
+  }
+  
+  .category-card__content {
+    padding: 15px;
+  }
+  
+  .category-card__title {
+    font-size: 1.1rem;
   }
   
   .cover-arrow {
-    width: 210px; /* 70px * 3 */
-    height: 165px; /* 55px * 3 */
+    width: 210px;
+    height: 165px;
     bottom: 20px;
   }
   
   .arrow-icon {
-    width: 108px; /* 36px * 3 */
+    width: 108px;
     height: 108px;
+  }
+}
+
+@media (max-width: 480px) {
+  .categories-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
 
 <script>
-import Season from '@/components/Season.vue'
-import { mapActions, mapState, mapMutations } from 'vuex'
+import { mapActions, mapState } from 'vuex'
 
 export default {
-  components: {
-    Season
-  },
   computed: {
-    ...mapState(['seasons', 'loading', 'error'])
-  },
-  data() {
-    return {
-      isUserAllowed: false
-    };
+    ...mapState(['loading', 'error']),
+    categories() {
+      return this.$store.state.categories || [];
+    }
   },
   methods: {
-    ...mapActions(['fetchSeasons']),
-    ...mapMutations(['REMOVE_SEASON']),
+    ...mapActions(['fetchCategories']),
     
-    navigateToCard(cardId) {
-      this.$router.push(`/card/${cardId}`);
+    navigateToCategory(category) {
+      // Navigate to category page or filter cards by category
+      this.$router.push(`/category/${category.id}`);
     },
     
-    updateUserAllowedStatus(isAllowed) {
-      console.log('Received user allowed status:', isAllowed);
-      this.isUserAllowed = isAllowed;
+    getCategoryTypeClass(type) {
+      return type.toLowerCase();
     },
     
-    navigateToAddCard() {
-      // Реализуйте навигацию к странице добавления карточки
-    },
-    
-    async navigateToAddSeason() {
-      try {
-        const { createSeason } = await import('@/api');
-        const newSeason = await createSeason();
-        console.log('New season created:', newSeason);
-        await this.fetchSeasons();
-      } catch (error) {
-        console.error('Error creating new season:', error);
-        alert('Failed to create new season.');
-      }
-    },
-    
-    handleSeasonDeleted(deletedSeasonUuid) {
-      this.REMOVE_SEASON(deletedSeasonUuid);
+    formatCategoryType(type) {
+      const typeMap = {
+        'general': 'General',
+        'shop': 'Shop',
+        'rarity': 'Rarity'
+      };
+      return typeMap[type.toLowerCase()] || type;
     },
     
     scrollToContent() {
@@ -309,7 +355,7 @@ export default {
     }
   },
   mounted() {
-    this.fetchSeasons()
+    this.fetchCategories();
   }
 }
 </script>
