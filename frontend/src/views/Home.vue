@@ -171,10 +171,11 @@
 }
 
 .category-card__count {
-  background: var(--accent-color);
+  background: rgb(30 30 30 / 0%);
   color: white;
   padding: 4px 8px;
   border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 0.9rem;
   font-weight: 600;
   min-width: 40px;
