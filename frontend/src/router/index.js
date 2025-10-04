@@ -3,6 +3,7 @@ import Home from '@/views/Home.vue'
 import Login from '@/components/Login.vue'
 import CardDetail from '@/views/CardDetail.vue'
 import AddCard from '@/views/AddCard.vue'
+import CategoryCards from '@/views/CategoryCards.vue' // Add this import
 
 const routes = [
   {
@@ -29,6 +30,12 @@ const routes = [
     path: '/add-card',
     name: 'AddCard',
     component: AddCard
+  },
+  {
+    path: '/category/:categoryId',
+    name: 'CategoryCards',
+    component: CategoryCards,
+    props: true
   },
   {
     path: '/logout',

@@ -1,0 +1,242 @@
+<template>
+  <div class="category-cards-page">
+    <div class="page-header">
+      <button @click="$router.back()" class="back-button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Categories
+      </button>
+      <h1 class="category-title">{{ categoryName }}</h1>
+      <div class="category-info">
+        <span class="card-count">{{ cards.length }} cards</span>
+      </div>
+    </div>
+
+    <div class="cards-container-wrapper">
+      <div v-if="loading" class="loading-spinner-container">
+        <div class="loading-spinner"></div>
+      </div>
+      
+      <div class="cards-container">
+        <Card
+          v-for="card in cards"
+          :key="card.id"
+          :card="card || {}"
+          @card-clicked="handleCardClicked"
+          class="card-item"
+        />
+        <div v-if="!loading && cards.length === 0" class="no-cards-message">
+          No cards found in this category
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Card from '@/components/Card.vue'
+import { fetchCardsByCategory } from '@/api'
+
+export default {
+  name: 'CategoryCards',
+  components: {
+    Card
+  },
+  props: {
+    categoryId: {
+      type: String,
+      required: true
+    }
+  },
+  data() {
+    return {
+      cards: [],
+      loading: false,
+      error: null,
+      categoryName: ''
+    }
+  },
+  async created() {
+    await this.loadCategoryCards()
+  },
+  watch: {
+    categoryId: {
+      handler: 'loadCategoryCards',
+      immediate: false
+    }
+  },
+  methods: {
+    async loadCategoryCards() {
+      this.loading = true
+      try {
+        const response = await fetchCardsByCategory(this.categoryId)
+        this.cards = response.cards
+        this.categoryName = this.getCategoryName(this.categoryId)
+        console.log('Loaded category cards:', this.cards)
+      } catch (err) {
+        this.error = err
+        console.error('Error loading category cards:', err)
+      } finally {
+        this.loading = false
+      }
+    },
+    
+    getCategoryName(categoryId) {
+      // Extract category name from categoryId
+      if (categoryId === 'all') return 'All Cards'
+      if (categoryId === 'shop') return 'Available at Shop'
+      if (categoryId.startsWith('rarity_')) {
+        return categoryId.replace('rarity_', '')
+      }
+      return categoryId
+    },
+    
+    handleCardClicked(cardId) {
+      this.$router.push(`/card/${cardId}`)
+    }
+  }
+}
+</script>
+
+<style scoped>
+.category-cards-page {
+  min-height: 100vh;
+  background: var(--bg-color);
+  padding: 20px;
+}
+
+.page-header {
+  max-width: 1200px;
+  margin: 0 auto 30px;
+  padding: 20px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid #333;
+  position: relative;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(-5px);
+}
+
+.back-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.category-title {
+  font-size: 2.5rem;
+  color: var(--accent-color);
+  margin: 0 0 10px 0;
+  font-weight: 600;
+}
+
+.category-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.card-count {
+  color: var(--text-color);
+  opacity: 0.8;
+  font-size: 1.1rem;
+}
+
+.cards-container-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  min-height: 200px;
+}
+
+.loading-spinner-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--accent-color);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  justify-content: center;
+}
+
+.no-cards-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-color);
+  opacity: 0.7;
+  font-size: 1.2rem;
+  padding: 40px 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .category-cards-page {
+    padding: 10px;
+  }
+  
+  .page-header {
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .category-title {
+    font-size: 2rem;
+  }
+  
+  .cards-container {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cards-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .category-title {
+    font-size: 1.5rem;
+  }
+}
+</style>

@@ -330,8 +330,7 @@ export default {
     
     navigateToCategory(category) {
       console.log('Navigating to category:', category);
-      // For now, just log the category - we'll implement navigation later
-      // this.$router.push(`/category/${category.id}`);
+      this.$router.push(`/category/${category.id}`);
     },
     
     getCategoryTypeClass(type) {
