@@ -105,7 +105,7 @@ export default {
 <style scoped>
 .category-cards-page {
   min-height: 100vh;
-  background: var(--bg-color);
+  /* background: var(--bg-color); */
   padding: 20px;
   font-family: 'Afacad', sans-serif;
   position: relative;
