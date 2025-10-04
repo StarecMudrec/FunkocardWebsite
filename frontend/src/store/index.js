@@ -1,3 +1,4 @@
+// store/index.js
 import { createStore } from 'vuex'
 import { fetchCategories, checkAuth } from '@/api'
 
@@ -6,6 +7,7 @@ export default createStore({
     isAuthenticated: false,
     userId: null,
     seasons: [],
+    categories: [], // Add categories to state
     loading: false,
     error: null
   },
@@ -16,6 +18,9 @@ export default createStore({
     },
     SET_SEASONS(state, seasons) {
       state.seasons = seasons
+    },
+    SET_CATEGORIES(state, categories) { // Add this mutation
+      state.categories = categories
     },
     UPDATE_SEASON(state, updatedSeason) {
       const index = state.seasons.findIndex(s => s.uuid === updatedSeason.uuid)
@@ -63,7 +68,7 @@ export default createStore({
         const categories = await fetchCategories();
         console.log('Categories fetched:', categories);
         
-        commit('SET_CATEGORIES', categories);
+        commit('SET_CATEGORIES', categories); // This will now work
       } catch (error) {
         console.error('Error fetching categories:', error);
         commit('SET_ERROR', error.message);

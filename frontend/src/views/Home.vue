@@ -318,14 +318,19 @@ import { mapActions, mapState } from 'vuex'
 
 export default {
   computed: {
-    ...mapState(['categories', 'loading', 'error'])
+    ...mapState({
+      categories: state => state.categories || [], // Safe access
+      loading: state => state.loading,
+      error: state => state.error
+    })
   },
   methods: {
     ...mapActions(['fetchCategories']),
     
     navigateToCategory(category) {
-      // Navigate to category page or filter cards by category
-      this.$router.push(`/category/${category.id}`);
+      console.log('Navigating to category:', category);
+      // For now, just log the category - we'll implement navigation later
+      // this.$router.push(`/category/${category.id}`);
     },
     
     getCategoryTypeClass(type) {
@@ -351,8 +356,13 @@ export default {
       }
     }
   },
-  mounted() {
-    this.fetchCategories();
+  async mounted() {
+    try {
+      await this.fetchCategories();
+      console.log('Categories after fetch:', this.categories);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
   }
 }
 </script>
