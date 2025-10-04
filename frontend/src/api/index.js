@@ -74,6 +74,24 @@ export const fetchSeasonInfo = async (seasonId) => {
   return response.json()
 }
 
+
+// Fetch all seasons
+export const fetchSeasons = async () => {
+  const response = await fetch('/api/seasons')
+  if (!response.ok) throw new Error('Failed to fetch seasons')
+  const seasonIds = await response.json()
+
+  const seasons = await Promise.all(
+    seasonIds.map(async seasonId => {
+      const seasonResponse = await fetch(`/api/season_info/${seasonId}`)
+      if (!seasonResponse.ok) throw new Error('Failed to fetch season info')
+      return seasonResponse.json()
+    })
+  )
+  
+  return seasons
+}
+
 // Check user permission
 export const checkUserPermission = async (username) => {
   try {
