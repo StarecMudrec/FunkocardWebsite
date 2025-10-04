@@ -67,6 +67,13 @@ export const checkAuth = async () => {
   }
 } 
 
+// Fetch season info
+export const fetchSeasonInfo = async (seasonId) => {
+  const response = await fetch(`/api/season_info/${seasonId}`)
+  if (!response.ok) throw new Error('Failed to fetch season info')
+  return response.json()
+}
+
 // Check user permission
 export const checkUserPermission = async (username) => {
   try {
