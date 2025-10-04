@@ -104,6 +104,7 @@ export default {
   min-height: 100vh;
   background: var(--bg-color);
   padding: 20px;
+  font-family: 'Afacad', sans-serif;
 }
 
 .page-header {
