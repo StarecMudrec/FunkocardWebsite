@@ -49,6 +49,13 @@ export const fetchCategories = async () => {
   }
 }
 
+// Fetch comments for a card
+export const fetchComments = async (cardId) => {
+  const response = await fetch(`/api/comments/${cardId}`)
+  if (!response.ok) throw new Error('Failed to fetch comments')
+  return response.json()
+}
+
 export const checkAuth = async () => {
   try {
     const response = await fetch('/api/check_auth')

@@ -318,10 +318,7 @@ import { mapActions, mapState } from 'vuex'
 
 export default {
   computed: {
-    ...mapState(['loading', 'error']),
-    categories() {
-      return this.$store.state.categories || [];
-    }
+    ...mapState(['categories', 'loading', 'error'])
   },
   methods: {
     ...mapActions(['fetchCategories']),
