@@ -1,5 +1,5 @@
 import { createStore } from 'vuex'
-import { fetchSeasons, checkAuth } from '@/api'
+import { fetchCategories, checkAuth } from '@/api'
 
 export default createStore({
   state: {
@@ -54,31 +54,21 @@ export default createStore({
         console.error('Logout failed:', error)
       }
     },
-    async fetchSeasons({ commit }) {
-      commit('SET_LOADING', true)
-      commit('SET_ERROR', null)
+    async fetchCategories({ commit }) {
       try {
-        const response = await fetch('/api/seasons');
-        if (!response.ok) throw new Error('Failed to fetch season IDs');
-        const seasonIds = await response.json();
-        const seasonPromises = seasonIds.map(id => fetch(`/api/season_info/${id}`).then(res => res.json()));
-        const orderedSeasonsData = await Promise.all(seasonPromises);
-        commit('SET_SEASONS', orderedSeasonsData);
+        commit('SET_LOADING', true);
+        commit('SET_ERROR', null);
+        
+        console.log('Fetching categories from API...');
+        const categories = await fetchCategories();
+        console.log('Categories fetched:', categories);
+        
+        commit('SET_CATEGORIES', categories);
       } catch (error) {
-        commit('SET_ERROR', error)
-        console.error('Error fetching seasons:', error)
+        console.error('Error fetching categories:', error);
+        commit('SET_ERROR', error.message);
       } finally {
-        commit('SET_LOADING', false)
-      }
-    },
-    async updateSeason({ commit }, { uuid, name }) {
-      try {
-        const updatedSeason = await updateSeason(uuid, { name });
-        commit('UPDATE_SEASON', updatedSeason);
-        return updatedSeason;
-      } catch (error) {
-        console.error('Error updating season:', error);
-        throw error;
+        commit('SET_LOADING', false);
       }
     }
   }
