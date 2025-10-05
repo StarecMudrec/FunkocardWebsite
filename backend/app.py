@@ -248,37 +248,42 @@ def serve_card_image(file_id):
     """Serve card images directly from Telegram using file_id"""
     TOKEN = os.getenv("CARDS_BOT_TOKEN")  # Replace with your actual bot token
     
-    # First, get file path from Telegram API
-    api_url = f"https://api.telegram.org/bot{TOKEN}/getFile?file_id={file_id}"
-    response = requests.get(api_url)
-    
-    if response.status_code != 200:
-        logging.warning(f"Failed to get file info for file_id {file_id}: {response.text}")
+    try:
+        # First, get file path from Telegram API
+        api_url = f"https://api.telegram.org/bot{TOKEN}/getFile?file_id={file_id}"
+        response = requests.get(api_url)
+        
+        if response.status_code != 200:
+            logging.warning(f"Failed to get file info for file_id {file_id}: {response.text}")
+            return send_from_directory('public', 'placeholder.jpg')
+        
+        file_info = response.json()
+        if not file_info.get("ok"):
+            logging.warning(f"Telegram API error for file_id {file_id}: {file_info}")
+            return send_from_directory('public', 'placeholder.jpg')
+        
+        file_path = file_info.get("result", {}).get("file_path")
+        if not file_path:
+            logging.warning(f"file_path not found for file_id {file_id}")
+            return send_from_directory('public', 'placeholder.jpg')
+        
+        # Download and serve the file directly from Telegram
+        file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
+        file_response = requests.get(file_url)
+        
+        if file_response.status_code != 200:
+            logging.warning(f"Failed to download file for file_id {file_id}: {file_response.text}")
+            return send_from_directory('public', 'placeholder.jpg')
+        
+        # Return the image with appropriate headers
+        response = make_response(file_response.content)
+        response.headers.set('Content-Type', 'image/jpeg')
+        response.headers.set('Cache-Control', 'public, max-age=3600')
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error serving card image for {file_id}: {str(e)}")
         return send_from_directory('public', 'placeholder.jpg')
-    
-    file_info = response.json()
-    if not file_info.get("ok"):
-        logging.warning(f"Telegram API error for file_id {file_id}: {file_info}")
-        return send_from_directory('public', 'placeholder.jpg')
-    
-    file_path = file_info.get("result", {}).get("file_path")
-    if not file_path:
-        logging.warning(f"file_path not found for file_id {file_id}")
-        return send_from_directory('public', 'placeholder.jpg')
-    
-    # Download and serve the file directly from Telegram
-    file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
-    file_response = requests.get(file_url)
-    
-    if file_response.status_code != 200:
-        logging.warning(f"Failed to download file for file_id {file_id}: {file_response.text}")
-        return send_from_directory('public', 'placeholder.jpg')
-    
-    # Return the image with appropriate headers
-    response = make_response(file_response.content)
-    response.headers.set('Content-Type', 'image/jpeg')  # Adjust if needed for other formats
-    response.headers.set('Cache-Control', 'public, max-age=3600')  # Cache for 1 hour
-    return response
 
 @app.route("/api/categories")
 def get_categories():
