@@ -43,7 +43,7 @@ services:
       db:
         condition: service_healthy
     environment:      
-      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://postgres:postgres@db:5432/cards
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://postgres:postgres@localhost:5433/cards
       BOT_TOKEN_HASH: ${BOT_TOKEN_HASH}
       SECRET_KEY: ${SECRET_KEY}
       CARDS_BOT_TOKEN: ${CARDS_BOT_TOKEN}
