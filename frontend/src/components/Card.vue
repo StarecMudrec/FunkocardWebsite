@@ -11,7 +11,7 @@
     <div class="card-inner-content">
       <div class="image-wrapper">
         <img
-          :src="card.img ? `/card_imgs/${card.img}` : '/placeholder.jpg'"
+          :src="card.img ? `/api/card_image/${card.img}` : '/placeholder.jpg'"
           :alt="card.name"
           class="card-image"
           @error="handleImageError"
