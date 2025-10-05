@@ -153,13 +153,14 @@ export default {
   gap: 8px;
   background: none;
   border: none;
-  color: var(--text-color);
+  color: var(--accent-color);
   cursor: pointer;
   font-size: 16px;
   padding: 8px 16px;
   border-radius: 6px;
   transition: all 0.3s ease;
   margin-bottom: 15px;
+  text-shadow: 0px 3px 5px rgba(0, 0, 0, 0.17);
 }
 
 .back-button:hover {
@@ -182,10 +183,11 @@ export default {
 }
 
 .category-title {
-  font-size: 2.5rem;
+  font-size: 5.5rem;
   color: var(--accent-color);
-  margin: 0 0 10px 0;
+  margin: 0 0 -10px 0;
   font-weight: 600;
+  text-shadow: 0px 3px 5px rgba(0, 0, 0, 0.27);
 }
 
 .category-info {
@@ -199,6 +201,7 @@ export default {
   color: var(--text-color);
   opacity: 0.8;
   font-size: 1.1rem;
+  text-shadow: 0px 3px 5px rgba(0, 0, 0, 0.27);
 }
 
 .cards-container-wrapper {
