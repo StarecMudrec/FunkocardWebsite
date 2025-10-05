@@ -75,25 +75,6 @@
 import Card from '@/components/Card.vue'
 import { fetchCardsByCategory } from '@/api'
 
-// Simple debounce function outside the component
-function debounce(func, wait) {
-  let timeout
-  const debounced = function(...args) {
-    const later = () => {
-      clearTimeout(timeout)
-      func(...args)
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
-  
-  debounced.cancel = function() {
-    clearTimeout(timeout)
-  }
-  
-  return debounced
-}
-
 export default {
   name: 'CategoryCards',
   components: {
@@ -113,13 +94,12 @@ export default {
       error: null,
       categoryName: '',
       searchQuery: '',
-      isSearching: false,
-      debouncedSearch: null
+      isSearching: false
     }
   },
   async created() {
-    // Initialize debounced search
-    this.debouncedSearch = debounce(this.performSearch, 300)
+    // Use the local debounce method
+    this.debouncedSearch = this.debounce(this.performSearch, 300)
     await this.loadCategoryCards()
   },
   watch: {
@@ -133,7 +113,7 @@ export default {
       this.loading = true
       try {
         const response = await fetchCardsByCategory(this.categoryId)
-        this.cards = response.cards || []
+        this.cards = response.cards
         this.filteredCards = [...this.cards]
         this.categoryName = this.getCategoryName(this.categoryId)
         this.searchQuery = '' // Reset search when category changes
@@ -141,9 +121,6 @@ export default {
       } catch (err) {
         this.error = err
         console.error('Error loading category cards:', err)
-        // Set empty arrays if API fails
-        this.cards = []
-        this.filteredCards = []
       } finally {
         this.loading = false
       }
@@ -154,10 +131,9 @@ export default {
       if (categoryId === 'all') return 'All Cards'
       if (categoryId === 'shop') return 'Available at Shop'
       if (categoryId.startsWith('rarity_')) {
-        return categoryId.replace('rarity_', '') + ' Rarity'
+        return categoryId.replace('rarity_', '')
       }
-      // Capitalize first letter of category name
-      return categoryId.charAt(0).toUpperCase() + categoryId.slice(1)
+      return categoryId
     },
     
     handleCardClicked(cardId) {
@@ -178,12 +154,8 @@ export default {
       
       const query = this.searchQuery.toLowerCase().trim()
       this.filteredCards = this.cards.filter(card => 
-        card && (
-          card.name?.toLowerCase().includes(query) ||
-          card.rarity?.toLowerCase().includes(query) ||
-          card.description?.toLowerCase().includes(query) ||
-          card.type?.toLowerCase().includes(query)
-        )
+        card.name?.toLowerCase().includes(query) ||
+        card.rarity?.toLowerCase().includes(query)
       )
       
       this.$nextTick(() => {
@@ -196,9 +168,25 @@ export default {
       this.filteredCards = [...this.cards]
       this.isSearching = false
       // Cancel any pending debounced search
-      if (this.debouncedSearch && this.debouncedSearch.cancel) {
-        this.debouncedSearch.cancel()
+      this.debouncedSearch?.cancel()
+    },
+    // Add this method to your component's methods
+    debounce(func, wait) {
+      let timeout
+      const debounced = function(...args) {
+        const later = () => {
+          clearTimeout(timeout)
+          func(...args)
+        }
+        clearTimeout(timeout)
+        timeout = setTimeout(later, wait)
       }
+      
+      debounced.cancel = function() {
+        clearTimeout(timeout)
+      }
+      
+      return debounced
     }
   }
 }
