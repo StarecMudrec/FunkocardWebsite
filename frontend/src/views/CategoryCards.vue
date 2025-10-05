@@ -144,7 +144,7 @@ export default {
   border-radius: 12px;
   /* border: 1px solid #333; */
   position: relative;
-  backdrop-filter: blur(5px);
+  /* backdrop-filter: blur(5px); */
 }
 
 .back-button {
