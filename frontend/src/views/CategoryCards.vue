@@ -54,8 +54,24 @@
         </div>
       
         <div class="cards-container">
-          <!-- Static render without transitions during search -->
-          <div class="cards-static-container">
+          <!-- Use transition-group only when not searching for better performance -->
+          <transition-group 
+            v-if="!isSearching"
+            name="cards" 
+            tag="div" 
+            class="cards-transition-container"
+          >
+            <Card
+              v-for="card in filteredCards"
+              :key="card.id"
+              :card="card || {}"
+              @card-clicked="handleCardClicked"
+              class="card-item"
+            />
+          </transition-group>
+          
+          <!-- Static render during search for maximum performance -->
+          <div v-else class="cards-static-container">
             <Card
               v-for="card in filteredCards"
               :key="card.id"
@@ -110,7 +126,8 @@ export default {
       error: null,
       categoryName: '',
       searchQuery: '',
-      searchCache: new Map() // Cache search results for better performance
+      searchCache: new Map(), // Cache search results for better performance
+      isSearching: false
     }
   },
   async created() {
@@ -134,6 +151,7 @@ export default {
         this.categoryName = this.getCategoryName(this.categoryId)
         this.searchQuery = '' // Reset search when category changes
         this.searchCache.clear() // Clear cache when category changes
+        this.isSearching = false
         console.log('Loaded category cards:', this.cards)
       } catch (err) {
         this.error = err
@@ -158,12 +176,14 @@ export default {
     },
     
     handleSearch() {
+      this.isSearching = true
       this.debouncedSearch()
     },
     
     performSearch() {
       if (!this.searchQuery.trim()) {
         this.filteredCards = [...this.cards]
+        this.isSearching = false
         return
       }
       
@@ -173,6 +193,7 @@ export default {
       const cacheKey = `${this.categoryId}_${query}`
       if (this.searchCache.has(cacheKey)) {
         this.filteredCards = this.searchCache.get(cacheKey)
+        this.isSearching = false
         return
       }
       
@@ -199,11 +220,14 @@ export default {
         this.searchCache.delete(firstKey)
       }
       this.searchCache.set(cacheKey, results)
+      
+      this.isSearching = false
     },
     
     clearSearch() {
       this.searchQuery = ''
       this.filteredCards = [...this.cards]
+      this.isSearching = false
       this.debouncedSearch?.cancel()
     }
   }
@@ -422,6 +446,10 @@ export default {
   will-change: transform;
 }
 
+.cards-transition-container {
+  display: contents;
+}
+
 .cards-static-container {
   display: contents;
 }
@@ -442,6 +470,53 @@ export default {
   opacity: 0.7;
   font-size: 1.2rem;
   padding: 40px 0;
+}
+
+/* Card transition animations - OPTIMIZED VERSION */
+.cards-enter-active,
+.cards-leave-active {
+  transition: all 0.3s ease;
+  /* Improve animation performance */
+  will-change: transform, opacity;
+}
+
+.cards-enter-from {
+  opacity: 0;
+  transform: scale(0.9) translateY(10px);
+}
+
+.cards-enter-to {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.cards-leave-active {
+  position: absolute;
+  width: 100%;
+}
+
+.cards-leave-from {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.cards-leave-to {
+  opacity: 0;
+  transform: scale(0.9) translateY(-10px);
+}
+
+/* This ensures the grid layout works smoothly during transitions */
+.cards-move {
+  transition: transform 0.3s ease;
+  /* Improve move animation performance */
+  will-change: transform;
+}
+
+/* Disable animations during search for better performance */
+.searching .cards-enter-active,
+.searching .cards-leave-active,
+.searching .cards-move {
+  transition: none !important;
 }
 
 /* Responsive design */
@@ -487,6 +562,16 @@ export default {
   
   .cards-divider-wrapper {
     margin: 40px 0 15px 0;
+  }
+  
+  /* Faster animations on mobile */
+  .cards-enter-active,
+  .cards-leave-active {
+    transition: all 0.2s ease;
+  }
+  
+  .cards-move {
+    transition: transform 0.2s ease;
   }
 }
 
