@@ -98,9 +98,9 @@ export default {
     }
   },
   async created() {
-    // Debounce the search method
-    this.debouncedSearch = debounce(this.performSearch, 300)
-    this.loadCategoryCards()
+    // Use the local debounce method
+    this.debouncedSearch = this.debounce(this.performSearch, 300)
+    await this.loadCategoryCards()
   },
   watch: {
     categoryId: {
@@ -169,6 +169,24 @@ export default {
       this.isSearching = false
       // Cancel any pending debounced search
       this.debouncedSearch?.cancel()
+    },
+    // Add this method to your component's methods
+    debounce(func, wait) {
+      let timeout
+      const debounced = function(...args) {
+        const later = () => {
+          clearTimeout(timeout)
+          func(...args)
+        }
+        clearTimeout(timeout)
+        timeout = setTimeout(later, wait)
+      }
+      
+      debounced.cancel = function() {
+        clearTimeout(timeout)
+      }
+      
+      return debounced
     }
   }
 }
