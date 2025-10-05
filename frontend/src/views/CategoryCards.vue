@@ -21,16 +21,22 @@
         <div class="loading-spinner"></div>
       </div>
       
-      <div class="cards-container">
-        <Card
-          v-for="card in cards"
-          :key="card.id"
-          :card="card || {}"
-          @card-clicked="handleCardClicked"
-          class="card-item"
-        />
-        <div v-if="!loading && cards.length === 0" class="no-cards-message">
-          No cards found in this category
+      <!-- Line above cards container -->
+      <div class="cards-divider"></div>
+      
+      <!-- Cards container with border -->
+      <div class="cards-section-container">
+        <div class="cards-container">
+          <Card
+            v-for="card in cards"
+            :key="card.id"
+            :card="card || {}"
+            @card-clicked="handleCardClicked"
+            class="card-item"
+          />
+          <div v-if="!loading && cards.length === 0" class="no-cards-message">
+            No cards found in this category
+          </div>
         </div>
       </div>
     </div>
@@ -186,6 +192,23 @@ export default {
   min-height: 200px;
 }
 
+/* Line above the cards */
+.cards-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+  margin: 20px 0 30px 0;
+  max-width: 1200px;
+}
+
+/* Cards section container */
+.cards-section-container {
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid #333;
+  padding: 25px;
+  backdrop-filter: blur(5px);
+}
+
 .loading-spinner-container {
   position: absolute;
   top: 0;
@@ -242,6 +265,10 @@ export default {
     font-size: 2rem;
   }
   
+  .cards-section-container {
+    padding: 15px;
+  }
+  
   .cards-container {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 15px;
@@ -256,6 +283,10 @@ export default {
   
   .category-title {
     font-size: 1.5rem;
+  }
+  
+  .cards-section-container {
+    padding: 10px;
   }
 }
 </style>
