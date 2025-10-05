@@ -53,13 +53,15 @@
         </div>
       
         <div class="cards-container">
-          <Card
-            v-for="card in filteredCards"
-            :key="card.id"
-            :card="card || {}"
-            @card-clicked="handleCardClicked"
-            class="card-item"
-          />
+          <transition-group name="cards" tag="div" class="cards-transition-container">
+            <Card
+              v-for="card in filteredCards"
+              :key="card.id"
+              :card="card || {}"
+              @card-clicked="handleCardClicked"
+              class="card-item"
+            />
+          </transition-group>
           <div v-if="!loading && filteredCards.length === 0" class="no-cards-message">
             {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
           </div>
@@ -382,6 +384,10 @@ export default {
   justify-items: center; /* Center items within grid cells */
 }
 
+.cards-transition-container {
+  display: contents; /* This allows the grid layout to work with transition-group */
+}
+
 .card-item {
   width: 100%; /* Ensure cards take full width of their grid cell */
   max-width: 220px; /* Match the minmax value */
@@ -394,6 +400,37 @@ export default {
   opacity: 0.7;
   font-size: 1.2rem;
   padding: 40px 0;
+}
+
+/* Card transition animations */
+.cards-enter-active,
+.cards-leave-active {
+  transition: all 0.5s ease;
+}
+
+.cards-enter-from {
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+}
+
+.cards-enter-to {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.cards-leave-from {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.cards-leave-to {
+  opacity: 0;
+  transform: scale(0.8) translateY(-20px);
+}
+
+/* This ensures the grid layout works smoothly during transitions */
+.cards-move {
+  transition: transform 0.5s ease;
 }
 
 /* Responsive design */
