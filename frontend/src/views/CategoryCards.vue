@@ -249,7 +249,12 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 20px;
-  justify-content: center;
+  justify-items: center; /* Center items within grid cells */
+}
+
+.card-item {
+  width: 100%; /* Ensure cards take full width of their grid cell */
+  max-width: 220px; /* Match the minmax value */
 }
 
 .no-cards-message {
@@ -285,6 +290,10 @@ export default {
     gap: 15px;
   }
   
+  .card-item {
+    max-width: 160px; /* Match the minmax value for mobile */
+  }
+  
   .cards-divider-wrapper {
     margin: 40px 0 15px 0;
   }
@@ -294,6 +303,10 @@ export default {
   .cards-container {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+  }
+  
+  .card-item {
+    max-width: none; /* Remove max-width constraint on very small screens */
   }
   
   .category-title {
