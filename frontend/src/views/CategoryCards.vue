@@ -53,15 +53,13 @@
         </div>
       
         <div class="cards-container">
-          <transition-group name="card-fade" tag="div" class="cards-grid">
-            <Card
-              v-for="card in filteredCards"
-              :key="card.id"
-              :card="card || {}"
-              @card-clicked="handleCardClicked"
-              class="card-item"
-            />
-          </transition-group>
+          <Card
+            v-for="card in filteredCards"
+            :key="card.id"
+            :card="card || {}"
+            @card-clicked="handleCardClicked"
+            class="card-item"
+          />
           <div v-if="!loading && filteredCards.length === 0" class="no-cards-message">
             {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
           </div>
@@ -139,17 +137,23 @@ export default {
     },
     
     handleSearch() {
-      // Use immediate search for better UX, but with very simple transitions
-      if (!this.searchQuery.trim()) {
-        this.filteredCards = [...this.cards]
-        return
+      // Debounce the search to reduce lag
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout)
       }
       
-      const query = this.searchQuery.toLowerCase().trim()
-      this.filteredCards = this.cards.filter(card => 
-        card.name?.toLowerCase().includes(query) ||
-        card.rarity?.toLowerCase().includes(query)
-      )
+      this.searchTimeout = setTimeout(() => {
+        if (!this.searchQuery.trim()) {
+          this.filteredCards = [...this.cards]
+          return
+        }
+        
+        const query = this.searchQuery.toLowerCase().trim()
+        this.filteredCards = this.cards.filter(card => 
+          card.name?.toLowerCase().includes(query) ||
+          card.rarity?.toLowerCase().includes(query)
+        )
+      }, 100) // Reduced to 100ms for better responsiveness
     },
     
     clearSearch() {
@@ -379,52 +383,54 @@ export default {
 }
 
 .cards-container {
-  position: relative;
-}
-
-.cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   column-gap: 30px;
-  row-gap: 20px;
+  row-gap: 20px; /* Added some row gap for better spacing */
   justify-items: center;
 }
 
 .card-item {
   width: 100%;
   max-width: 220px;
+  /* Optimized transitions - only opacity for better performance */
+  transition: opacity 0.3s ease;
 }
 
-/* Optimized transitions for search */
-.card-fade-enter-active,
-.card-fade-leave-active {
-  transition: all 0.25s ease !important;
-  transition-delay: 0s !important;
+/* Smooth fade in/out for search */
+.card-item {
+  animation: fadeInUp 0.4s ease forwards;
 }
 
-.card-fade-enter-from {
-  opacity: 0;
-  transform: scale(0.9);
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.card-fade-enter-to {
-  opacity: 1;
-  transform: scale(1);
-}
+/* Stagger the animations for initial load only */
+.card-item:nth-child(1) { animation-delay: 0.05s; }
+.card-item:nth-child(2) { animation-delay: 0.08s; }
+.card-item:nth-child(3) { animation-delay: 0.11s; }
+.card-item:nth-child(4) { animation-delay: 0.14s; }
+.card-item:nth-child(5) { animation-delay: 0.17s; }
+.card-item:nth-child(6) { animation-delay: 0.2s; }
+.card-item:nth-child(7) { animation-delay: 0.23s; }
+.card-item:nth-child(8) { animation-delay: 0.26s; }
+.card-item:nth-child(9) { animation-delay: 0.29s; }
+.card-item:nth-child(10) { animation-delay: 0.32s; }
+.card-item:nth-child(11) { animation-delay: 0.35s; }
+.card-item:nth-child(12) { animation-delay: 0.38s; }
 
-.card-fade-leave-from {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.card-fade-leave-to {
-  opacity: 0;
-  transform: scale(0.9);
-}
-
-/* Disable move transitions to reduce lag */
-.card-fade-move {
-  transition: none !important;
+/* For search transitions, use a simpler fade */
+.cards-container {
+  /* This enables smooth grid transitions */
+  transition: grid-template-rows 0.3s ease;
 }
 
 .no-cards-message {
@@ -474,7 +480,7 @@ export default {
     padding: 15px;
   }
   
-  .cards-grid {
+  .cards-container {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 15px;
   }
@@ -489,7 +495,7 @@ export default {
 }
 
 @media (max-width: 480px) {
-  .cards-grid {
+  .cards-container {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
