@@ -8,7 +8,7 @@ class Config:
     # Configuration
     JWT_SECRET_KEY = "COOL"  # Replace with your actual secret key
     BOT_TOKEN_HASH = sha256(os.environ.get("BOT_TOKEN_HASH").encode())  # Replace with your actual token
-    SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres:postgres@localhost:5433/cards"  # SQLite database
+    SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres:postgres@db:5432/cards"  # SQLite database
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get("SECRET_KEY")
 
