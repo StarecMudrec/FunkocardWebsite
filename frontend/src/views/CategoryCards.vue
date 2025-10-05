@@ -9,7 +9,6 @@
         <h1 class="category-title">{{ categoryName }}</h1>
         <div class="category-info">
           <span class="card-count">{{ cards.length }} cards</span>
-          <span v-if="searchQuery" class="filtered-count">({{ filteredCards.length }} filtered)</span>
         </div>
         
         <!-- Search Bar -->
@@ -20,7 +19,7 @@
               <path d="m21 21-4.3-4.3"></path>
             </svg>
             <input
-              v-model.lazy="searchQuery"
+              v-model="searchQuery"
               type="text"
               placeholder="Search cards..."
               class="search-input"
@@ -54,8 +53,7 @@
         </div>
       
         <div class="cards-container">
-          <!-- Static render without transitions during search -->
-          <div class="cards-static-container">
+          <transition-group name="cards" tag="div" class="cards-transition-container">
             <Card
               v-for="card in filteredCards"
               :key="card.id"
@@ -63,8 +61,7 @@
               @card-clicked="handleCardClicked"
               class="card-item"
             />
-          </div>
-          
+          </transition-group>
           <div v-if="!loading && filteredCards.length === 0" class="no-cards-message">
             {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
           </div>
@@ -77,19 +74,6 @@
 <script>
 import Card from '@/components/Card.vue'
 import { fetchCardsByCategory } from '@/api'
-
-// Simple debounce implementation to avoid lodash dependency
-function debounce(func, wait) {
-  let timeout
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout)
-      func(...args)
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
-}
 
 export default {
   name: 'CategoryCards',
@@ -110,13 +94,13 @@ export default {
       error: null,
       categoryName: '',
       searchQuery: '',
-      searchCache: new Map() // Cache search results for better performance
+      isSearching: false
     }
   },
   async created() {
-    // Use a longer debounce time for better performance
-    this.debouncedSearch = debounce(this.performSearch, 150)
-    await this.loadCategoryCards()
+    // Debounce the search method
+    this.debouncedSearch = debounce(this.performSearch, 300)
+    this.loadCategoryCards()
   },
   watch: {
     categoryId: {
@@ -133,7 +117,6 @@ export default {
         this.filteredCards = [...this.cards]
         this.categoryName = this.getCategoryName(this.categoryId)
         this.searchQuery = '' // Reset search when category changes
-        this.searchCache.clear() // Clear cache when category changes
         console.log('Loaded category cards:', this.cards)
       } catch (err) {
         this.error = err
@@ -148,7 +131,7 @@ export default {
       if (categoryId === 'all') return 'All Cards'
       if (categoryId === 'shop') return 'Available at Shop'
       if (categoryId.startsWith('rarity_')) {
-        return categoryId.replace('rarity_', '') + ' Cards'
+        return categoryId.replace('rarity_', '')
       }
       return categoryId
     },
@@ -158,52 +141,33 @@ export default {
     },
     
     handleSearch() {
+      this.isSearching = true
       this.debouncedSearch()
     },
     
     performSearch() {
       if (!this.searchQuery.trim()) {
         this.filteredCards = [...this.cards]
+        this.isSearching = false
         return
       }
       
       const query = this.searchQuery.toLowerCase().trim()
+      this.filteredCards = this.cards.filter(card => 
+        card.name?.toLowerCase().includes(query) ||
+        card.rarity?.toLowerCase().includes(query)
+      )
       
-      // Check cache first
-      const cacheKey = `${this.categoryId}_${query}`
-      if (this.searchCache.has(cacheKey)) {
-        this.filteredCards = this.searchCache.get(cacheKey)
-        return
-      }
-      
-      // Optimized search with early returns
-      const results = this.cards.filter(card => {
-        const name = card.name?.toLowerCase() || ''
-        const rarity = card.rarity?.toLowerCase() || ''
-        
-        // Early return for exact matches
-        if (name.includes(query)) return true
-        if (rarity.includes(query)) return true
-        
-        // Additional search fields for better results
-        const type = card.type?.toLowerCase() || ''
-        const description = card.description?.toLowerCase() || ''
-        
-        return type.includes(query) || description.includes(query)
+      this.$nextTick(() => {
+        this.isSearching = false
       })
-      
-      this.filteredCards = results
-      // Cache the results (limit cache size to prevent memory issues)
-      if (this.searchCache.size > 50) {
-        const firstKey = this.searchCache.keys().next().value
-        this.searchCache.delete(firstKey)
-      }
-      this.searchCache.set(cacheKey, results)
     },
     
     clearSearch() {
       this.searchQuery = ''
       this.filteredCards = [...this.cards]
+      this.isSearching = false
+      // Cancel any pending debounced search
       this.debouncedSearch?.cancel()
     }
   }
@@ -213,6 +177,7 @@ export default {
 <style scoped>
 .category-cards-page {
   min-height: 100vh;
+  /* background: var(--bg-color); */
   padding: 20px;
   font-family: 'Afacad', sans-serif;
   position: relative;
@@ -229,20 +194,46 @@ export default {
   background-size: cover;
   background-position: center 57%;
   z-index: -1;
-  /* Optimize background rendering */
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000;
 }
 
 .page-header {
   max-width: 1200px;
   margin: 227px auto 50px;
   padding: 20px;
+  /* background: var(--card-bg); */
   border-radius: 12px;
+  /* border: 1px solid #333; */
   position: relative;
+  /* backdrop-filter: blur(5px); */
 }
 
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+  text-shadow: 0px 3px 5px rgba(0, 0, 0, 0.17);
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(-5px);
+}
+
+.back-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Centered category header content */
 .category-header-content {
   display: flex;
   flex-direction: column;
@@ -267,16 +258,11 @@ export default {
   margin-bottom: 30px;
 }
 
-.card-count, .filtered-count {
+.card-count {
   color: var(--text-color);
   opacity: 0.8;
   font-size: 1.1rem;
   text-shadow: 0px 3px 5px rgba(0, 0, 0, 0.27);
-}
-
-.filtered-count {
-  opacity: 0.6;
-  font-size: 1rem;
 }
 
 /* Search Container */
@@ -313,8 +299,6 @@ export default {
   backdrop-filter: blur(5px);
   transition: all 0.3s ease;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  /* Improve input performance */
-  transform: translateZ(0);
 }
 
 .search-input:focus {
@@ -342,8 +326,6 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Improve button performance */
-  transform: translateZ(0);
 }
 
 .clear-search-button:hover {
@@ -383,8 +365,6 @@ export default {
   backdrop-filter: blur(5px);
   max-width: 1300px;
   margin: 0 auto;
-  /* Improve container rendering */
-  transform: translateZ(0);
 }
 
 .loading-spinner-container {
@@ -417,22 +397,16 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   column-gap: 30px;
   row-gap: 0px;
-  justify-items: center;
-  /* Improve grid performance */
-  will-change: transform;
+  justify-items: center; /* Center items within grid cells */
 }
 
-.cards-static-container {
-  display: contents;
+.cards-transition-container {
+  display: contents; /* This allows the grid layout to work with transition-group */
 }
 
 .card-item {
-  width: 100%;
-  max-width: 220px;
-  /* Improve card rendering performance */
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000;
+  width: 100%; /* Ensure cards take full width of their grid cell */
+  max-width: 220px; /* Match the minmax value */
 }
 
 .no-cards-message {
@@ -444,35 +418,36 @@ export default {
   padding: 40px 0;
 }
 
-/* Remove transition animations for better performance */
-/* .cards-enter-active, */
-/* .cards-leave-active { */
-/*   transition: all 0.5s ease; */
-/* } */
-/*  */
-/* .cards-enter-from { */
-/*   opacity: 0; */
-/*   transform: scale(0.8) translateY(20px); */
-/* } */
-/*  */
-/* .cards-enter-to { */
-/*   opacity: 1; */
-/*   transform: scale(1) translateY(0); */
-/* } */
-/*  */
-/* .cards-leave-from { */
-/*   opacity: 1; */
-/*   transform: scale(1) translateY(0); */
-/* } */
-/*  */
-/* .cards-leave-to { */
-/*   opacity: 0; */
-/*   transform: scale(0.8) translateY(-20px); */
-/* } */
-/*  */
-/* .cards-move { */
-/*   transition: transform 0.5s ease; */
-/* } */
+/* Card transition animations */
+.cards-enter-active,
+.cards-leave-active {
+  transition: all 0.5s ease;
+}
+
+.cards-enter-from {
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+}
+
+.cards-enter-to {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.cards-leave-from {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.cards-leave-to {
+  opacity: 0;
+  transform: scale(0.8) translateY(-20px);
+}
+
+/* This ensures the grid layout works smoothly during transitions */
+.cards-move {
+  transition: transform 0.5s ease;
+}
 
 /* Responsive design */
 @media (max-width: 768px) {
@@ -512,7 +487,7 @@ export default {
   }
   
   .card-item {
-    max-width: 160px;
+    max-width: 160px; /* Match the minmax value for mobile */
   }
   
   .cards-divider-wrapper {
@@ -527,7 +502,7 @@ export default {
   }
   
   .card-item {
-    max-width: none;
+    max-width: none; /* Remove max-width constraint on very small screens */
   }
   
   .category-title {
@@ -548,15 +523,6 @@ export default {
   
   .cards-divider-wrapper {
     margin: 30px 0 12px 0;
-  }
-}
-
-/* Performance optimizations */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
   }
 }
 </style>
