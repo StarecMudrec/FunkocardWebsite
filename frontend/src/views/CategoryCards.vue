@@ -296,14 +296,14 @@ export default {
 
 .clear-search-button {
   position: absolute;
-  right: 12px;
+  right: 17px;
   background: none;
   border: none;
   color: var(--text-color);
   opacity: 0.7;
   cursor: pointer;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: 20px;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -313,6 +313,7 @@ export default {
 .clear-search-button:hover {
   opacity: 1;
   background: rgba(255, 255, 255, 0.1);
+  scale: 1.1;
 }
 
 .cards-container-wrapper {
