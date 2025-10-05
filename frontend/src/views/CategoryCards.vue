@@ -93,11 +93,14 @@ export default {
       loading: false,
       error: null,
       categoryName: '',
-      searchQuery: ''
+      searchQuery: '',
+      isSearching: false
     }
   },
   async created() {
-    await this.loadCategoryCards()
+    // Debounce the search method
+    this.debouncedSearch = debounce(this.performSearch, 300)
+    this.loadCategoryCards()
   },
   watch: {
     categoryId: {
@@ -138,8 +141,14 @@ export default {
     },
     
     handleSearch() {
+      this.isSearching = true
+      this.debouncedSearch()
+    },
+    
+    performSearch() {
       if (!this.searchQuery.trim()) {
         this.filteredCards = [...this.cards]
+        this.isSearching = false
         return
       }
       
@@ -148,11 +157,18 @@ export default {
         card.name?.toLowerCase().includes(query) ||
         card.rarity?.toLowerCase().includes(query)
       )
+      
+      this.$nextTick(() => {
+        this.isSearching = false
+      })
     },
     
     clearSearch() {
       this.searchQuery = ''
       this.filteredCards = [...this.cards]
+      this.isSearching = false
+      // Cancel any pending debounced search
+      this.debouncedSearch?.cancel()
     }
   }
 }
