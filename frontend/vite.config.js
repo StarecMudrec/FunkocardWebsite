@@ -24,7 +24,7 @@ export default defineConfig({
         secure: false
       },
       '/card_imgs': {
-        target: 'http://web:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false
       }
