@@ -21,8 +21,10 @@
         <div class="loading-spinner"></div>
       </div>
       
-      <!-- Line above cards container -->
-      <div class="cards-divider"></div>
+      <!-- Line above cards container - centered -->
+      <div class="cards-divider-wrapper">
+        <div class="cards-divider"></div>
+      </div>
       
       <!-- Cards container with border -->
       <div class="cards-section-container">
@@ -186,18 +188,25 @@ export default {
 }
 
 .cards-container-wrapper {
-  max-width: 1200px;
+  max-width: 1300px;
   margin: 0 auto;
   position: relative;
   min-height: 200px;
 }
 
-/* Line above the cards */
+/* Wrapper to center the line */
+.cards-divider-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 52px 0 17px 0;
+}
+
+/* Line above the cards - centered and same width as cards container */
 .cards-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
-  margin: 20px 0 30px 0;
-  max-width: 1200px;
+  height: 2px;
+  background: linear-gradient(90deg, #434343a1, #434343, #434343a1);
+  width: 100%;
+  max-width: 1300px;
 }
 
 /* Cards section container */
@@ -207,6 +216,8 @@ export default {
   border: 1px solid #333;
   padding: 25px;
   backdrop-filter: blur(5px);
+  max-width: 1300px;
+  margin: 0 auto;
 }
 
 .loading-spinner-container {
@@ -273,6 +284,10 @@ export default {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 15px;
   }
+  
+  .cards-divider-wrapper {
+    margin: 40px 0 15px 0;
+  }
 }
 
 @media (max-width: 480px) {
@@ -287,6 +302,10 @@ export default {
   
   .cards-section-container {
     padding: 10px;
+  }
+  
+  .cards-divider-wrapper {
+    margin: 30px 0 12px 0;
   }
 }
 </style>
