@@ -19,7 +19,7 @@
               <path d="m21 21-4.3-4.3"></path>
             </svg>
             <input
-              v-model.lazy="searchQuery"
+              v-model="searchQuery"
               type="text"
               placeholder="Search cards..."
               class="search-input"
@@ -53,7 +53,7 @@
         </div>
       
         <div class="cards-container">
-          <div class="cards-transition-container">
+          <transition-group name="cards" tag="div" class="cards-transition-container">
             <Card
               v-for="card in filteredCards"
               :key="card.id"
@@ -61,7 +61,7 @@
               @card-clicked="handleCardClicked"
               class="card-item"
             />
-          </div>
+          </transition-group>
           <div v-if="!loading && filteredCards.length === 0" class="no-cards-message">
             {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
           </div>
@@ -94,10 +94,12 @@ export default {
       error: null,
       categoryName: '',
       searchQuery: '',
-      searchTimeout: null
+      isSearching: false
     }
   },
   async created() {
+    // Use the local debounce method
+    this.debouncedSearch = this.debounce(this.performSearch, 300)
     await this.loadCategoryCards()
   },
   watch: {
@@ -139,60 +141,58 @@ export default {
     },
     
     handleSearch() {
-      // Clear any existing timeout
-      if (this.searchTimeout) {
-        clearTimeout(this.searchTimeout)
-      }
-      
-      // Set a new timeout for immediate feedback with slight delay
-      this.searchTimeout = setTimeout(() => {
-        this.performSearch()
-      }, 50) // Reduced from 300ms to 50ms for better responsiveness
+      this.isSearching = true
+      this.debouncedSearch()
     },
     
     performSearch() {
       if (!this.searchQuery.trim()) {
         this.filteredCards = [...this.cards]
+        this.isSearching = false
         return
       }
       
       const query = this.searchQuery.toLowerCase().trim()
+      this.filteredCards = this.cards.filter(card => 
+        card.name?.toLowerCase().includes(query) ||
+        card.rarity?.toLowerCase().includes(query)
+      )
       
-      // Use a more efficient search approach
-      this.filteredCards = this.cards.filter(card => {
-        const nameMatch = card.name?.toLowerCase().includes(query)
-        const rarityMatch = card.rarity?.toLowerCase().includes(query)
-        return nameMatch || rarityMatch
+      this.$nextTick(() => {
+        this.isSearching = false
       })
     },
     
     clearSearch() {
       this.searchQuery = ''
       this.filteredCards = [...this.cards]
-      if (this.searchTimeout) {
-        clearTimeout(this.searchTimeout)
-        this.searchTimeout = null
+      this.isSearching = false
+      // Cancel any pending debounced search
+      this.debouncedSearch?.cancel()
+    },
+    // Add this method to your component's methods
+    debounce(func, wait) {
+      let timeout
+      const debounced = function(...args) {
+        const later = () => {
+          clearTimeout(timeout)
+          func(...args)
+        }
+        clearTimeout(timeout)
+        timeout = setTimeout(later, wait)
       }
-    }
-  },
-  
-  // Use computed property for better performance
-  computed: {
-    // This computed property will automatically update when searchQuery or cards change
-    // But we'll keep the manual search for better control
-  },
-  
-  beforeUnmount() {
-    // Clean up timeout when component is destroyed
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout)
+      
+      debounced.cancel = function() {
+        clearTimeout(timeout)
+      }
+      
+      return debounced
     }
   }
 }
 </script>
 
 <style scoped>
-/* Your existing CSS remains the same */
 .category-cards-page {
   min-height: 100vh;
   /* background: var(--bg-color); */
@@ -434,6 +434,37 @@ export default {
   opacity: 0.7;
   font-size: 1.2rem;
   padding: 40px 0;
+}
+
+/* Card transition animations */
+.cards-enter-active,
+.cards-leave-active {
+  transition: all 0.5s ease;
+}
+
+.cards-enter-from {
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+}
+
+.cards-enter-to {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.cards-leave-from {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.cards-leave-to {
+  opacity: 0;
+  transform: scale(0.8) translateY(-20px);
+}
+
+/* This ensures the grid layout works smoothly during transitions */
+.cards-move {
+  transition: transform 0.5s ease;
 }
 
 /* Responsive design */
