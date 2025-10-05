@@ -53,15 +53,13 @@
         </div>
       
         <div class="cards-container">
-          <transition-group name="cards" tag="div" class="cards-transition-container">
-            <Card
-              v-for="card in filteredCards"
-              :key="card.id"
-              :card="card || {}"
-              @card-clicked="handleCardClicked"
-              class="card-item"
-            />
-          </transition-group>
+          <Card
+            v-for="card in filteredCards"
+            :key="card.id"
+            :card="card || {}"
+            @card-clicked="handleCardClicked"
+            class="card-item"
+          />
           <div v-if="!loading && filteredCards.length === 0" class="no-cards-message">
             {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
           </div>
@@ -93,7 +91,8 @@ export default {
       loading: false,
       error: null,
       categoryName: '',
-      searchQuery: ''
+      searchQuery: '',
+      searchTimeout: null
     }
   },
   async created() {
@@ -138,16 +137,23 @@ export default {
     },
     
     handleSearch() {
-      if (!this.searchQuery.trim()) {
-        this.filteredCards = [...this.cards]
-        return
+      // Debounce the search to reduce lag
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout)
       }
       
-      const query = this.searchQuery.toLowerCase().trim()
-      this.filteredCards = this.cards.filter(card => 
-        card.name?.toLowerCase().includes(query) ||
-        card.rarity?.toLowerCase().includes(query)
-      )
+      this.searchTimeout = setTimeout(() => {
+        if (!this.searchQuery.trim()) {
+          this.filteredCards = [...this.cards]
+          return
+        }
+        
+        const query = this.searchQuery.toLowerCase().trim()
+        this.filteredCards = this.cards.filter(card => 
+          card.name?.toLowerCase().includes(query) ||
+          card.rarity?.toLowerCase().includes(query)
+        )
+      }, 100) // Reduced to 100ms for better responsiveness
     },
     
     clearSearch() {
@@ -380,17 +386,51 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   column-gap: 30px;
-  row-gap: 0px;
-  justify-items: center; /* Center items within grid cells */
-}
-
-.cards-transition-container {
-  display: contents; /* This allows the grid layout to work with transition-group */
+  row-gap: 20px; /* Added some row gap for better spacing */
+  justify-items: center;
 }
 
 .card-item {
-  width: 100%; /* Ensure cards take full width of their grid cell */
-  max-width: 220px; /* Match the minmax value */
+  width: 100%;
+  max-width: 220px;
+  /* Optimized transitions - only opacity for better performance */
+  transition: opacity 0.3s ease;
+}
+
+/* Smooth fade in/out for search */
+.card-item {
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger the animations for initial load only */
+.card-item:nth-child(1) { animation-delay: 0.05s; }
+.card-item:nth-child(2) { animation-delay: 0.08s; }
+.card-item:nth-child(3) { animation-delay: 0.11s; }
+.card-item:nth-child(4) { animation-delay: 0.14s; }
+.card-item:nth-child(5) { animation-delay: 0.17s; }
+.card-item:nth-child(6) { animation-delay: 0.2s; }
+.card-item:nth-child(7) { animation-delay: 0.23s; }
+.card-item:nth-child(8) { animation-delay: 0.26s; }
+.card-item:nth-child(9) { animation-delay: 0.29s; }
+.card-item:nth-child(10) { animation-delay: 0.32s; }
+.card-item:nth-child(11) { animation-delay: 0.35s; }
+.card-item:nth-child(12) { animation-delay: 0.38s; }
+
+/* For search transitions, use a simpler fade */
+.cards-container {
+  /* This enables smooth grid transitions */
+  transition: grid-template-rows 0.3s ease;
 }
 
 .no-cards-message {
@@ -400,37 +440,12 @@ export default {
   opacity: 0.7;
   font-size: 1.2rem;
   padding: 40px 0;
+  animation: fadeIn 0.5s ease;
 }
 
-/* Card transition animations */
-.cards-enter-active,
-.cards-leave-active {
-  transition: all 0.5s ease;
-}
-
-.cards-enter-from {
-  opacity: 0;
-  transform: scale(0.8) translateY(20px);
-}
-
-.cards-enter-to {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-.cards-leave-from {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-.cards-leave-to {
-  opacity: 0;
-  transform: scale(0.8) translateY(-20px);
-}
-
-/* This ensures the grid layout works smoothly during transitions */
-.cards-move {
-  transition: transform 0.5s ease;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 0.7; }
 }
 
 /* Responsive design */
@@ -471,7 +486,7 @@ export default {
   }
   
   .card-item {
-    max-width: 160px; /* Match the minmax value for mobile */
+    max-width: 160px;
   }
   
   .cards-divider-wrapper {
@@ -486,7 +501,7 @@ export default {
   }
   
   .card-item {
-    max-width: none; /* Remove max-width constraint on very small screens */
+    max-width: none;
   }
   
   .category-title {
