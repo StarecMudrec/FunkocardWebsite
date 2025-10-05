@@ -53,15 +53,13 @@
         </div>
       
         <div class="cards-container">
-          <transition-group name="cards" tag="div" class="cards-transition-container">
-            <Card
-              v-for="card in filteredCards"
-              :key="card.id"
-              :card="card || {}"
-              @card-clicked="handleCardClicked"
-              class="card-item"
-            />
-          </transition-group>
+          <Card
+            v-for="card in filteredCards"
+            :key="card.id"
+            :card="card || {}"
+            @card-clicked="handleCardClicked"
+            class="card-item"
+          />
           <div v-if="!loading && filteredCards.length === 0" class="no-cards-message">
             {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
           </div>
@@ -93,7 +91,8 @@ export default {
       loading: false,
       error: null,
       categoryName: '',
-      searchQuery: ''
+      searchQuery: '',
+      searchTimeout: null
     }
   },
   async created() {
@@ -138,16 +137,23 @@ export default {
     },
     
     handleSearch() {
-      if (!this.searchQuery.trim()) {
-        this.filteredCards = [...this.cards]
-        return
+      // Debounce the search to reduce lag
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout)
       }
       
-      const query = this.searchQuery.toLowerCase().trim()
-      this.filteredCards = this.cards.filter(card => 
-        card.name?.toLowerCase().includes(query) ||
-        card.rarity?.toLowerCase().includes(query)
-      )
+      this.searchTimeout = setTimeout(() => {
+        if (!this.searchQuery.trim()) {
+          this.filteredCards = [...this.cards]
+          return
+        }
+        
+        const query = this.searchQuery.toLowerCase().trim()
+        this.filteredCards = this.cards.filter(card => 
+          card.name?.toLowerCase().includes(query) ||
+          card.rarity?.toLowerCase().includes(query)
+        )
+      }, 100) // Reduced to 100ms for faster response
     },
     
     clearSearch() {
@@ -381,18 +387,47 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   column-gap: 30px;
   row-gap: 0px;
-  justify-items: center; /* Center items within grid cells */
+  justify-items: center;
 }
 
-.cards-transition-container {
-  display: contents; /* This allows the grid layout to work with transition-group */
-}
-
+/* Optimized card transitions */
 .card-item {
-  width: 100%; /* Ensure cards take full width of their grid cell */
-  max-width: 220px; /* Match the minmax value */
+  width: 100%;
+  max-width: 220px;
+  transition: all 0.3s ease;
+  animation: cardAppear 0.4s ease-out forwards;
 }
 
+/* Initial load animation */
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger the initial appearance */
+.card-item:nth-child(1) { animation-delay: 0.05s; }
+.card-item:nth-child(2) { animation-delay: 0.1s; }
+.card-item:nth-child(3) { animation-delay: 0.15s; }
+.card-item:nth-child(4) { animation-delay: 0.2s; }
+.card-item:nth-child(5) { animation-delay: 0.25s; }
+.card-item:nth-child(6) { animation-delay: 0.3s; }
+.card-item:nth-child(7) { animation-delay: 0.35s; }
+.card-item:nth-child(8) { animation-delay: 0.4s; }
+.card-item:nth-child(9) { animation-delay: 0.45s; }
+.card-item:nth-child(10) { animation-delay: 0.5s; }
+
+/* Search filter animation - only animate opacity for better performance */
+.cards-container .card-item {
+  transition: opacity 0.3s ease;
+}
+
+/* When filtering, cards will smoothly fade in/out */
 .no-cards-message {
   grid-column: 1 / -1;
   text-align: center;
@@ -400,37 +435,16 @@ export default {
   opacity: 0.7;
   font-size: 1.2rem;
   padding: 40px 0;
+  animation: fadeIn 0.4s ease;
 }
 
-/* Card transition animations */
-.cards-enter-active,
-.cards-leave-active {
-  transition: all 0.5s ease;
-}
-
-.cards-enter-from {
-  opacity: 0;
-  transform: scale(0.8) translateY(20px);
-}
-
-.cards-enter-to {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-.cards-leave-from {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-.cards-leave-to {
-  opacity: 0;
-  transform: scale(0.8) translateY(-20px);
-}
-
-/* This ensures the grid layout works smoothly during transitions */
-.cards-move {
-  transition: transform 0.5s ease;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.7;
+  }
 }
 
 /* Responsive design */
@@ -471,7 +485,7 @@ export default {
   }
   
   .card-item {
-    max-width: 160px; /* Match the minmax value for mobile */
+    max-width: 160px;
   }
   
   .cards-divider-wrapper {
@@ -486,7 +500,7 @@ export default {
   }
   
   .card-item {
-    max-width: none; /* Remove max-width constraint on very small screens */
+    max-width: none;
   }
   
   .category-title {
