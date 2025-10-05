@@ -21,13 +21,13 @@
         <div class="loading-spinner"></div>
       </div>
       
-      <!-- Line above cards container - centered -->
-      <div class="cards-divider-wrapper">
-        <div class="cards-divider"></div>
-      </div>
-      
       <!-- Cards container with border -->
       <div class="cards-section-container">
+        <!-- Line above cards container - centered -->
+        <div class="cards-divider-wrapper">
+          <div class="cards-divider"></div>
+        </div>
+      
         <div class="cards-container">
           <Card
             v-for="card in cards"
