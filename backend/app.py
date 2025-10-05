@@ -294,16 +294,31 @@ def get_categories():
     
     try:
         with connection.cursor() as cursor:
-            # Get total card count
-            cursor.execute("SELECT COUNT(*) as total FROM files")
+            # Get total card count (excluding Nameless 📛 and Scarface - Tony Montana)
+            cursor.execute("""
+                SELECT COUNT(*) as total 
+                FROM files 
+                WHERE rare NOT IN ('Nameless 📛', 'Scarface - Tony Montana')
+            """)
             total_cards = cursor.fetchone()['total']
             
-            # Get shop available count
-            cursor.execute("SELECT COUNT(*) as shop_count FROM files WHERE shop != '-' AND shop IS NOT NULL")
+            # Get shop available count (excluding Nameless 📛 and Scarface - Tony Montana)
+            cursor.execute("""
+                SELECT COUNT(*) as shop_count 
+                FROM files 
+                WHERE shop != '-' AND shop IS NOT NULL 
+                AND rare NOT IN ('Nameless 📛', 'Scarface - Tony Montana')
+            """)
             shop_count = cursor.fetchone()['shop_count']
             
-            # Get all rarities with counts
-            cursor.execute("SELECT rare, COUNT(*) as count FROM files GROUP BY rare ORDER BY count DESC")
+            # Get all rarities with counts (excluding Nameless 📛 and Scarface - Tony Montana)
+            cursor.execute("""
+                SELECT rare, COUNT(*) as count 
+                FROM files 
+                WHERE rare NOT IN ('Nameless 📛', 'Scarface - Tony Montana')
+                GROUP BY rare 
+                ORDER BY count DESC
+            """)
             rarities_data = cursor.fetchall()
             
             # Build categories list
