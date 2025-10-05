@@ -10,9 +10,13 @@
         </svg>
         Back to Categories
       </button>
-      <h1 class="category-title">{{ categoryName }}</h1>
-      <div class="category-info">
-        <span class="card-count">{{ cards.length }} cards</span>
+      
+      <!-- Centered category title and info -->
+      <div class="category-header-content">
+        <h1 class="category-title">{{ categoryName }}</h1>
+        <div class="category-info">
+          <span class="card-count">{{ cards.length }} cards</span>
+        </div>
       </div>
     </div>
 
@@ -134,11 +138,11 @@ export default {
 
 .page-header {
   max-width: 1200px;
-  margin: 0 auto 30px;
+  margin: 167px auto 100px;
   padding: 20px;
-  background: var(--card-bg);
+  /* background: var(--card-bg); */
   border-radius: 12px;
-  border: 1px solid #333;
+  /* border: 1px solid #333; */
   position: relative;
   backdrop-filter: blur(5px);
 }
@@ -168,6 +172,15 @@ export default {
   height: 18px;
 }
 
+/* Centered category header content */
+.category-header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
 .category-title {
   font-size: 2.5rem;
   color: var(--accent-color);
@@ -178,6 +191,7 @@ export default {
 .category-info {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 15px;
 }
 
