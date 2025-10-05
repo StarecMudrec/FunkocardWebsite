@@ -285,8 +285,7 @@ export default {
 
 .search-input:focus {
   outline: none;
-  border-color: #434343;
-  border-width: 2px;
+  border-color: #555555;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
