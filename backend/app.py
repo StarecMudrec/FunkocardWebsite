@@ -243,7 +243,7 @@ def db_status():
     finally:
         connection.close()
 
-@app.route('/card_imgs/<file_id>')
+@app.route('/card_imgs/<path:file_id>')
 def serve_card_image(file_id):
     """Serve card images directly from Telegram using file_id"""
     TOKEN = os.getenv("CARDS_BOT_TOKEN")  # Replace with your actual bot token
