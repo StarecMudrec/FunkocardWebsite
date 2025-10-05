@@ -196,7 +196,7 @@ export default {
   filter: blur(4px) opacity(0.5);
 }
 .card-content {
-  padding: 16px;
+  padding: 10px 16px 2px 16px;
 }
 
 .card-info {
