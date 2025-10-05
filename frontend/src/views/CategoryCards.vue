@@ -54,12 +54,12 @@
         </div>
       
         <div class="cards-container">
-          <!-- Simple transition group without conditional rendering -->
+          <!-- Use transition-group only when not searching for better performance -->
           <transition-group 
+            v-if="!isSearching"
             name="cards" 
             tag="div" 
-            class="cards-grid"
-            :class="{ 'no-transitions': isSearching }"
+            class="cards-transition-container"
           >
             <Card
               v-for="card in filteredCards"
@@ -69,6 +69,17 @@
               class="card-item"
             />
           </transition-group>
+          
+          <!-- Static render during search for maximum performance -->
+          <div v-else class="cards-static-container">
+            <Card
+              v-for="card in filteredCards"
+              :key="card.id"
+              :card="card || {}"
+              @card-clicked="handleCardClicked"
+              class="card-item"
+            />
+          </div>
           
           <div v-if="!loading && filteredCards.length === 0" class="no-cards-message">
             {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
@@ -426,10 +437,6 @@ export default {
 }
 
 .cards-container {
-  position: relative;
-}
-
-.cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   column-gap: 30px;
@@ -437,6 +444,14 @@ export default {
   justify-items: center;
   /* Improve grid performance */
   will-change: transform;
+}
+
+.cards-transition-container {
+  display: contents;
+}
+
+.cards-static-container {
+  display: contents;
 }
 
 .card-item {
@@ -457,17 +472,17 @@ export default {
   padding: 40px 0;
 }
 
-/* Card transition animations */
+/* Card transition animations - OPTIMIZED VERSION */
 .cards-enter-active,
 .cards-leave-active {
-  transition: all 0.4s ease;
+  transition: all 0.3s ease;
   /* Improve animation performance */
   will-change: transform, opacity;
 }
 
 .cards-enter-from {
   opacity: 0;
-  transform: scale(0.8) translateY(20px);
+  transform: scale(0.9) translateY(10px);
 }
 
 .cards-enter-to {
@@ -476,36 +491,31 @@ export default {
 }
 
 .cards-leave-active {
-  transition: all 0.3s ease;
   position: absolute;
   width: 100%;
 }
 
 .cards-leave-from {
   opacity: 1;
-  transform: scale(1);
+  transform: scale(1) translateY(0);
 }
 
 .cards-leave-to {
   opacity: 0;
-  transform: scale(0.8);
+  transform: scale(0.9) translateY(-10px);
 }
 
 /* This ensures the grid layout works smoothly during transitions */
 .cards-move {
-  transition: transform 0.4s ease;
+  transition: transform 0.3s ease;
   /* Improve move animation performance */
   will-change: transform;
 }
 
 /* Disable animations during search for better performance */
-.no-transitions .cards-enter-active,
-.no-transitions .cards-leave-active,
-.no-transitions .cards-move {
-  transition: none !important;
-}
-
-.no-transitions .card-item {
+.searching .cards-enter-active,
+.searching .cards-leave-active,
+.searching .cards-move {
   transition: none !important;
 }
 
@@ -541,7 +551,7 @@ export default {
     padding: 15px;
   }
   
-  .cards-grid {
+  .cards-container {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 15px;
   }
@@ -557,16 +567,16 @@ export default {
   /* Faster animations on mobile */
   .cards-enter-active,
   .cards-leave-active {
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
   }
   
   .cards-move {
-    transition: transform 0.3s ease;
+    transition: transform 0.2s ease;
   }
 }
 
 @media (max-width: 480px) {
-  .cards-grid {
+  .cards-container {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
@@ -598,10 +608,10 @@ export default {
 
 /* Performance optimizations */
 @media (prefers-reduced-motion: reduce) {
-  .cards-enter-active,
-  .cards-leave-active,
-  .cards-move {
-    transition: none !important;
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 </style>
