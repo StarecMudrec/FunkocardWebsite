@@ -180,7 +180,7 @@ export default {
 
 .page-header {
   max-width: 1200px;
-  margin: 167px auto 100px;
+  margin: 227px auto 50px;
   padding: 20px;
   /* background: var(--card-bg); */
   border-radius: 12px;
@@ -250,7 +250,7 @@ export default {
 /* Search Container */
 .search-container {
   width: 100%;
-  max-width: 500px;
+  max-width: 950px;
   margin: 0 auto;
 }
 
@@ -274,9 +274,9 @@ export default {
   padding: 15px 45px 15px 45px;
   background: var(--card-bg);
   border: 1px solid #333;
-  border-radius: 12px;
+  border-radius: 32px;
   color: var(--text-color);
-  font-size: 1rem;
+  font-size: 1.4rem;
   font-family: 'Afacad', sans-serif;
   backdrop-filter: blur(5px);
   transition: all 0.3s ease;
