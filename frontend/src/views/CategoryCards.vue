@@ -20,7 +20,7 @@
               <path d="m21 21-4.3-4.3"></path>
             </svg>
             <input
-              v-model.lazy="searchQuery"
+              v-model="searchQuery"
               type="text"
               placeholder="Search cards..."
               class="search-input"
@@ -443,36 +443,6 @@ export default {
   font-size: 1.2rem;
   padding: 40px 0;
 }
-
-/* Remove transition animations for better performance */
-/* .cards-enter-active, */
-/* .cards-leave-active { */
-/*   transition: all 0.5s ease; */
-/* } */
-/*  */
-/* .cards-enter-from { */
-/*   opacity: 0; */
-/*   transform: scale(0.8) translateY(20px); */
-/* } */
-/*  */
-/* .cards-enter-to { */
-/*   opacity: 1; */
-/*   transform: scale(1) translateY(0); */
-/* } */
-/*  */
-/* .cards-leave-from { */
-/*   opacity: 1; */
-/*   transform: scale(1) translateY(0); */
-/* } */
-/*  */
-/* .cards-leave-to { */
-/*   opacity: 0; */
-/*   transform: scale(0.8) translateY(-20px); */
-/* } */
-/*  */
-/* .cards-move { */
-/*   transition: transform 0.5s ease; */
-/* } */
 
 /* Responsive design */
 @media (max-width: 768px) {
