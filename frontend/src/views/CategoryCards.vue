@@ -248,7 +248,8 @@ export default {
 .cards-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
+  column-gap: 30px;
+  row-gap: 0px;
   justify-items: center; /* Center items within grid cells */
 }
 
