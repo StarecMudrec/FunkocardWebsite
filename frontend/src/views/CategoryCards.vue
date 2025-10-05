@@ -4,18 +4,38 @@
     <div class="background-container"></div>
     
     <div class="page-header">
-      <!-- <button @click="$router.back()" class="back-button">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        Back to Categories
-      </button> -->
-      
       <!-- Centered category title and info -->
       <div class="category-header-content">
         <h1 class="category-title">{{ categoryName }}</h1>
         <div class="category-info">
           <span class="card-count">{{ cards.length }} cards</span>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="search-container">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search cards..."
+              class="search-input"
+              @input="handleSearch"
+            />
+            <button
+              v-if="searchQuery"
+              @click="clearSearch"
+              class="clear-search-button"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -34,14 +54,14 @@
       
         <div class="cards-container">
           <Card
-            v-for="card in cards"
+            v-for="card in filteredCards"
             :key="card.id"
             :card="card || {}"
             @card-clicked="handleCardClicked"
             class="card-item"
           />
-          <div v-if="!loading && cards.length === 0" class="no-cards-message">
-            No cards found in this category
+          <div v-if="!loading && filteredCards.length === 0" class="no-cards-message">
+            {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
           </div>
         </div>
       </div>
@@ -67,9 +87,11 @@ export default {
   data() {
     return {
       cards: [],
+      filteredCards: [],
       loading: false,
       error: null,
-      categoryName: ''
+      categoryName: '',
+      searchQuery: ''
     }
   },
   async created() {
@@ -87,7 +109,9 @@ export default {
       try {
         const response = await fetchCardsByCategory(this.categoryId)
         this.cards = response.cards
+        this.filteredCards = [...this.cards]
         this.categoryName = this.getCategoryName(this.categoryId)
+        this.searchQuery = '' // Reset search when category changes
         console.log('Loaded category cards:', this.cards)
       } catch (err) {
         this.error = err
@@ -109,6 +133,24 @@ export default {
     
     handleCardClicked(cardId) {
       this.$router.push(`/card/${cardId}`)
+    },
+    
+    handleSearch() {
+      if (!this.searchQuery.trim()) {
+        this.filteredCards = [...this.cards]
+        return
+      }
+      
+      const query = this.searchQuery.toLowerCase().trim()
+      this.filteredCards = this.cards.filter(card => 
+        card.name?.toLowerCase().includes(query) ||
+        card.rarity?.toLowerCase().includes(query)
+      )
+    },
+    
+    clearSearch() {
+      this.searchQuery = ''
+      this.filteredCards = [...this.cards]
     }
   }
 }
@@ -195,6 +237,7 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 15px;
+  margin-bottom: 30px;
 }
 
 .card-count {
@@ -202,6 +245,74 @@ export default {
   opacity: 0.8;
   font-size: 1.1rem;
   text-shadow: 0px 3px 5px rgba(0, 0, 0, 0.27);
+}
+
+/* Search Container */
+.search-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 15px;
+  color: var(--text-color);
+  opacity: 0.7;
+  z-index: 2;
+}
+
+.search-input {
+  width: 100%;
+  padding: 15px 45px 15px 45px;
+  background: var(--card-bg);
+  border: 1px solid #333;
+  border-radius: 12px;
+  color: var(--text-color);
+  font-size: 1rem;
+  font-family: 'Afacad', sans-serif;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.search-input::placeholder {
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
+.clear-search-button {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-search-button:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .cards-container-wrapper {
@@ -299,6 +410,19 @@ export default {
     font-size: 2rem;
   }
   
+  .category-info {
+    margin-bottom: 20px;
+  }
+  
+  .search-container {
+    max-width: 400px;
+  }
+  
+  .search-input {
+    padding: 12px 40px 12px 40px;
+    font-size: 0.9rem;
+  }
+  
   .cards-section-container {
     padding: 15px;
   }
@@ -329,6 +453,14 @@ export default {
   
   .category-title {
     font-size: 1.5rem;
+  }
+  
+  .category-info {
+    margin-bottom: 15px;
+  }
+  
+  .search-container {
+    max-width: 100%;
   }
   
   .cards-section-container {
