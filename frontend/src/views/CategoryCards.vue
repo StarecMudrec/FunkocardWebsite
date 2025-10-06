@@ -312,9 +312,9 @@ export default {
   z-index: 2;
 }
 
-/* .search-icon:focus {
-  scale: 1.01 ;
-} */
+.search-icon:focus {
+  transform: scale(1.005);
+}
 
 .search-input {
   width: 100%;
@@ -334,7 +334,7 @@ export default {
   outline: none;
   border-color: #555555;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transform: scale(1.001);
+  transform: scale(1.005);
 }
 
 .search-input::placeholder {
