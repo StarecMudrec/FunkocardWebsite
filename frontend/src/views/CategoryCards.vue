@@ -173,13 +173,16 @@ export default {
       showSortDropdown: false,
       currentSort: { field: 'id', direction: 'asc' },
       rarityOrder: {
-        'EPISODICAL': 1,
-        'SECONDARY': 2,
-        'FAMOUS': 3,
-        'MAINCHARACTER': 4,
-        'MOVIE': 5,
-        'SERIES': 6,
-        'ACHIEVEMENTS': 7
+        'Vinyl Figure💫': 1,
+        'Legendary🧡': 2,
+        'Plain😼': 3,
+        'Force🤷‍♂️': 4,
+        'SuperCool🤟': 5,
+        'Cool👍': 6,
+        'Special 🌟': 7,
+        'Nameless 📛': 8,
+        'Limited ⚠️': 9,
+        'Scarface - Tony Montana': 10
       }
     }
   },
@@ -290,16 +293,16 @@ export default {
         
         case 'amount':
           sortedCards.sort((a, b) => {
-            const amountA = a.amount || 0
-            const amountB = b.amount || 0
+            const amountA = a.points || 0
+            const amountB = b.points || 0
             return direction === 'asc' ? amountA - amountB : amountB - amountA
           })
           break
         
         case 'rarity':
           sortedCards.sort((a, b) => {
-            const rarityA = this.rarityOrder[a.rarity?.toUpperCase()] || 0
-            const rarityB = this.rarityOrder[b.rarity?.toUpperCase()] || 0
+            const rarityA = this.rarityOrder[a.rarity] || 0
+            const rarityB = this.rarityOrder[b.rarity] || 0
             return direction === 'asc' ? rarityA - rarityB : rarityB - rarityA
           })
           break
