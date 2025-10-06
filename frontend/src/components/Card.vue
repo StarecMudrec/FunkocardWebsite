@@ -16,16 +16,15 @@
           :loading="priority ? 'eager' : 'lazy'"
           class="card-image"
           @load="imageLoaded = true"
-          @error="handleImageError"
+          @error="imageError = true"
         />
       </div>
       <div class="card-content">
         <div class="card-info">
           <h3 class="card-title">{{ card.name }}</h3>
-          <span class="card-rarity">{{ card.rarity }}</span>
         </div>
         <div class="card-meta">
-          <p class="card-category">{{ card.category || card.rarity }}</p>
+          <p class="card-category">{{ card.category }}</p>
         </div>
       </div>
     </div>
@@ -37,6 +36,7 @@
       @click.stop
       v-if="allowSelection"
     >
+
   </div>
 </template>
 
@@ -56,21 +56,8 @@ export default {
   data() {
     return {
       isSelected: false,
-      isMobile: false,
-      imageLoaded: false,
-      imageError: false
+      isMobile: false
     };
-  },
-  computed: {
-    imageUrl() {
-      if (!this.card.img) return '/placeholder.jpg';
-      return `/api/card_image/${this.card.img}`;
-    },
-    allowSelection() {
-      // You can add logic here to determine when selection is allowed
-      // For now, let's return false to hide the checkbox since it's causing issues
-      return false;
-    }
   },
   mounted() {
     this.checkMobile();
@@ -84,9 +71,7 @@ export default {
       this.isMobile = window.innerWidth <= 768;
     },
     handleImageError(e) {
-      console.error('Error loading image:', this.card.img);
       e.target.src = '/placeholder.jpg';
-      this.imageError = true;
     },
     handleCardClick(event) {
       // Если карточка выделена, не выполняем никаких действий (кроме обработки клика по чекбоксу, которая уже есть)
@@ -188,11 +173,6 @@ export default {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transition: opacity 0.3s ease;
-}
-
-.card-image:not([src]) {
-  opacity: 0;
 }
 
 .card-inner-content {
@@ -222,30 +202,32 @@ export default {
 
 .card-info {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
 }
-
-.card-title {
-  font-size: 1.1rem;
-  margin: 0;
-  color: var(--accent-color);
-  flex: 1;
-  margin-right: 8px;
-}
-
-.card-rarity {
-  font-size: 0.9rem;
-  color: #888;
-}
-
 .card-category {
   font-size: 0.9rem;
   color: #888;
   margin: 0;
 }
 
+
+/* New styles for card info layout */
+.card-info {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ margin-bottom: 8px;
+}
+
+.card-title {
+ font-size: 1.1rem;
+ margin: 0;
+ color: var(--accent-color);
+}
+
+.card-rarity {
+  font-size: 0.9rem;
+  color: #888;
+}
 /* 🟡 НОВЫЕ СТИЛИ ДЛЯ КОМПАКТНОГО ВИДА */
 .card.compact {
   --card-width: 180px;
