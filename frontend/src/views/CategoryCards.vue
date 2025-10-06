@@ -528,7 +528,7 @@ export default {
 .sort-dropdown {
   position: absolute;
   top: 100%;
-  right: 0;
+  left: 0;
   margin-top: 10px;
   background-color: #1e1e1eeb;
   color: var(--text-color);
@@ -538,6 +538,12 @@ export default {
   z-index: 100;
   min-width: 190px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1317px) {
+  .sort-dropdown {
+    right: 0;
+  }
 }
 
 .sort-option {
