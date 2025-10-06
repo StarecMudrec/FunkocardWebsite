@@ -42,9 +42,23 @@
           <!-- Sort Controls -->
           <div class="sort-controls">
             <div class="sort-icon" @click.stop="toggleSortDropdown">
-              <span class="sort-icon-line"></span>
-              <span class="sort-icon-line"></span>
-              <span class="sort-icon-line"></span>
+              <svg width="52" height="44" viewBox="0 0 52 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g filter="url(#filter0_d_110_20)">
+                  <path d="M45.3209 18.0467H21.1236M45.3209 3.0233L6.60522 3.0233M45.3209 33.0701H35.642" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <defs>
+                  <filter id="filter0_d_110_20" x="0.105225" y="0.523315" width="51.7157" height="43.0468" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                    <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                    <feOffset dy="4"/>
+                    <feGaussianBlur stdDeviation="2"/>
+                    <feComposite in2="hardAlpha" operator="out"/>
+                    <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+                    <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_110_20"/>
+                    <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_110_20" result="shape"/>
+                  </filter>
+                </defs>
+              </svg>
             </div>
             <transition name="sort-dropdown">
               <div class="sort-dropdown" v-if="showSortDropdown" v-click-outside="closeSortDropdown">
@@ -489,16 +503,16 @@ export default {
 
 .sort-icon {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 30px;
-  height: 30px;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 5px;
+  padding: 8px;
   border-radius: 8px;
   background: var(--card-bg);
   border: 1px solid #333;
   transition: all 0.3s ease;
+  width: 60px;
+  height: 50px;
 }
 
 .sort-icon:hover {
@@ -506,23 +520,9 @@ export default {
   transform: scale(1.05);
 }
 
-.sort-icon-line {
-  display: block;
-  height: 2px;
-  background-color: var(--text-color);
-  transition: all 0.3s ease;
-}
-
-.sort-icon-line:nth-child(1) {
-  width: 90%;
-}
-
-.sort-icon-line:nth-child(2) {
-  width: 60%;
-}
-
-.sort-icon-line:nth-child(3) {
-  width: 30%;
+.sort-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .sort-dropdown {
@@ -711,6 +711,11 @@ export default {
     align-self: flex-end;
   }
   
+  .sort-icon {
+    width: 50px;
+    height: 42px;
+  }
+  
   .cards-section-container {
     padding: 15px;
   }
@@ -749,6 +754,11 @@ export default {
   
   .search-sort-container {
     max-width: 100%;
+  }
+  
+  .sort-icon {
+    width: 45px;
+    height: 38px;
   }
   
   .cards-section-container {
