@@ -536,7 +536,7 @@ export default {
   border-radius: 8px;
   padding: 10px 0;
   z-index: 100;
-  min-width: 250px;
+  min-width: 190px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
