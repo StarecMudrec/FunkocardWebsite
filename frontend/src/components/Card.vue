@@ -65,7 +65,9 @@ export default {
       isSelected: false,
       isMobile: false,
       imageLoaded: false,
-      imageError: false
+      imageError: false,
+      retryCount: 0,
+      maxRetries: 2 // Limit retries to prevent infinite loops
     };
   },
   computed: {
@@ -74,7 +76,9 @@ export default {
         console.warn('No image ID for card:', this.card.id, this.card.name);
         return '/placeholder.jpg';
       }
-      return `/api/card_image/${this.card.img}`;
+      // Add cache busting parameter only for retries
+      const cacheBuster = this.retryCount > 0 ? `?retry=${this.retryCount}` : '';
+      return `/api/card_image/${this.card.img}${cacheBuster}`;
     },
     allowSelection() {
       return false;
@@ -95,21 +99,29 @@ export default {
       console.log('Image loaded successfully:', this.card.img, 'for card:', this.card.name);
       this.imageLoaded = true;
       this.imageError = false;
+      this.retryCount = 0; // Reset retry count on success
     },
     handleImageError(e) {
       console.error('Error loading image:', this.card.img, 'for card:', this.card.name);
       this.imageError = true;
       this.imageLoaded = false;
       
-      // Retry loading after a short delay with a different approach
-      setTimeout(() => {
-        if (this.imageError) {
-          console.log('Retrying image load for:', this.card.name);
-          // Force reload by updating the src
-          const img = e.target;
-          img.src = `/api/card_image/${this.card.img}?retry=${Date.now()}`;
-        }
-      }, 1000);
+      // Only retry if we haven't exceeded max retries
+      if (this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        console.log(`Retrying image load for: ${this.card.name} (attempt ${this.retryCount})`);
+        
+        // Use exponential backoff for retries
+        const delay = Math.pow(2, this.retryCount) * 500; // 1s, 2s, 4s
+        setTimeout(() => {
+          if (this.imageError) { // Only retry if still in error state
+            const img = e.target;
+            img.src = `/api/card_image/${this.card.img}?retry=${this.retryCount}&t=${Date.now()}`;
+          }
+        }, delay);
+      } else {
+        console.warn(`Max retries exceeded for: ${this.card.name}. Giving up.`);
+      }
     },
     handleCardClick(event) {
       if (this.isSelected) {
