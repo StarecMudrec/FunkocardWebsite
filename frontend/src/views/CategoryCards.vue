@@ -86,11 +86,11 @@
         </div>
       
         <div class="cards-container">
-          <div v-if="loading" class="loading-spinner-container">
+          <div  class="loading-spinner-container">
             <div class="loading-spinner"></div>
           </div>
           
-          <transition-group name="cards" tag="div" class="cards-transition-container">
+          <!-- <transition-group name="cards" tag="div" class="cards-transition-container">
             <Card
               v-for="card in filteredCards"
               :key="card.id"
@@ -101,7 +101,7 @@
           </transition-group>
           <div v-if="!loading && filteredCards.length === 0" class="no-cards-message">
             {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
-          </div>
+          </div> -->
         </div>
       </div>
     </div>
