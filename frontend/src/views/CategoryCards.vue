@@ -310,8 +310,8 @@ export default {
   color: var(--text-color);
   opacity: 0.7;
   z-index: 2;
-  width: 1.2em;
-  height: 1.2em;
+  width: 24px;
+  height: 24px;
   transition: all 0.3s ease;
 }
 
@@ -355,8 +355,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.2em;
-  height: 1.2em;
+  width: 24px;
+  height: 24px;
 }
 
 .clear-search-button svg {
@@ -368,112 +368,6 @@ export default {
   opacity: 1;
   background: rgba(255, 255, 255, 0.1);
   transform: scale(1.1);
-}
-
-.cards-container-wrapper {
-  max-width: 1300px;
-  margin: 0 auto;
-  position: relative;
-  min-height: 200px;
-}
-
-/* Wrapper to center the line */
-.cards-divider-wrapper {
-  display: flex;
-  justify-content: center;
-  margin: 52px 0 17px 0;
-}
-
-/* Line above the cards - centered and same width as cards container */
-.cards-divider {
-  height: 2px;
-  background: linear-gradient(90deg, #434343a1, #434343, #434343a1);
-  width: 100%;
-  max-width: 1300px;
-}
-
-/* Cards section container */
-.cards-section-container {
-  background: var(--card-bg);
-  border-radius: 12px;
-  border: 1px solid #333;
-  padding: 25px;
-  backdrop-filter: blur(5px);
-  max-width: 1300px;
-  margin: 0 auto;
-}
-
-.loading-spinner-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: var(--accent-color);
-  animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.cards-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  column-gap: 30px;
-  row-gap: 0px;
-  justify-items: center; /* Center items within grid cells */
-}
-
-.cards-transition-container {
-  display: contents; /* This allows the grid layout to work with transition-group */
-}
-
-.card-item {
-  width: 100%; /* Ensure cards take full width of their grid cell */
-  max-width: 220px; /* Match the minmax value */
-}
-
-.no-cards-message {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: var(--text-color);
-  opacity: 0.7;
-  font-size: 1.2rem;
-  padding: 40px 0;
-}
-
-/* Card transition animations - Only fade, no movement */
-.cards-enter-active,
-.cards-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.cards-enter-from {
-  opacity: 0;
-}
-
-.cards-enter-to {
-  opacity: 1;
-}
-
-.cards-leave-from {
-  opacity: 1;
-}
-
-.cards-leave-to {
-  opacity: 0;
 }
 
 /* Responsive design */
@@ -502,18 +396,19 @@ export default {
   .search-input {
     padding: 12px 40px 12px 50px;
     font-size: 1.1rem;
+    height: 50px; /* Add fixed height for consistent scaling */
   }
   
   .search-icon {
+    width: 20px;
+    height: 20px;
     left: 15px;
-    width: 1.1em;
-    height: 1.1em;
   }
   
   .clear-search-button {
+    width: 20px;
+    height: 20px;
     right: 15px;
-    width: 1.1em;
-    height: 1.1em;
   }
   
   .cards-section-container {
@@ -526,7 +421,7 @@ export default {
   }
   
   .card-item {
-    max-width: 160px; /* Match the minmax value for mobile */
+    max-width: 160px;
   }
   
   .cards-divider-wrapper {
@@ -541,7 +436,7 @@ export default {
   }
   
   .card-item {
-    max-width: none; /* Remove max-width constraint on very small screens */
+    max-width: none;
   }
   
   .category-title {
@@ -559,18 +454,19 @@ export default {
   .search-input {
     padding: 10px 35px 10px 45px;
     font-size: 1rem;
+    height: 45px; /* Add fixed height for consistent scaling */
   }
   
   .search-icon {
+    width: 18px;
+    height: 18px;
     left: 12px;
-    width: 1em;
-    height: 1em;
   }
   
   .clear-search-button {
+    width: 18px;
+    height: 18px;
     right: 12px;
-    width: 1em;
-    height: 1em;
   }
   
   .cards-section-container {
@@ -579,6 +475,26 @@ export default {
   
   .cards-divider-wrapper {
     margin: 30px 0 12px 0;
+  }
+}
+
+/* Additional scaling for very large screens */
+@media (min-width: 1400px) {
+  .search-input {
+    font-size: 1.5rem;
+    padding: 18px 50px 18px 60px;
+  }
+  
+  .search-icon {
+    width: 28px;
+    height: 28px;
+    left: 18px;
+  }
+  
+  .clear-search-button {
+    width: 28px;
+    height: 28px;
+    right: 18px;
   }
 }
 </style>
