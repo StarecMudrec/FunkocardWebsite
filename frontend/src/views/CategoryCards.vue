@@ -88,10 +88,9 @@
         <div class="cards-container">
           <transition-group name="cards" tag="div" class="cards-transition-container">
             <Card
-              v-for="(card, index) in filteredCards"
+              v-for="card in filteredCards"
               :key="card.id"
               :card="card || {}"
-              :priority="index < 12"
               @card-clicked="handleCardClicked"
               class="card-item"
             />
@@ -216,9 +215,6 @@ export default {
         // Cancel any pending search
         this.debouncedSearch?.cancel()
         console.log('Loaded category cards:', this.cards)
-        
-        // Preload images for the first batch of cards
-        this.preloadTopImages()
       } catch (err) {
         this.error = err
         console.error('Error loading category cards:', err)
@@ -250,8 +246,6 @@ export default {
       if (!this.searchQuery.trim()) {
         this.filteredCards = [...this.cards]
         this.isSearching = false
-        // Preload images when search is cleared
-        this.preloadTopImages()
         return
       }
       
@@ -265,8 +259,6 @@ export default {
         )
         
         this.isSearching = false
-        // Preload images for search results
-        this.preloadTopImages()
       })
     },
     
@@ -276,8 +268,6 @@ export default {
       this.isSearching = false
       // Cancel any pending debounced search
       this.debouncedSearch?.cancel()
-      // Preload images when search is cleared
-      this.preloadTopImages()
     },
 
     toggleSortDropdown() {
@@ -331,31 +321,6 @@ export default {
       }
       
       this.filteredCards = sortedCards
-      // Preload images after sorting
-      this.preloadTopImages()
-    },
-
-    preloadTopImages() {
-      // Preload images for the first 12 cards (first visible row + buffer)
-      const cardsToPreload = this.filteredCards.slice(0, 12)
-      
-      cardsToPreload.forEach((card, index) => {
-        if (card.img) {
-          // Add a small delay to prioritize the very first cards
-          setTimeout(() => {
-            this.preloadImage(card.img)
-          }, index * 50) // Stagger loading by 50ms
-        }
-      })
-    },
-
-    preloadImage(src) {
-      return new Promise((resolve, reject) => {
-        const img = new Image()
-        img.onload = resolve
-        img.onerror = reject
-        img.src = `/api/card_image/${src}`
-      })
     }
   }
 }

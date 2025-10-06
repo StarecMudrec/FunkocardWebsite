@@ -11,13 +11,11 @@
     <div class="card-inner-content">
       <div class="image-wrapper">
         <img
-          :src="imageUrl"
+          :src="card.img ? `/api/card_image/${card.img}` : '/placeholder.jpg'"
           :alt="card.name"
-          :loading="priority ? 'eager' : 'lazy'"
           class="card-image"
-          @load="imageLoaded = true"
-          @error="imageError = true"
-        />
+          @error="handleImageError"
+        >
       </div>
       <div class="card-content">
         <div class="card-info">
@@ -48,9 +46,10 @@ export default {
       required: true,
       validator: card => 'name' in card && 'img' in card
     },
-    priority: {
+    // Add this new prop:
+    allowSelection: {
       type: Boolean,
-      default: false
+      default: false // Or whatever default value makes sense
     }
   },
   data() {
