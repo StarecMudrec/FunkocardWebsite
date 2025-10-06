@@ -11,30 +11,53 @@
           <span class="card-count">{{ cards.length }} cards</span>
         </div>
         
-        <!-- Search Bar -->
-        <div class="search-container">
-          <div class="search-input-wrapper">
-            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="30" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.3-4.3"></path>
-            </svg>
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search cards..."
-              class="search-input"
-              @input="handleSearch"
-            />
-            <button
-              v-if="searchQuery"
-              @click="clearSearch"
-              class="clear-search-button"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 6 6 18"></path>
-                <path d="m6 6 12 12"></path>
+        <!-- Search Bar and Sort Controls -->
+        <div class="search-sort-container">
+          <div class="search-container">
+            <div class="search-input-wrapper">
+              <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="30" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
               </svg>
-            </button>
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search cards..."
+                class="search-input"
+                @input="handleSearch"
+              />
+              <button
+                v-if="searchQuery"
+                @click="clearSearch"
+                class="clear-search-button"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 6 6 18"></path>
+                  <path d="m6 6 12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sort Controls -->
+          <div class="sort-controls">
+            <div class="sort-icon" @click.stop="toggleSortDropdown">
+              <span class="sort-icon-line"></span>
+              <span class="sort-icon-line"></span>
+              <span class="sort-icon-line"></span>
+            </div>
+            <transition name="sort-dropdown">
+              <div class="sort-dropdown" v-if="showSortDropdown" v-click-outside="closeSortDropdown">
+                <div class="sort-option" @click="sortBy('id', 'asc')">Old first</div>
+                <div class="sort-option" @click="sortBy('id', 'desc')">New first</div>
+                <div class="sort-option" @click="sortBy('amount', 'asc')">Points (Low to High)</div>
+                <div class="sort-option" @click="sortBy('amount', 'desc')">Points (High to Low)</div>
+                <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'asc')">Rarity (Episodical to Achievements)</div>
+                <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'desc')">Rarity (Achievements to Episodical)</div>
+                <div class="sort-option" @click="sortBy('name', 'asc')">Name (A-Z)</div>
+                <div class="sort-option" @click="sortBy('name', 'desc')">Name (Z-A)</div>
+              </div>
+            </transition>
           </div>
         </div>
       </div>
@@ -94,10 +117,28 @@ const debounce = (func, wait) => {
   return debounced
 }
 
+// Add this directive definition
+const clickOutside = {
+  beforeMount(el, binding) {
+    el.clickOutsideEvent = function(event) {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value();
+      }
+    };
+    document.addEventListener('click', el.clickOutsideEvent);
+  },
+  unmounted(el) {
+    document.removeEventListener('click', el.clickOutsideEvent);
+  },
+};
+
 export default {
   name: 'CategoryCards',
   components: {
     Card
+  },
+  directives: {
+    'click-outside': clickOutside
   },
   props: {
     categoryId: {
@@ -114,7 +155,24 @@ export default {
       categoryName: '',
       searchQuery: '',
       isSearching: false,
-      debouncedSearch: null
+      debouncedSearch: null,
+      showSortDropdown: false,
+      currentSort: { field: 'id', direction: 'asc' },
+      rarityOrder: {
+        'EPISODICAL': 1,
+        'SECONDARY': 2,
+        'FAMOUS': 3,
+        'MAINCHARACTER': 4,
+        'MOVIE': 5,
+        'SERIES': 6,
+        'ACHIEVEMENTS': 7
+      }
+    }
+  },
+  computed: {
+    showRaritySort() {
+      // Show rarity sort only for 'all' and 'shop' categories
+      return this.categoryId === 'all' || this.categoryId === 'shop'
     }
   },
   async created() {
@@ -193,6 +251,59 @@ export default {
       this.isSearching = false
       // Cancel any pending debounced search
       this.debouncedSearch?.cancel()
+    },
+
+    toggleSortDropdown() {
+      this.showSortDropdown = !this.showSortDropdown
+    },
+
+    closeSortDropdown() {
+      this.showSortDropdown = false
+    },
+
+    sortBy(field, direction) {
+      this.currentSort = { field, direction }
+      this.showSortDropdown = false
+      
+      let sortedCards = [...this.filteredCards]
+      
+      switch (field) {
+        case 'id':
+          sortedCards.sort((a, b) => {
+            return direction === 'asc' ? a.id - b.id : b.id - a.id
+          })
+          break
+        
+        case 'amount':
+          sortedCards.sort((a, b) => {
+            const amountA = a.amount || 0
+            const amountB = b.amount || 0
+            return direction === 'asc' ? amountA - amountB : amountB - amountA
+          })
+          break
+        
+        case 'rarity':
+          sortedCards.sort((a, b) => {
+            const rarityA = this.rarityOrder[a.rarity?.toUpperCase()] || 0
+            const rarityB = this.rarityOrder[b.rarity?.toUpperCase()] || 0
+            return direction === 'asc' ? rarityA - rarityB : rarityB - rarityA
+          })
+          break
+        
+        case 'name':
+          sortedCards.sort((a, b) => {
+            const nameA = a.name?.toLowerCase() || ''
+            const nameB = b.name?.toLowerCase() || ''
+            if (direction === 'asc') {
+              return nameA.localeCompare(nameB)
+            } else {
+              return nameB.localeCompare(nameA)
+            }
+          })
+          break
+      }
+      
+      this.filteredCards = sortedCards
     }
   }
 }
@@ -290,11 +401,21 @@ export default {
   text-shadow: 0px 3px 5px rgba(0, 0, 0, 0.27);
 }
 
+/* Search and Sort Container */
+.search-sort-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
 /* Search Container */
 .search-container {
-  width: 100%;
+  flex: 1;
   max-width: 950px;
-  margin: 0 auto;
 }
 
 .search-input-wrapper {
@@ -311,10 +432,6 @@ export default {
   opacity: 0.7;
   z-index: 2;
 }
-
-/* .search-icon:focus {
-  transform: translateX(-10.5%);
-} */
 
 .search-input {
   width: 100%;
@@ -334,7 +451,6 @@ export default {
   outline: none;
   border-color: #555555;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  /* transform: scale(1.0067); */
 }
 
 .search-input::placeholder {
@@ -362,6 +478,93 @@ export default {
   opacity: 1;
   background: rgba(255, 255, 255, 0.1);
   scale: 1.1;
+}
+
+/* Sort Controls */
+.sort-controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sort-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid #333;
+  transition: all 0.3s ease;
+}
+
+.sort-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.sort-icon-line {
+  display: block;
+  height: 2px;
+  background-color: var(--text-color);
+  transition: all 0.3s ease;
+}
+
+.sort-icon-line:nth-child(1) {
+  width: 90%;
+}
+
+.sort-icon-line:nth-child(2) {
+  width: 60%;
+}
+
+.sort-icon-line:nth-child(3) {
+  width: 30%;
+}
+
+.sort-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 10px;
+  background-color: #1e1e1eeb;
+  color: var(--text-color);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 10px 0;
+  z-index: 100;
+  min-width: 250px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.sort-option {
+  padding: 8px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.sort-option:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sort-dropdown-enter-active,
+.sort-dropdown-leave-active {
+  transition: all 0.3s ease;
+}
+
+.sort-dropdown-enter-from,
+.sort-dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .cards-container-wrapper {
@@ -489,13 +692,23 @@ export default {
     margin-bottom: 20px;
   }
   
-  .search-container {
+  .search-sort-container {
+    flex-direction: column;
+    gap: 10px;
     max-width: 400px;
+  }
+  
+  .search-container {
+    max-width: 100%;
   }
   
   .search-input {
     padding: 12px 40px 12px 40px;
     font-size: 0.9rem;
+  }
+  
+  .sort-controls {
+    align-self: flex-end;
   }
   
   .cards-section-container {
@@ -534,7 +747,7 @@ export default {
     margin-bottom: 15px;
   }
   
-  .search-container {
+  .search-sort-container {
     max-width: 100%;
   }
   
