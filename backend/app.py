@@ -243,6 +243,7 @@ def db_status():
     finally:
         connection.close()
 
+
 @app.route('/api/card_image/<path:file_id>')
 def serve_card_image(file_id):
     """Serve card images from local cache, downloading from Telegram if not cached"""
@@ -310,6 +311,7 @@ def serve_card_image(file_id):
         logging.error(f"Error serving card image for {file_id}: {str(e)}")
         return send_from_directory('public', 'placeholder.jpg')
 
+
 @app.route("/api/categories")
 def get_categories():
     """Get all categories: all cards, available at shop, and rarities"""
@@ -319,31 +321,34 @@ def get_categories():
     
     try:
         with connection.cursor() as cursor:
-            # Get total card count (excluding Nameless 📛 and Scarface - Tony Montana)
+            # Define hidden categories to exclude
+            hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
+            
+            # Get total card count (excluding hidden categories)
             cursor.execute("""
                 SELECT COUNT(*) as total 
                 FROM files 
-                WHERE rare NOT IN ('Nameless 📛', 'Scarface - Tony Montana')
-            """)
+                WHERE rare NOT IN (%s, %s, %s)
+            """, hidden_categories)
             total_cards = cursor.fetchone()['total']
             
-            # Get shop available count (excluding Nameless 📛 and Scarface - Tony Montana)
+            # Get shop available count (excluding hidden categories)
             cursor.execute("""
                 SELECT COUNT(*) as shop_count 
                 FROM files 
                 WHERE shop != '-' AND shop IS NOT NULL 
-                AND rare NOT IN ('Nameless 📛', 'Scarface - Tony Montana')
-            """)
+                AND rare NOT IN (%s, %s, %s)
+            """, hidden_categories)
             shop_count = cursor.fetchone()['shop_count']
             
-            # Get all rarities with counts (excluding Nameless 📛 and Scarface - Tony Montana)
+            # Get all rarities with counts (excluding hidden categories)
             cursor.execute("""
                 SELECT rare, COUNT(*) as count 
                 FROM files 
-                WHERE rare NOT IN ('Nameless 📛', 'Scarface - Tony Montana')
+                WHERE rare NOT IN (%s, %s, %s)
                 GROUP BY rare 
                 ORDER BY count DESC
-            """)
+            """, hidden_categories)
             rarities_data = cursor.fetchall()
             
             # Build categories list
@@ -379,6 +384,7 @@ def get_categories():
     finally:
         connection.close()
 
+
 @app.route("/api/cards/by-category/<category_id>")
 def get_cards_by_category(category_id):
     """Get cards filtered by category (all cards, shop, or specific rarity)"""
@@ -390,29 +396,34 @@ def get_cards_by_category(category_id):
         sort_field = request.args.get('sort', 'id')
         sort_direction = request.args.get('direction', 'asc')
         
+        # Define hidden categories to exclude
+        hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
+        
         with connection.cursor() as cursor:
             # Handle different category types
             if category_id == 'all':
-                # Get all cards
+                # Get all cards except hidden categories
                 query = f"""
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
+                    WHERE rare NOT IN (%s, %s, %s)
                     ORDER BY {sort_field} {sort_direction}
                 """
-                cursor.execute(query)
+                cursor.execute(query, hidden_categories)
                 
             elif category_id == 'shop':
-                # Get only cards available in shop
+                # Get only cards available in shop, excluding hidden categories
                 query = f"""
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
                     WHERE shop != '-' AND shop IS NOT NULL
+                    AND rare NOT IN (%s, %s, %s)
                     ORDER BY {sort_field} {sort_direction}
                 """
-                cursor.execute(query)
+                cursor.execute(query, hidden_categories)
                 
             elif category_id.startswith('rarity_'):
-                # Get cards by specific rarity
+                # Get cards by specific rarity (this will naturally exclude hidden ones since they're not in categories)
                 rarity_name = category_id.replace('rarity_', '')
                 # Handle URL encoding for special characters
                 import urllib.parse
@@ -455,6 +466,7 @@ def get_cards_by_category(category_id):
     finally:
         connection.close()
 
+
 @app.route('/api/check_permission', methods=['GET'])
 def check_permission():
     username = request.args.get('username')
@@ -466,6 +478,7 @@ def check_permission():
 
     return jsonify({'is_allowed': is_allowed})
     
+
 @app.route("/api/card_info/<card_id>")
 def get_card_info(card_id):  
     connection = get_db_conn()
@@ -482,6 +495,11 @@ def get_card_info(card_id):
             row = cursor.fetchone()
             
             if not row:
+                return jsonify({'error': 'Card not found'}), 404
+            
+            # Check if card is in hidden category
+            hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
+            if row['rarity'] in hidden_categories:
                 return jsonify({'error': 'Card not found'}), 404
 
             return jsonify({
@@ -502,6 +520,7 @@ def get_card_info(card_id):
     finally:
         connection.close()
 
+
 @app.route("/api/season_info/<int:season_id>")  #yep
 def get_season_info(season_id):  
     try:
@@ -521,6 +540,7 @@ def get_season_info(season_id):
         logging.error(f"Error fetching season info: {e}")
         return jsonify({'error': 'Failed to fetch season info'}), 500
 
+
 @app.route("/api/check_auth")
 def check_auth():
     is_auth, user_id = is_authenticated(request, session)
@@ -528,6 +548,7 @@ def check_auth():
         'isAuthenticated': is_auth,
         'userId': user_id
     }), 200
+
 
 @app.route("/api/user", methods=['GET'])
 def get_user_info():
