@@ -246,20 +246,24 @@ def db_status():
 @app.route('/api/card_image/<path:file_id>')
 def serve_card_image(file_id):
     """Serve card images from local cache, downloading from Telegram if not cached"""
-    TOKEN = os.getenv("CARDS_BOT_TOKEN")  # Replace with your actual bot token
+    TOKEN = os.getenv("CARDS_BOT_TOKEN")
     
     # Create cache directory if it doesn't exist
     cache_dir = 'backend/card_images'
     os.makedirs(cache_dir, exist_ok=True)
     
-    # Define local cache file path
-    cache_file = os.path.join(cache_dir, f"{file_id}.jpg")
+    # Define local cache file path - use a safe filename
+    import hashlib
+    safe_filename = hashlib.md5(file_id.encode()).hexdigest() + '.jpg'
+    cache_file = os.path.join(cache_dir, safe_filename)
     
     # Check if image is already cached
     if os.path.exists(cache_file):
         try:
             # Serve from local cache
-            return send_from_directory(cache_dir, f"{file_id}.jpg")
+            response = send_from_directory(cache_dir, safe_filename)
+            response.headers.set('Cache-Control', 'public, max-age=3600')
+            return response
         except Exception as e:
             logging.warning(f"Error serving cached image for {file_id}: {str(e)}")
             # Fall through to download again
@@ -295,14 +299,16 @@ def serve_card_image(file_id):
         try:
             with open(cache_file, 'wb') as f:
                 f.write(file_response.content)
-            logging.debug(f"Cached image for file_id {file_id}")
+            logging.debug(f"Cached image for file_id {file_id} as {safe_filename}")
         except Exception as e:
             logging.warning(f"Failed to cache image for {file_id}: {str(e)}")
             # Continue to serve the image even if caching fails
         
         # Return the image with appropriate headers
         response = make_response(file_response.content)
-        response.headers.set('Content-Type', 'image/jpeg')
+        # Detect content type from the file response
+        content_type = file_response.headers.get('Content-Type', 'image/jpeg')
+        response.headers.set('Content-Type', content_type)
         response.headers.set('Cache-Control', 'public, max-age=3600')
         return response
         

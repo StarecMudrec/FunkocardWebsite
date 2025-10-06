@@ -15,9 +15,15 @@
           :alt="card.name"
           :loading="priority ? 'eager' : 'lazy'"
           class="card-image"
-          @load="imageLoaded = true"
+          @load="handleImageLoad"
           @error="handleImageError"
         />
+        <div v-if="!imageLoaded && !imageError" class="image-loading">
+          Loading...
+        </div>
+        <div v-if="imageError" class="image-error">
+          Failed to load
+        </div>
       </div>
       <div class="card-content">
         <div class="card-info">
@@ -63,12 +69,15 @@ export default {
   },
   computed: {
     imageUrl() {
-      if (!this.card.img) return '/placeholder.jpg';
-      return `/api/card_image/${this.card.img}`;
+      if (!this.card.img) {
+        console.log('No image ID for card:', this.card.id, this.card.name);
+        return '/placeholder.jpg';
+      }
+      const url = `/api/card_image/${this.card.img}`;
+      console.log('Image URL for card:', this.card.id, this.card.name, url);
+      return url;
     },
     allowSelection() {
-      // You can add logic here to determine when selection is allowed
-      // For now, let's return false to hide the checkbox since it's causing issues
       return false;
     }
   },
@@ -83,31 +92,34 @@ export default {
     checkMobile() {
       this.isMobile = window.innerWidth <= 768;
     },
+    handleImageLoad() {
+      console.log('Image loaded successfully:', this.card.img);
+      this.imageLoaded = true;
+      this.imageError = false;
+    },
     handleImageError(e) {
-      console.error('Error loading image:', this.card.img);
-      e.target.src = '/placeholder.jpg';
+      console.error('Error loading image:', this.card.img, 'for card:', this.card.id, this.card.name);
       this.imageError = true;
+      this.imageLoaded = false;
+      
+      // Don't change the src to placeholder immediately, let the backend handle it
+      // The backend should return the placeholder if there's an error
     },
     handleCardClick(event) {
-      // Если карточка выделена, не выполняем никаких действий (кроме обработки клика по чекбоксу, которая уже есть)
       if (this.isSelected) {
         return;
       }
-      // Prevent triggering on checkbox click
       if (event.target.classList.contains('selection-checkbox')) {
         return;
       }
-      // Navigate on any click unless it's the checkbox
-      // This handler is primarily for desktop, mobile is handled by handleCardContentClick
       this.$emit('card-clicked', this.card.id);
     },
     handleCheckboxChange(event) {
       this.isSelected = event.target.checked;
       this.$emit('card-selected', this.card.id, this.isSelected);
     },
-
     toggleSelection() {
-      this.isSelected = !this.isSelected; // Toggle selection mapState
+      this.isSelected = !this.isSelected;
       this.$emit('card-selected', this.card.id, this.isSelected);
     },
     deleteCard() {
@@ -124,8 +136,8 @@ export default {
   background: var(--card-bg);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Use consistent shadow */
-  position: relative; /* Added for absolute positioning of the button */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
   transition: transform 0.2s ease, border 0.2s ease;
   margin: 15px;
 }
@@ -141,7 +153,6 @@ export default {
   z-index: 10;
 }
 
-/* Добавляем новые стили для анимации */
 @keyframes float-shake {
   0%, 100% {
     transform: translateY(-20px) rotate(-2deg);
@@ -157,25 +168,23 @@ export default {
   }
 }
 
-/* Style for the selection checkbox */
 .selection-checkbox {
   position: absolute;
   top: 8px;
   left: 8px;
-  z-index: 1; /* Ensure it's above the image */
+  z-index: 1;
   width: 20px;
   height: 20px;
   cursor: pointer;
-  /* Hide on mobile by default */
   display: none;
 }
 
-/* Show on desktop */
-@media (min-width: 769px) { /* Adjust breakpoint as needed */
+@media (min-width: 769px) {
   .selection-checkbox {
     display: block;
   }
 }
+
 .image-wrapper {
   position: relative;
   width: 100%;
@@ -191,17 +200,33 @@ export default {
   transition: opacity 0.3s ease;
 }
 
-.card-image:not([src]) {
-  opacity: 0;
+.image-loading, .image-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text-color);
+  font-size: 0.9rem;
+}
+
+.image-error {
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff4444;
 }
 
 .card-inner-content {
-  transition: filter 0.3s ease; /* Add transition for blur */
+  transition: filter 0.3s ease;
 }
 
 .card.selected {
   border: 4px solid rgba(255, 42, 42, 0.32);
 }
+
 .card.selected::before {
   content: '';
   position: absolute;
@@ -210,12 +235,14 @@ export default {
   right: 0;
   bottom: 0;
   background-color: rgba(255, 42, 42, 0.24);
-  z-index: 0; /* Lower than checkbox and potential future delete button */
+  z-index: 0;
   filter: blur(4px);
 }
+
 .card.selected .card-inner-content {
   filter: blur(4px) opacity(0.5);
 }
+
 .card-content {
   padding: 10px 16px 2px 16px;
 }
@@ -246,34 +273,35 @@ export default {
   margin: 0;
 }
 
-/* 🟡 НОВЫЕ СТИЛИ ДЛЯ КОМПАКТНОГО ВИДА */
 .card.compact {
   --card-width: 180px;
   margin: 8px;
-  
-  .card-content {
-    padding: 8px;
-  }
-  
-  .card-title {
-    font-size: 0.9rem;
-    margin-right: 8px; /* Add spacing between title and rarity in compact view */
-  }
+}
+
+.card.compact .card-content {
+  padding: 8px;
+}
+
+.card.compact .card-title {
+  font-size: 0.9rem;
+  margin-right: 8px;
 }
 
 @media (max-width: 768px) {
   .card {
     --card-width: 48vw;
     margin: 8px 4px;
-
-    .selection-checkbox {
-      display: block; /* Ensure checkbox is visible on mobile */
-    }
   }
+  
+  .card .selection-checkbox {
+    display: block;
+  }
+  
   .card.selected-animation {
     animation: none;
     transform: none;
   }
+  
   .image-wrapper {
     height: calc(var(--card-width) * 1.4);
   }
@@ -283,12 +311,12 @@ export default {
   .card {
     --card-width: 90vw;
     margin: 8px auto;
-
-    .selection-checkbox {
-      display: block; /* Ensure checkbox is visible on mobile */
-      width: 30px;
-      height: 30px;
-    }
+  }
+  
+  .card .selection-checkbox {
+    display: block;
+    width: 30px;
+    height: 30px;
   }
 }
 </style>
