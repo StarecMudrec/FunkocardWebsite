@@ -443,35 +443,26 @@ export default {
   padding: 40px 0;
 }
 
-/* Card transition animations */
+/* Card transition animations - Only fade, no movement */
 .cards-enter-active,
 .cards-leave-active {
-  transition: all 0.5s ease;
+  transition: opacity 0.3s ease;
 }
 
 .cards-enter-from {
   opacity: 0;
-  transform: scale(0.8) translateY(20px);
 }
 
 .cards-enter-to {
   opacity: 1;
-  transform: scale(1) translateY(0);
 }
 
 .cards-leave-from {
   opacity: 1;
-  transform: scale(1) translateY(0);
 }
 
 .cards-leave-to {
   opacity: 0;
-  transform: scale(0.8) translateY(-20px);
-}
-
-/* This ensures the grid layout works smoothly during transitions */
-.cards-move {
-  transition: transform 0.5s ease;
 }
 
 /* Responsive design */
