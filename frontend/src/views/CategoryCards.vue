@@ -617,6 +617,7 @@ export default {
   justify-content: center;
   align-items: center;
   z-index: 10;
+  padding: 20px 0; /* Add 20px padding top and bottom */
 }
 
 .loading-spinner {
@@ -626,8 +627,8 @@ export default {
   border-radius: 50%;
   border-top-color: var(--accent-color);
   animation: spin 1s ease-in-out infinite;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  /* margin-top: 20px;
+  margin-bottom: 20px; */
 }
 
 @keyframes spin {
