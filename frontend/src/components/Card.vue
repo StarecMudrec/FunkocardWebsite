@@ -29,7 +29,7 @@
       <div class="card-content">
         <div class="card-info">
           <h3 class="card-title">{{ card.name }}</h3>
-          <span class="card-rarity">{{ card.rarity }}</span>
+          <!-- <span class="card-rarity">{{ card.rarity }}</span> -->
         </div>
         <div class="card-meta">
           <p class="card-category">{{ card.category || card.rarity }}</p>
