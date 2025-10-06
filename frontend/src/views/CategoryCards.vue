@@ -306,7 +306,7 @@ export default {
 
 .search-icon {
   position: absolute;
-  left: 15px;
+  left: 1.7%;
   color: var(--text-color);
   opacity: 0.7;
   z-index: 2;
