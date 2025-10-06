@@ -83,8 +83,7 @@
       </div>
       
       <!-- Cards container with border -->
-      <div class="cards-section-container">
-        <!-- Line above cards container - centered -->
+      <!-- <div class="cards-section-container">
         <div class="cards-divider-wrapper">
           <div class="cards-divider"></div>
         </div>
@@ -103,7 +102,7 @@
             {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
           </div>
         </div>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
