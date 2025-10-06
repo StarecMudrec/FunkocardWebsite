@@ -528,7 +528,7 @@ export default {
 .sort-dropdown {
   position: absolute;
   top: 100%;
-  left: 0;
+  left: -100%;
   margin-top: 10px;
   background-color: #1e1e1eeb;
   color: var(--text-color);
