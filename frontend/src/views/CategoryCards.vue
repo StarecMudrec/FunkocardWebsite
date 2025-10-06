@@ -508,15 +508,15 @@ export default {
   cursor: pointer;
   padding: 8px;
   border-radius: 8px;
-  background: var(--card-bg);
-  border: 1px solid #333;
+  /* background: var(--card-bg);
+  border: 1px solid #333; */
   transition: all 0.3s ease;
-  width: 60px;
+  width: 50px;
   height: 50px;
 }
 
 .sort-icon:hover {
-  background: rgba(255, 255, 255, 0.1);
+  /* background: rgba(255, 255, 255, 0.1); */
   transform: scale(1.05);
 }
 
