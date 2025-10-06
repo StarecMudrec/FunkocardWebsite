@@ -81,7 +81,6 @@
       <div v-if="loading" class="loading-spinner-container">
         <div class="loading-spinner"></div>
       </div>
-        <div class="loading-spinner"></div>
       
       <!-- Cards container with border -->
       <div class="cards-section-container">
@@ -614,8 +613,6 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  padding-top: 20px;
-  padding-bottom: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -629,6 +626,8 @@ export default {
   border-radius: 50%;
   border-top-color: var(--accent-color);
   animation: spin 1s ease-in-out infinite;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 @keyframes spin {
