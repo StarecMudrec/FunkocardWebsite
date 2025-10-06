@@ -291,16 +291,11 @@ def serve_card_image(file_id):
         logging.error("CARDS_BOT_TOKEN environment variable is not set")
         return send_from_directory('public', 'placeholder.jpg')
     
-    # Validate file_id format
-    if not file_id or len(file_id) < 10:
-        logging.warning(f"Invalid file_id format: {file_id}")
-        return send_from_directory('public', 'placeholder.jpg')
-    
     # Create cache directory if it doesn't exist
     cache_dir = 'backend/card_images'
     os.makedirs(cache_dir, exist_ok=True)
     
-    # Define local cache file path
+    # Define local cache file path - use a safe filename
     import hashlib
     safe_filename = hashlib.md5(file_id.encode()).hexdigest() + '.jpg'
     cache_file = os.path.join(cache_dir, safe_filename)
@@ -308,16 +303,12 @@ def serve_card_image(file_id):
     # Check if image is already cached
     if os.path.exists(cache_file):
         try:
-            # Verify the cached file is valid
-            file_size = os.path.getsize(cache_file)
-            if file_size > 100:  # Basic validation - file should be more than 100 bytes
-                logging.debug(f"Serving cached image for {file_id}")
-                return send_from_directory(cache_dir, safe_filename)
-            else:
-                logging.warning(f"Cached file too small, re-downloading: {file_id}")
-                os.remove(cache_file)  # Remove invalid cache
+            # Serve from local cache
+            logging.debug(f"Serving cached image for {file_id}")
+            return send_from_directory(cache_dir, safe_filename)
         except Exception as e:
-            logging.warning(f"Error with cached image for {file_id}: {str(e)}")
+            logging.warning(f"Error serving cached image for {file_id}: {str(e)}")
+            # Fall through to download again
     
     try:
         logging.debug(f"Fetching file info from Telegram API for: {file_id}")
@@ -327,7 +318,7 @@ def serve_card_image(file_id):
         response = requests.get(api_url, timeout=10)
         
         if response.status_code != 200:
-            logging.warning(f"Failed to get file info for file_id {file_id}: Status {response.status_code}")
+            logging.warning(f"Failed to get file info for file_id {file_id}: Status {response.status_code}, Response: {response.text}")
             return send_from_directory('public', 'placeholder.jpg')
         
         file_info = response.json()
@@ -353,14 +344,6 @@ def serve_card_image(file_id):
             logging.warning(f"Failed to download file for file_id {file_id}: Status {file_response.status_code}")
             return send_from_directory('public', 'placeholder.jpg')
         
-        # Validate the downloaded content
-        content_type = file_response.headers.get('Content-Type', '')
-        content_length = file_response.headers.get('Content-Length', '0')
-        
-        if not content_type.startswith('image/') or int(content_length) < 100:
-            logging.warning(f"Invalid image content for file_id {file_id}: {content_type}, size: {content_length}")
-            return send_from_directory('public', 'placeholder.jpg')
-        
         # Cache the image locally for future requests
         try:
             with open(cache_file, 'wb') as f:
@@ -369,12 +352,20 @@ def serve_card_image(file_id):
             logging.debug(f"Cached image for file_id {file_id} as {safe_filename}")
         except Exception as e:
             logging.warning(f"Failed to cache image for {file_id}: {str(e)}")
+            # Continue to serve the image even if caching fails
         
         # Return the image with appropriate headers
         response = make_response(file_response.content)
+        # Detect content type from the file response or file extension
+        content_type = file_response.headers.get('Content-Type', 'image/jpeg')
+        if 'application' in content_type:  # Fallback if content type is wrong
+            if file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                content_type = f'image/{file_path.split(".")[-1]}'
+            else:
+                content_type = 'image/jpeg'
+                
         response.headers.set('Content-Type', content_type)
         response.headers.set('Cache-Control', 'public, max-age=3600')
-        response.headers.set('Content-Length', content_length)
         logging.debug(f"Successfully served image for {file_id}")
         return response
         

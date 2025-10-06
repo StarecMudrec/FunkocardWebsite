@@ -336,22 +336,15 @@ export default {
     },
 
     preloadTopImages() {
-      // Remove the slice limit or increase it significantly
-      const cardsToPreload = this.filteredCards.slice(0, 50) // Preload more cards
+      // Preload images for the first 12 cards (first visible row + buffer)
+      const cardsToPreload = this.filteredCards.slice(0, 12)
       
       cardsToPreload.forEach((card, index) => {
         if (card.img) {
-          // Use requestIdleCallback for better performance
-          if ('requestIdleCallback' in window) {
-            requestIdleCallback(() => {
-              this.preloadImage(card.img)
-            }, { timeout: 1000 })
-          } else {
-            // Fallback with smaller delay
-            setTimeout(() => {
-              this.preloadImage(card.img)
-            }, index * 20) // Reduced delay
-          }
+          // Add a small delay to prioritize the very first cards
+          setTimeout(() => {
+            this.preloadImage(card.img)
+          }, index * 50) // Stagger loading by 50ms
         }
       })
     },
