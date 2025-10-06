@@ -304,10 +304,6 @@ export default {
   width: 100%;
 }
 
-.search-input-wrapper:focus {
-  scale: 1.01; 
-}
-
 .search-icon {
   position: absolute;
   left: 15px;
@@ -334,6 +330,7 @@ export default {
   outline: none;
   border-color: #555555;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  scale: 1.01;
 }
 
 .search-input::placeholder {
