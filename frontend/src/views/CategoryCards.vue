@@ -536,8 +536,9 @@ export default {
   border-radius: 8px;
   padding: 10px 0;
   z-index: 100;
-  min-width: 250px;
+  min-width: 190px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateX(76%);
 }
 
 .sort-option {
@@ -559,12 +560,14 @@ export default {
 .sort-dropdown-enter-active,
 .sort-dropdown-leave-active {
   transition: all 0.3s ease;
+  transform: translateX(76%);
 }
 
 .sort-dropdown-enter-from,
 .sort-dropdown-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+  transform: translateX(76%);
 }
 
 .cards-container-wrapper {
