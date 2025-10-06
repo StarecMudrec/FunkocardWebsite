@@ -313,7 +313,7 @@ export default {
 }
 
 .search-icon:focus {
-  transform: scale(1.005);
+  transform: translateX(-10.5%);
 }
 
 .search-input {
@@ -334,7 +334,7 @@ export default {
   outline: none;
   border-color: #555555;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transform: scale(1.005);
+  transform: scale(1.007);
 }
 
 .search-input::placeholder {
