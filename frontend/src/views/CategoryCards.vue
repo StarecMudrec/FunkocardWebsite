@@ -19,7 +19,7 @@
               <path d="m21 21-4.3-4.3"></path>
             </svg>
             <input
-              v-model="searchQuery"
+              v-model.lazy="searchQuery"
               type="text"
               placeholder="Search cards..."
               class="search-input"
@@ -75,6 +75,25 @@
 import Card from '@/components/Card.vue'
 import { fetchCardsByCategory } from '@/api'
 
+// Move debounce outside the component to avoid recreation
+const debounce = (func, wait) => {
+  let timeout
+  const debounced = function(...args) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+  
+  debounced.cancel = function() {
+    clearTimeout(timeout)
+  }
+  
+  return debounced
+}
+
 export default {
   name: 'CategoryCards',
   components: {
@@ -94,12 +113,13 @@ export default {
       error: null,
       categoryName: '',
       searchQuery: '',
-      isSearching: false
+      isSearching: false,
+      debouncedSearch: null
     }
   },
   async created() {
-    // Use the local debounce method
-    this.debouncedSearch = this.debounce(this.performSearch, 300)
+    // Use the external debounce function
+    this.debouncedSearch = debounce(this.performSearch, 300)
     await this.loadCategoryCards()
   },
   watch: {
@@ -117,6 +137,8 @@ export default {
         this.filteredCards = [...this.cards]
         this.categoryName = this.getCategoryName(this.categoryId)
         this.searchQuery = '' // Reset search when category changes
+        // Cancel any pending search
+        this.debouncedSearch?.cancel()
         console.log('Loaded category cards:', this.cards)
       } catch (err) {
         this.error = err
@@ -153,12 +175,14 @@ export default {
       }
       
       const query = this.searchQuery.toLowerCase().trim()
-      this.filteredCards = this.cards.filter(card => 
-        card.name?.toLowerCase().includes(query) ||
-        card.rarity?.toLowerCase().includes(query)
-      )
       
-      this.$nextTick(() => {
+      // Use requestAnimationFrame for smoother UI updates
+      requestAnimationFrame(() => {
+        this.filteredCards = this.cards.filter(card => 
+          card.name?.toLowerCase().includes(query) ||
+          card.rarity?.toLowerCase().includes(query)
+        )
+        
         this.isSearching = false
       })
     },
@@ -169,30 +193,13 @@ export default {
       this.isSearching = false
       // Cancel any pending debounced search
       this.debouncedSearch?.cancel()
-    },
-    // Add this method to your component's methods
-    debounce(func, wait) {
-      let timeout
-      const debounced = function(...args) {
-        const later = () => {
-          clearTimeout(timeout)
-          func(...args)
-        }
-        clearTimeout(timeout)
-        timeout = setTimeout(later, wait)
-      }
-      
-      debounced.cancel = function() {
-        clearTimeout(timeout)
-      }
-      
-      return debounced
     }
   }
 }
 </script>
 
 <style scoped>
+/* Your existing styles remain the same */
 .category-cards-page {
   min-height: 100vh;
   /* background: var(--bg-color); */
