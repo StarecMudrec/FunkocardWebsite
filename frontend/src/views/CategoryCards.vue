@@ -613,8 +613,8 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
