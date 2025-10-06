@@ -334,7 +334,7 @@ export default {
   outline: none;
   border-color: #555555;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transform: scale(1.007);
+  transform: scale(1.0067);
 }
 
 .search-input::placeholder {
