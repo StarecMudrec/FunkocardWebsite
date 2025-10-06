@@ -245,8 +245,24 @@ def db_status():
 
 @app.route('/api/card_image/<path:file_id>')
 def serve_card_image(file_id):
-    """Serve card images directly from Telegram using file_id"""
+    """Serve card images from local cache, downloading from Telegram if not cached"""
     TOKEN = os.getenv("CARDS_BOT_TOKEN")  # Replace with your actual bot token
+    
+    # Create cache directory if it doesn't exist
+    cache_dir = 'backend/card_images'
+    os.makedirs(cache_dir, exist_ok=True)
+    
+    # Define local cache file path
+    cache_file = os.path.join(cache_dir, f"{file_id}.jpg")
+    
+    # Check if image is already cached
+    if os.path.exists(cache_file):
+        try:
+            # Serve from local cache
+            return send_from_directory(cache_dir, f"{file_id}.jpg")
+        except Exception as e:
+            logging.warning(f"Error serving cached image for {file_id}: {str(e)}")
+            # Fall through to download again
     
     try:
         # First, get file path from Telegram API
@@ -267,13 +283,22 @@ def serve_card_image(file_id):
             logging.warning(f"file_path not found for file_id {file_id}")
             return send_from_directory('public', 'placeholder.jpg')
         
-        # Download and serve the file directly from Telegram
+        # Download the file from Telegram
         file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
         file_response = requests.get(file_url)
         
         if file_response.status_code != 200:
             logging.warning(f"Failed to download file for file_id {file_id}: {file_response.text}")
             return send_from_directory('public', 'placeholder.jpg')
+        
+        # Cache the image locally for future requests
+        try:
+            with open(cache_file, 'wb') as f:
+                f.write(file_response.content)
+            logging.debug(f"Cached image for file_id {file_id}")
+        except Exception as e:
+            logging.warning(f"Failed to cache image for {file_id}: {str(e)}")
+            # Continue to serve the image even if caching fails
         
         # Return the image with appropriate headers
         response = make_response(file_response.content)
