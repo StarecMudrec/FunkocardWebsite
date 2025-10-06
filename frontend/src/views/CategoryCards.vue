@@ -310,6 +310,9 @@ export default {
   color: var(--text-color);
   opacity: 0.7;
   z-index: 2;
+  width: 1.2em; /* Scale relative to font size */
+  height: 1.2em; /* Scale relative to font size */
+  transition: all 0.3s ease; /* Smooth scaling on focus */
 }
 
 .search-input {
@@ -331,6 +334,38 @@ export default {
   border-color: #555555;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   scale: 1.01;
+}
+
+/* Scale the icon when search input is focused */
+.search-input:focus + .search-icon {
+  scale: 1.05;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-input {
+    padding: 12px 40px 12px 45px; /* Adjusted left padding for smaller icon */
+    font-size: 0.9rem;
+  }
+  
+  .search-icon {
+    left: 12px;
+    width: 1.1em; /* Slightly smaller on mobile */
+    height: 1.1em;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-input {
+    padding: 10px 35px 10px 40px; /* Further adjusted for very small screens */
+    font-size: 0.8rem;
+  }
+  
+  .search-icon {
+    left: 10px;
+    width: 1em;
+    height: 1em;
+  }
 }
 
 .search-input::placeholder {
