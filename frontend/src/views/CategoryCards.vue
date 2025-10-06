@@ -312,6 +312,10 @@ export default {
   z-index: 2;
 }
 
+.search-icon:focus {
+  scale: 1.01 ;
+}
+
 .search-input {
   width: 100%;
   padding: 15px 45px 15px 55px;
