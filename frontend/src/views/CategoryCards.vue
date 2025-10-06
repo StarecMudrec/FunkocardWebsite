@@ -19,7 +19,7 @@
               <path d="m21 21-4.3-4.3"></path>
             </svg>
             <input
-              v-model.lazy="searchQuery"
+              v-model="searchQuery"
               type="text"
               placeholder="Search cards..."
               class="search-input"
