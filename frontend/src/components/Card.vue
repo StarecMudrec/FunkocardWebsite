@@ -100,6 +100,16 @@ export default {
       console.error('Error loading image:', this.card.img, 'for card:', this.card.name);
       this.imageError = true;
       this.imageLoaded = false;
+      
+      // Retry loading after a short delay with a different approach
+      setTimeout(() => {
+        if (this.imageError) {
+          console.log('Retrying image load for:', this.card.name);
+          // Force reload by updating the src
+          const img = e.target;
+          img.src = `/api/card_image/${this.card.img}?retry=${Date.now()}`;
+        }
+      }, 1000);
     },
     handleCardClick(event) {
       if (this.isSelected) {
