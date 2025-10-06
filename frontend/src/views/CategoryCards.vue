@@ -83,13 +83,14 @@
       </div>
       
       <!-- Cards container with border -->
-      <!-- <div class="cards-section-container">
+      <div class="cards-section-container">
+        <!-- Line above cards container - centered -->
         <div class="cards-divider-wrapper">
           <div class="cards-divider"></div>
         </div>
       
         <div class="cards-container">
-          <transition-group name="cards" tag="div" class="cards-transition-container">
+          <!-- <transition-group name="cards" tag="div" class="cards-transition-container">
             <Card
               v-for="card in filteredCards"
               :key="card.id"
@@ -100,9 +101,9 @@
           </transition-group>
           <div v-if="!loading && filteredCards.length === 0" class="no-cards-message">
             {{ searchQuery ? 'No cards match your search' : 'No cards found in this category' }}
-          </div>
+          </div> -->
         </div>
-      </div> -->
+      </div>
     </div>
   </div>
 </template>
