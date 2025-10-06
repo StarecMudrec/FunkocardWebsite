@@ -310,6 +310,9 @@ export default {
   color: var(--text-color);
   opacity: 0.7;
   z-index: 2;
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s ease;
 }
 
 .search-input {
@@ -352,6 +355,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
 }
 
 .clear-search-button:hover {
@@ -490,8 +495,25 @@ export default {
   }
   
   .search-input {
-    padding: 12px 40px 12px 40px;
+    padding: 12px 40px 12px 45px;
     font-size: 0.9rem;
+  }
+  
+  .search-icon {
+    width: 20px;
+    height: 20px;
+    left: 12px;
+  }
+  
+  .clear-search-button {
+    width: 20px;
+    height: 20px;
+    right: 12px;
+  }
+  
+  .clear-search-button svg {
+    width: 16px;
+    height: 16px;
   }
   
   .cards-section-container {
@@ -532,6 +554,28 @@ export default {
   
   .search-container {
     max-width: 100%;
+  }
+  
+  .search-input {
+    padding: 10px 35px 10px 40px;
+    font-size: 0.8rem;
+  }
+  
+  .search-icon {
+    width: 18px;
+    height: 18px;
+    left: 10px;
+  }
+  
+  .clear-search-button {
+    width: 18px;
+    height: 18px;
+    right: 10px;
+  }
+  
+  .clear-search-button svg {
+    width: 14px;
+    height: 14px;
   }
   
   .cards-section-container {
