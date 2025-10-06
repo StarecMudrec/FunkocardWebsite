@@ -451,7 +451,7 @@ export default {
   width: 100%;
   padding: 15px 45px 15px 55px;
   background: var(--card-bg);
-  border: 1px solid #333;
+  border: 2px solid #333;
   border-radius: 32px;
   color: var(--text-color);
   font-size: 1.4rem;
