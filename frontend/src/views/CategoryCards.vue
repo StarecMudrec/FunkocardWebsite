@@ -78,7 +78,7 @@
     </div>
 
     <div class="cards-container-wrapper">
-      <div v-if="loading" class="loading-spinner-container">
+      <div class="loading-spinner-container">
         <div class="loading-spinner"></div>
       </div>
       
