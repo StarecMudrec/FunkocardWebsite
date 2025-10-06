@@ -17,12 +17,13 @@
           class="card-image"
           @load="handleImageLoad"
           @error="handleImageError"
+          v-show="imageLoaded && !imageError"
         />
         <div v-if="!imageLoaded && !imageError" class="image-loading">
-          Loading...
+          <div class="loading-spinner-small"></div>
         </div>
         <div v-if="imageError" class="image-error">
-          Failed to load
+          <span>Image not available</span>
         </div>
       </div>
       <div class="card-content">
@@ -70,12 +71,10 @@ export default {
   computed: {
     imageUrl() {
       if (!this.card.img) {
-        console.log('No image ID for card:', this.card.id, this.card.name);
+        console.warn('No image ID for card:', this.card.id, this.card.name);
         return '/placeholder.jpg';
       }
-      const url = `/api/card_image/${this.card.img}`;
-      console.log('Image URL for card:', this.card.id, this.card.name, url);
-      return url;
+      return `/api/card_image/${this.card.img}`;
     },
     allowSelection() {
       return false;
@@ -93,17 +92,14 @@ export default {
       this.isMobile = window.innerWidth <= 768;
     },
     handleImageLoad() {
-      console.log('Image loaded successfully:', this.card.img);
+      console.log('Image loaded successfully:', this.card.img, 'for card:', this.card.name);
       this.imageLoaded = true;
       this.imageError = false;
     },
     handleImageError(e) {
-      console.error('Error loading image:', this.card.img, 'for card:', this.card.id, this.card.name);
+      console.error('Error loading image:', this.card.img, 'for card:', this.card.name);
       this.imageError = true;
       this.imageLoaded = false;
-      
-      // Don't change the src to placeholder immediately, let the backend handle it
-      // The backend should return the placeholder if there's an error
     },
     handleCardClick(event) {
       if (this.isSelected) {
@@ -117,13 +113,6 @@ export default {
     handleCheckboxChange(event) {
       this.isSelected = event.target.checked;
       this.$emit('card-selected', this.card.id, this.isSelected);
-    },
-    toggleSelection() {
-      this.isSelected = !this.isSelected;
-      this.$emit('card-selected', this.card.id, this.isSelected);
-    },
-    deleteCard() {
-      this.$emit('delete-card', this.card.id);
     },
   }
 }
@@ -190,6 +179,7 @@ export default {
   width: 100%;
   height: calc(var(--card-width) * 1.3);
   overflow: hidden;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .card-image {
@@ -197,7 +187,6 @@ export default {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transition: opacity 0.3s ease;
 }
 
 .image-loading, .image-error {
@@ -211,12 +200,25 @@ export default {
   justify-content: center;
   background: rgba(0, 0, 0, 0.1);
   color: var(--text-color);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .image-error {
-  background: rgba(255, 0, 0, 0.1);
-  color: #ff4444;
+  background: rgba(255, 0, 0, 0.05);
+  color: #888;
+}
+
+.loading-spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--accent-color);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .card-inner-content {
