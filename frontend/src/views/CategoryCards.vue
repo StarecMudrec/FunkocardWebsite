@@ -543,6 +543,7 @@ export default {
 @media (max-width: 1317px) {
   .sort-dropdown {
     right: 0;
+    left: auto; 
   }
 }
 
