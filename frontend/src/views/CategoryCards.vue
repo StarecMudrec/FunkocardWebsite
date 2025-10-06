@@ -81,6 +81,7 @@
       <div v-if="loading" class="loading-spinner-container">
         <div class="loading-spinner"></div>
       </div>
+        <div class="loading-spinner"></div>
       
       <!-- Cards container with border -->
       <div class="cards-section-container">
