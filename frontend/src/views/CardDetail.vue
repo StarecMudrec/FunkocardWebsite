@@ -166,7 +166,7 @@
 </template>
 
 <script>
-  import { fetchCardInfo, fetchComments, checkUserPermission, fetchUserInfo, fetchCards } from '@/api'
+  import { fetchCardInfo, fetchComments, checkUserPermission, fetchUserInfo, fetchCardsByCategory } from '@/api'
   import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
   import { useRouter } from 'vue-router'
 
@@ -226,11 +226,16 @@
 
       const loadSortedCards = async () => {
         try {
-          const cards = await fetchCards('id', 'asc');
+          if (!card.value?.category) {
+            console.log('No category on card:', card.value);
+            return;
+          }
+          
+          const cards = await fetchCardsByCategory(card.value.category, 'id', 'asc');
           sortedCards.value = cards;
           currentCardIndex.value = findCurrentCardIndex();
           
-          console.log('Loaded cards:', cards);
+          console.log('Loaded cards by category:', cards);
           console.log('Current card ID:', card.value.id);
           console.log('Current card index:', currentCardIndex.value);
           console.log('Card IDs in sortedCards:', sortedCards.value.map(c => c.id));
@@ -238,7 +243,7 @@
           // Preload adjacent cards after we have the sorted list
           preloadAdjacentCards();
         } catch (error) {
-          console.error('Error loading sorted cards:', error);
+          console.error('Error loading sorted cards by category:', error);
         }
       }
 
@@ -394,6 +399,11 @@
 
           card.value[field] = editableCard.value[field];
           editing.value = { ...editing.value, [field]: false };
+          
+          // Reload sorted cards if category was changed
+          if (field === 'category') {
+            await loadSortedCards();
+          }
         } catch (err) {
           console.error('Error updating card:', err);
           saveError.value = err.message || 'Failed to update card';
