@@ -130,19 +130,6 @@
                   </div>
                 </div>
               </div>
-              
-              <!-- Комментарии -->
-              <div class="comments-section">
-                <div v-if="comments.length === 0" class="no-comments">
-                  No comments yet
-                </div>
-                <div v-else class="comments-list">
-                  <div v-for="comment in comments" :key="comment.id" class="comment">
-                    <div class="comment-text">{{ comment.text }}</div>
-                    <div class="comment-meta">User #{{ comment.user_id }}</div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -166,7 +153,7 @@
 </template>
 
 <script>
-  import { fetchCardInfo, fetchComments, checkUserPermission, fetchUserInfo, fetchCardsByCategory } from '@/api'
+  import { fetchCardInfo, checkUserPermission, fetchUserInfo, fetchCardsByCategory } from '@/api'
   import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
   import { useRouter } from 'vue-router'
 
@@ -186,7 +173,6 @@
 
       const card = ref({})
       const editableCard = ref({})
-      const comments = ref([])
       const loading = ref(true)
       const error = ref(null)
       const imageError = ref(false)
@@ -452,9 +438,6 @@
           
           await loadSortedCards()
           
-          // Load comments
-          comments.value = await fetchComments(card.value.id)
-          
           // Check user permissions
           try {
             const userInfo = await fetchUserInfo()
@@ -491,9 +474,6 @@
           // Update URL without triggering a full reload
           router.replace(`/card/${prevCard.id}`);
           
-          // Load comments for the new card
-          loadComments();
-          
           // Preload new adjacent cards
           preloadAdjacentCards();
         } else if (prevCard) {
@@ -517,23 +497,11 @@
           // Update URL without triggering a full reload
           router.replace(`/card/${nextCard.id}`);
           
-          // Load comments for the new card
-          loadComments();
-          
           // Preload new adjacent cards
           preloadAdjacentCards();
         } else if (nextCard) {
           // Fallback to regular navigation if not preloaded
           router.push(`/card/${nextCard.id}`);
-        }
-      }
-
-      const loadComments = async () => {
-        try {
-          comments.value = await fetchComments(card.value.id);
-          adjustFontSize();
-        } catch (err) {
-          console.error('Error loading comments:', err);
         }
       }
 
@@ -588,7 +556,6 @@
         card,
         editableCard,
         categoryError,
-        comments,
         loading,
         error,
         nameError,
@@ -619,7 +586,6 @@
         preloadedCards,
         isPreloading,
         preloadError,
-        loadComments,
         showTransition,
       }
     }
