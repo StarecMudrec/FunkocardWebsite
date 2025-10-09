@@ -100,7 +100,7 @@
                 <div class="secondary-divider"></div>
               </div>
               
-              <!-- Информация о категории и сезоне -->
+              <!-- Информация о категории -->
               <div class="card-info-section">
                 <div class="card-info-columns">
                   <div class="card-info-column">
@@ -127,33 +127,6 @@
                       >
                     </div>
                     <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
-                  </div>
-                  <div class="card-info-column">
-                    <h3>
-                      Season:
-                      <span v-if="isUserAllowed" class="edit-icon" @click.stop="toggleEdit('season')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                      </span>
-                    </h3>
-                    <div v-if="!isUserAllowed">
-                      <p>{{ seasonName }}</p>
-                    </div>
-                    <select
-                      v-else
-                      v-if="isUserAllowed" 
-                      v-model="editableCard.season_uuid"
-                      @change="saveField('season')"
-                      @blur="cancelEdit('season')"
-                      ref="seasonInput"
-                      class="edit-input-select"
-                    >
-                      <option class="edit-input-option" v-for="season in allSeasons" :key="season.uuid" :value="season.uuid">
-                        {{ season.name }}
-                      </option>
-                    </select>
                   </div>
                 </div>
               </div>
@@ -193,7 +166,7 @@
 </template>
 
 <script>
-  import { fetchCardInfo, fetchSeasonInfo, fetchComments, checkUserPermission, fetchUserInfo, fetchSeasons, fetchCardsForSeason } from '@/api'
+  import { fetchCardInfo, fetchComments, checkUserPermission, fetchUserInfo, fetchCards } from '@/api'
   import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
   import { useRouter } from 'vue-router'
 
@@ -210,12 +183,9 @@
       const nameInput = ref(null)
       const descriptionInput = ref(null)
       const categoryInput = ref(null)
-      const seasonInput = ref(null)
 
       const card = ref({})
       const editableCard = ref({})
-      const seasonName = ref('')
-      const allSeasons = ref([])
       const comments = ref([])
       const loading = ref(true)
       const error = ref(null)
@@ -229,8 +199,7 @@
       const editing = ref({
         name: false,
         description: false,
-        category: false,
-        season: false
+        category: false
       })
       const transitionName = ref('slide-left');
 
@@ -257,12 +226,7 @@
 
       const loadSortedCards = async () => {
         try {
-          if (!card.value?.season_id) {
-            console.log('No season_id on card:', card.value);
-            return;
-          }
-          
-          const cards = await fetchCardsForSeason(card.value.season_id, 'id', 'asc');
+          const cards = await fetchCards('id', 'asc');
           sortedCards.value = cards;
           currentCardIndex.value = findCurrentCardIndex();
           
@@ -393,9 +357,6 @@
             case 'description':
               descriptionInput.value?.focus()
               break
-            case 'category':
-              categoryInput.value?.focus()
-              break
           }
         })
       }
@@ -405,11 +366,7 @@
         try {
           let dataToSend = {};
           
-          if (field === 'season') {
-            dataToSend = {
-              season_uuid: editableCard.value.season_uuid
-            };
-          } else if (field === 'category') {
+          if (field === 'category') {
               if (editableCard.value.category && editableCard.value.category.length > 20) {
                   categoryError.value = 'Category cannot exceed 20 characters.';
                   throw new Error('Validation failed on frontend.');
@@ -435,14 +392,7 @@
             throw new Error(errorData.error || 'Failed to update card');
           }
 
-          if (field === 'season') {
-            const season = allSeasons.value.find(s => s.uuid === editableCard.value.season_uuid);
-            seasonName.value = season?.name || '';
-            card.value.season_uuid = editableCard.value.season_uuid;
-          } else {
-            card.value[field] = editableCard.value[field];
-          }
-
+          card.value[field] = editableCard.value[field];
           editing.value = { ...editing.value, [field]: false };
         } catch (err) {
           console.error('Error updating card:', err);
@@ -490,20 +440,7 @@
           card.value = await fetchCardInfo(props.id);
           editableCard.value = { ...card.value };
           
-          const seasons = await fetchSeasons();
-          allSeasons.value = seasons.map(season => ({
-            uuid: season.uuid,
-            name: season.name
-          }));
-          
-          // Загружаем текущий сезон
-          if (card.value.season_id) {
-            const season = await fetchSeasonInfo(card.value.season_id);
-            seasonName.value = season.name;
-            editableCard.value.season_uuid = season.uuid;
-
-            await loadSortedCards()
-          }
+          await loadSortedCards()
           
           // Load comments
           comments.value = await fetchComments(card.value.id)
@@ -544,8 +481,8 @@
           // Update URL without triggering a full reload
           router.replace(`/card/${prevCard.id}`);
           
-          // Load season info and comments for the new card
-          loadSeasonAndComments();
+          // Load comments for the new card
+          loadComments();
           
           // Preload new adjacent cards
           preloadAdjacentCards();
@@ -570,8 +507,8 @@
           // Update URL without triggering a full reload
           router.replace(`/card/${nextCard.id}`);
           
-          // Load season info and comments for the new card
-          loadSeasonAndComments();
+          // Load comments for the new card
+          loadComments();
           
           // Preload new adjacent cards
           preloadAdjacentCards();
@@ -581,21 +518,14 @@
         }
       }
 
-      const loadSeasonAndComments = async () => {
+      const loadComments = async () => {
         try {
-          if (card.value.season_id) {
-            const season = await fetchSeasonInfo(card.value.season_id);
-            seasonName.value = season.name;
-            editableCard.value.season_uuid = season.uuid;
-          }
-          
           comments.value = await fetchComments(card.value.id);
           adjustFontSize();
         } catch (err) {
-          console.error('Error loading season or comments:', err);
+          console.error('Error loading comments:', err);
         }
       }
-
 
       onMounted(() => {
         window.addEventListener('resize', adjustFontSize)
@@ -647,15 +577,13 @@
       return {
         card,
         editableCard,
-        seasonName,
-        categoryError, // Return categoryError
-        allSeasons,
+        categoryError,
         comments,
         loading,
         error,
-        nameError, // Return nameError
-        descriptionError, // Return descriptionError
-        saveError, // Return saveError
+        nameError,
+        descriptionError,
+        saveError,
         imageError,
         cardNameRef,
         editing,
@@ -663,7 +591,6 @@
         nameInput,
         descriptionInput,
         categoryInput,
-        seasonInput,
         fileInput,
         handleImageDoubleClick,
         handleFileChange,
@@ -682,7 +609,7 @@
         preloadedCards,
         isPreloading,
         preloadError,
-        loadSeasonAndComments,
+        loadComments,
         showTransition,
       }
     }
