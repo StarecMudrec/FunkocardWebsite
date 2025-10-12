@@ -1012,7 +1012,7 @@
     border: 2px var(--hover-border-color);
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
     /* Add these lines to ensure full height */
-    height: 100%;
+    height: 736px;
     align-items: stretch;
   }
 
