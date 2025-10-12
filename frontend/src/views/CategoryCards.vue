@@ -66,8 +66,8 @@
                 <div class="sort-option" @click="sortBy('id', 'desc')">New first</div>
                 <div class="sort-option" @click="sortBy('amount', 'asc')">Points (Low to High)</div>
                 <div class="sort-option" @click="sortBy('amount', 'desc')">Points (High to Low)</div>
-                <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'asc')">Rarity (Episodical to Achievements)</div>
-                <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'desc')">Rarity (Achievements to Episodical)</div>
+                <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'asc')">Rarity (Force🤷‍♂️ to Vinyl Figure💫)</div>
+                <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'desc')">Rarity (Vinyl Figure💫 to Force🤷‍♂️)</div>
                 <div class="sort-option" @click="sortBy('name', 'asc')">Name (A-Z)</div>
                 <div class="sort-option" @click="sortBy('name', 'desc')">Name (Z-A)</div>
               </div>
@@ -175,13 +175,13 @@ export default {
       rarityOrder: {
         'Vinyl Figure💫': 1,
         'Legendary🧡': 2,
-        'Plain😼': 3,
-        'Force🤷‍♂️': 4,
-        'SuperCool🤟': 5,
-        'Cool👍': 6,
-        'Special 🌟': 7,
-        'Nameless 📛': 8,
-        'Limited ⚠️': 9,
+        'Special 🌟': 3,
+        'Nameless 📛': 4,
+        'Limited ⚠️': 5,
+        'SuperCool🤟': 6,
+        'Cool👍': 7,
+        'Plain😼': 8,
+        'Force🤷‍♂️': 9,
         'Scarface - Tony Montana': 10
       }
     }
