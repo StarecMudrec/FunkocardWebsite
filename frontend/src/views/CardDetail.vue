@@ -603,6 +603,7 @@
     overflow: hidden;
     width: 100%;
     height: 100%;
+    font-family: 'Afacad', sans-serif;
   }
   /* Hide scrollbar for Chrome, Safari and Opera */
   ::-webkit-scrollbar {
