@@ -63,7 +63,9 @@
               <div class="shop-section">
                 <div class="shop-info">
                   <h3>Available at shop:</h3>
-                  <p>{{ formatShopInfo(card.shop) }}</p>
+                  <p :class="{ 'available-glow': isShopAvailable(card.shop) }">
+                    {{ formatShopInfo(card.shop) }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -245,6 +247,20 @@
         
         // If shop data is an object or needs formatting, handle it here
         return shopData.toString();
+      }
+      
+      const isShopAvailable = (shopData) => {
+        if (!shopData || shopData === '-' || shopData === 'null' || shopData === 'None') {
+          return false;
+        }
+        
+        // Check if the shop data indicates availability
+        if (typeof shopData === 'string') {
+          // You can add more conditions here if needed
+          return shopData !== '-' && shopData !== 'null' && shopData !== 'None';
+        }
+        
+        return false;
       }
 
       const adjustFontSize = () => {
@@ -955,6 +971,34 @@
     color: var(--text-color);
     margin: 0;
     margin-bottom: 30px;
+  }
+
+  .available-glow {
+    color: #4ade80 !important; /* Green color */
+    text-shadow: 
+      0 0 5px #4ade80,
+      0 0 10px #4ade80,
+      0 0 15px #4ade80,
+      0 0 20px #4ade80 !important;
+    animation: glow-pulse 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow-pulse {
+    from {
+      text-shadow: 
+        0 0 5px #4ade80,
+        0 0 10px #4ade80,
+        0 0 15px #4ade80,
+        0 0 20px #4ade80;
+    }
+    to {
+      text-shadow: 
+        0 0 10px #4ade80,
+        0 0 15px #4ade80,
+        0 0 20px #4ade80,
+        0 0 25px #4ade80,
+        0 0 30px #4ade80;
+    }
   }
 
 
