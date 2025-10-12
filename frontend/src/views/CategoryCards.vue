@@ -167,14 +167,11 @@ export default {
       loading: false,
       error: null,
       categoryName: '',
-      searchQuery: this.$route.query.search || '',
+      searchQuery: '',
       isSearching: false,
       debouncedSearch: null,
       showSortDropdown: false,
-      currentSort: {
-        field: this.$route.query.sortField || 'id',
-        direction: this.$route.query.sortDirection || 'asc'
-      },
+      currentSort: { field: 'id', direction: 'asc' },
       rarityOrder: {
         'Vinyl Figure💫': 1,
         'Legendary🧡': 2,
@@ -207,34 +204,16 @@ export default {
     }
   },
   methods: {
-    saveFilterState() {
-      const filterState = {
-        searchQuery: this.searchQuery,
-        sort: this.currentSort
-      }
-      sessionStorage.setItem(`categoryFilters_${this.categoryId}`, JSON.stringify(filterState))
-    },
     async loadCategoryCards() {
       this.loading = true
       try {
         const response = await fetchCardsByCategory(this.categoryId)
         this.cards = response.cards
-        
-        // Apply stored filters or URL parameters
-        const storedFilters = sessionStorage.getItem(`categoryFilters_${this.categoryId}`)
-        if (storedFilters) {
-          const filters = JSON.parse(storedFilters)
-          this.searchQuery = filters.searchQuery || this.$route.query.search || ''
-          this.currentSort = filters.sort || {
-            field: this.$route.query.sortField || 'id',
-            direction: this.$route.query.sortDirection || 'asc'
-          }
-        }
-        
-        // Apply filters to the loaded cards
-        this.applyFilters()
-        
+        this.filteredCards = [...this.cards]
         this.categoryName = this.getCategoryName(this.categoryId)
+        this.searchQuery = '' // Reset search when category changes
+        // Cancel any pending search
+        this.debouncedSearch?.cancel()
         console.log('Loaded category cards:', this.cards)
       } catch (err) {
         this.error = err
@@ -242,21 +221,6 @@ export default {
       } finally {
         this.loading = false
       }
-    },
-    applyFilters() {
-      // Apply search filter
-      let filtered = [...this.cards]
-      
-      if (this.searchQuery.trim()) {
-        const query = this.searchQuery.toLowerCase().trim()
-        filtered = filtered.filter(card => 
-          card.name?.toLowerCase().includes(query) ||
-          card.rarity?.toLowerCase().includes(query)
-        )
-      }
-      
-      // Apply sort
-      this.sortCards(filtered)
     },
     
     getCategoryName(categoryId) {
@@ -270,15 +234,12 @@ export default {
     },
     
     handleCardClicked(cardId) {
-      this.saveFilterState()
       this.$router.push(`/card/${cardId}`)
     },
     
     handleSearch() {
       this.isSearching = true
       this.debouncedSearch()
-      this.saveFilterState()
-      this.updateURL()
     },
     
     performSearch() {
@@ -305,9 +266,8 @@ export default {
       this.searchQuery = ''
       this.filteredCards = [...this.cards]
       this.isSearching = false
+      // Cancel any pending debounced search
       this.debouncedSearch?.cancel()
-      this.saveFilterState()
-      this.updateURL()
     },
 
     toggleSortDropdown() {
@@ -361,62 +321,7 @@ export default {
       }
       
       this.filteredCards = sortedCards
-      this.saveFilterState()
-      this.updateURL()
-    },
-    sortCards(cardsToSort) {
-      const sortedCards = [...cardsToSort]
-      
-      switch (this.currentSort.field) {
-        case 'id':
-          sortedCards.sort((a, b) => {
-            return this.currentSort.direction === 'asc' ? a.id - b.id : b.id - a.id
-          })
-          break
-        case 'amount':
-          sortedCards.sort((a, b) => {
-            const amountA = a.points || 0
-            const amountB = b.points || 0
-            return direction === 'asc' ? amountA - amountB : amountB - amountA
-          })
-          break
-        
-        case 'rarity':
-          sortedCards.sort((a, b) => {
-            const rarityA = this.rarityOrder[a.rarity] || 0
-            const rarityB = this.rarityOrder[b.rarity] || 0
-            return direction === 'asc' ? rarityA - rarityB : rarityB - rarityA
-          })
-          break
-        
-        case 'name':
-          sortedCards.sort((a, b) => {
-            const nameA = a.name?.toLowerCase() || ''
-            const nameB = b.name?.toLowerCase() || ''
-            if (direction === 'asc') {
-              return nameA.localeCompare(nameB)
-            } else {
-              return nameB.localeCompare(nameA)
-            }
-          })
-          break
-      }
-      
-      this.filteredCards = sortedCards
-    },
-    updateURL() {
-      // Update URL with current filters without triggering navigation
-      const query = {}
-      if (this.searchQuery) query.search = this.searchQuery
-      if (this.currentSort.field !== 'id' || this.currentSort.direction !== 'asc') {
-        query.sortField = this.currentSort.field
-        query.sortDirection = this.currentSort.direction
-      }
-
-      this.$router.replace({
-        query: Object.keys(query).length ? query : undefined
-      })
-    },
+    }
   }
 }
 </script>

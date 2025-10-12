@@ -68,14 +68,6 @@
                   </p>
                 </div>
               </div>
-              <div class="back-to-category-section">
-                <button @click="goBackToCategory" class="back-to-category-button">
-                  <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-                  Back to {{ previousCategoryName }}
-                </button>
-              </div>
             </div>
             
             <div class="card-image-container">
@@ -162,30 +154,6 @@
       const preloadError = ref(null)
 
       const showTransition = ref(false);
-
-      const previousCategoryName = ref('Category')
-      const previousCategoryId = ref('')
-      const previousSearchQuery = ref('')
-      const previousSort = ref({ field: 'id', direction: 'asc' })
-
-      // Add this method to your setup()
-      const goBackToCategory = () => {
-        // Store current state before navigating back
-        if (router.options.history.state.back) {
-          // We're coming from category page, go back
-          router.back()
-        } else {
-          // Fallback: navigate to the category page with stored filters
-          router.push({
-            path: `/category/${previousCategoryId.value}`,
-            query: {
-              search: previousSearchQuery.value,
-              sortField: previousSort.value.field,
-              sortDirection: previousSort.value.direction
-            }
-          })
-        }
-      }
 
       const findCurrentCardIndex = () => {
         if (!card.value?.id || !sortedCards.value.length) return -1;
@@ -639,20 +607,6 @@
           
           await loadSortedCards()
           
-          // Store category information for back navigation
-          if (card.value.category) {
-            previousCategoryName.value = card.value.category
-            previousCategoryId.value = card.value.category.toLowerCase().replace(/\s+/g, '-')
-          }
-          
-          // Check if we have stored filter state in session storage
-          const storedFilters = sessionStorage.getItem(`categoryFilters_${previousCategoryId.value}`)
-          if (storedFilters) {
-            const filters = JSON.parse(storedFilters)
-            previousSearchQuery.value = filters.searchQuery || ''
-            previousSort.value = filters.sort || { field: 'id', direction: 'asc' }
-          }
-          
           // Check user permissions
           try {
             const userInfo = await fetchUserInfo()
@@ -917,38 +871,6 @@
   .slide-right-leave-to {
     transform: translateX(100%) translateY(0);
     opacity: 0;
-  }
-
-  /* Add to your existing styles in CardDetail.vue */
-  .back-to-category-section {
-    text-align: center;
-    margin-top: 20px;
-  }
-
-  .back-to-category-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid #333;
-    border-radius: 8px;
-    color: var(--text-color);
-    padding: 10px 20px;
-    cursor: pointer;
-    font-size: 16px;
-    font-family: inherit;
-    transition: all 0.3s ease;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-  }
-
-  .back-to-category-button:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-  }
-
-  .back-icon {
-    width: 18px;
-    height: 18px;
   }
 
   .card-detail-container {
