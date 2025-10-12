@@ -63,7 +63,7 @@
               <div class="shop-section">
                 <div class="shop-info">
                   <h3>Available at shop:</h3>
-                  <p>{{ card.shop || 'Not available' }}</p>
+                  <p>{{ formatShopInfo(card.shop) }}</p>
                 </div>
               </div>
             </div>
@@ -231,6 +231,20 @@
         } finally {
           isPreloading.value = false;
         }
+      }
+
+      const formatShopInfo = (shopData) => {
+        if (!shopData || shopData === '-' || shopData === 'null' || shopData === 'None') {
+          return 'Not available';
+        }
+        
+        // If shop data is a simple string, return it as is
+        if (typeof shopData === 'string') {
+          return shopData;
+        }
+        
+        // If shop data is an object or needs formatting, handle it here
+        return shopData.toString();
       }
 
       const adjustFontSize = () => {
@@ -613,6 +627,7 @@
         isPreloading,
         preloadError,
         showTransition,
+        formatShopInfo,
       }
     }
   }

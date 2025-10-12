@@ -487,9 +487,9 @@ def get_card_info(card_id):
     
     try:
         with connection.cursor() as cursor:
-            # Query the files table instead of cards table
+            # Query the files table with shop information
             cursor.execute(
-                "SELECT tg_id as photo, name, rare as rarity, fame as points FROM files WHERE id = %s", 
+                "SELECT tg_id as photo, name, rare as rarity, fame as points, shop FROM files WHERE id = %s", 
                 (int(card_id),)
             )
             row = cursor.fetchone()
@@ -509,7 +509,8 @@ def get_card_info(card_id):
                 'img': row['photo'],
                 'category': row['rarity'],
                 'name': row['name'],
-                'description': f"Points: {row['points']}"
+                'description': f"Points: {row['points']}",
+                'shop': row['shop']  # Add shop information
             }), 200
             
     except ValueError:
