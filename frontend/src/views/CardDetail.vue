@@ -1170,6 +1170,7 @@
     align-items: center;
     justify-content: center;
     font-weight: normal;
+    gap: 10px;
   }
 
   .card-info-column p {
