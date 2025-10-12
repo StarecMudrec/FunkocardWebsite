@@ -388,7 +388,7 @@ export default {
 }
 
 .scroll-top-button:hover {
-  background: var(--accent-color-dark);
+  background: rgba(100, 100, 100, 0.92);
   transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
