@@ -997,6 +997,9 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 67px;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
   }
 
   .card-detail {
@@ -1008,36 +1011,42 @@
     border-radius: 17px;
     border: 2px var(--hover-border-color);
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
+    /* Add these lines to ensure full height */
+    height: 100%;
+    align-items: stretch;
   }
 
   .card-image-container {
     position: relative;
-    /* cursor: pointer;  */
+    /* Add these lines to fill container height */
+    height: 100%;
+    display: flex;
+    align-items: stretch;
   }
 
   .card-detail-image {
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    /* border-radius: 17px; */
+    object-fit: cover; /* Changed from contain to cover to fill the space */
     border-top-right-radius: 17px;
     border-bottom-right-radius: 17px;
-    /* border: 10px solid var(--bg-color); */
     background-color: #1e1e1e;
-    /* cursor: pointer; */
-    height: 736px;
+    /* Remove fixed height and let it fill container */
+    /* height: 736px; REMOVE THIS LINE */
   }
 
   .image-placeholder {
     width: 100%;
-    height: 571px; /* Match the image height */
+    height: 100%; /* Changed from fixed height to 100% */
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: #1e1e1e;
     color: #666;
-    border-radius: 17px;
-    border: 10px solid var(--bg-color);
+    border-top-right-radius: 17px;
+    border-bottom-right-radius: 17px;
+    /* Remove border to eliminate gaps */
+    /* border: 10px solid var(--bg-color); REMOVE THIS LINE */
   }
 
   .card-content-wrapper {
@@ -1178,6 +1187,12 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
+      /* Reset height for mobile */
+      height: auto;
+    }
+    .card-image-container {
+      /* Reset height for mobile */
+      height: auto;
     }
     .card-header-section {
       text-align: center;
@@ -1220,7 +1235,8 @@
 
     .card-detail-image {
       border-radius: 15px;
-      border: 10px solid var(--bg-color);
+      /* Keep border on mobile if needed, but adjust height */
+      height: 400px; /* Or whatever height works for mobile */
     }
 
     .edit-input {
