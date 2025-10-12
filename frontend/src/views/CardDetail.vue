@@ -242,33 +242,58 @@
           
           if (!container) return;
           
+          // Reset styles
           element.style.fontSize = '';
           element.classList.remove('wrapped');
           element.style.whiteSpace = 'nowrap';
           element.style.lineHeight = '1';
+          element.style.width = 'auto';
           
           const containerWidth = container.clientWidth;
-          let fontSize = 100;
+          const maxWidth = 350; // Fixed container width
+          
+          // Start with a reasonable font size
+          let fontSize = 48; // Start smaller for the fixed container
+          let needsWrap = false;
+          
+          // Test different font sizes
+          for (let testSize = 48; testSize >= 24; testSize -= 2) {
+            element.style.fontSize = `${testSize}px`;
+            
+            // Force reflow
+            void element.offsetWidth;
+            
+            if (element.scrollWidth <= maxWidth) {
+              fontSize = testSize;
+              break;
+            }
+            
+            // If we reach the minimum size and it still doesn't fit, enable wrapping
+            if (testSize === 24 && element.scrollWidth > maxWidth) {
+              fontSize = 24;
+              needsWrap = true;
+              break;
+            }
+          }
           
           element.style.fontSize = `${fontSize}px`;
           
-          // Force reflow
-          void element.offsetWidth;
-          
-          if (element.scrollWidth > containerWidth) {
-            const ratio = containerWidth / element.scrollWidth;
-            fontSize = Math.max(
-              28,
-              Math.min(
-                fontSize, 
-                Math.floor(fontSize * ratio * 0.85)
-              )
-            );
-            element.style.fontSize = `${fontSize}px`;
+          if (needsWrap) {
+            element.classList.add('wrapped');
+            element.style.whiteSpace = 'normal';
+            element.style.lineHeight = '1.1';
+            element.style.width = '100%';
             
-            // Check if we still need to wrap
-            if (element.scrollWidth > containerWidth * 1.05) {
-              element.classList.add('wrapped');
+            // Further reduce font size if wrapped text is still too tall
+            const lineHeight = parseInt(getComputedStyle(element).lineHeight);
+            const maxLines = 3; // Maximum number of lines allowed
+            const maxHeight = lineHeight * maxLines;
+            
+            if (element.scrollHeight > maxHeight) {
+              // Reduce font size to fit within max lines
+              const heightRatio = maxHeight / element.scrollHeight;
+              const adjustedSize = Math.max(18, Math.floor(fontSize * heightRatio * 0.9));
+              element.style.fontSize = `${adjustedSize}px`;
             }
           }
         });
@@ -1059,6 +1084,7 @@
   .card-header-section h1 {
     margin: 0;
     padding: 0;
+    font-size: 48px;
     white-space: nowrap;
     font-size: 100px;
     line-height: 1;
