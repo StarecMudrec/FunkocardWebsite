@@ -968,7 +968,7 @@
 
   .card-detail {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Change from 1fr 2fr to equal columns */
+    grid-template-columns: 350px 1fr; /* Change from 1fr 2fr to equal columns */
     gap: 40px;
     background-color: var(--card-bg);
     backdrop-filter: blur(5px);
