@@ -63,31 +63,7 @@
                 <div class="main-divider"></div>
               </div>
               
-              <!-- Описание карточки -->
-              <div class="card-description-section">
-                <div class="card-description">
-                  <p v-if="!editing.description">{{ card.description }}</p>
-                  <textarea
-                    v-else
-                    v-model="editableCard.description"
-                    @blur="saveField('description')"
-                    @keyup.enter="saveField('description')"
-                    ref="descriptionInput"
-                    maxlength="1000"
-                    class="edit-textarea"
-                  ></textarea>
-                  <span v-if="isUserAllowed" class="edit-icon" @click="startEditing('description')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                  </span>
-                </div>
-                <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
-                <div class="secondary-divider"></div>
-              </div>
-              
-              <!-- Информация о категории -->
+              <!-- Rarity and Points section under main divider -->
               <div class="card-info-section">
                 <div class="card-info-columns">
                   <div class="card-info-column">
@@ -115,6 +91,43 @@
                     </div>
                     <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
                   </div>
+                  <!-- Add Points column if needed -->
+                  <!-- <div class="card-info-column">
+                    <h3>Points:</h3>
+                    <p>{{ card.points || '0' }}</p>
+                  </div> -->
+                </div>
+              </div>
+              
+              <!-- Описание карточки -->
+              <div class="card-description-section">
+                <div class="card-description">
+                  <p v-if="!editing.description">{{ card.description }}</p>
+                  <textarea
+                    v-else
+                    v-model="editableCard.description"
+                    @blur="saveField('description')"
+                    @keyup.enter="saveField('description')"
+                    ref="descriptionInput"
+                    maxlength="1000"
+                    class="edit-textarea"
+                  ></textarea>
+                  <span v-if="isUserAllowed" class="edit-icon" @click="startEditing('description')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </span>
+                </div>
+                <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
+                <div class="secondary-divider"></div>
+              </div>
+              
+              <!-- Available at shop section under secondary divider -->
+              <div class="shop-section">
+                <div class="shop-info">
+                  <h3>Available at shop:</h3>
+                  <p>{{ card.shop || 'Not available' }}</p>
                 </div>
               </div>
             </div>
@@ -901,6 +914,23 @@
     text-align: center;
   }
 
+  .shop-section {
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  .shop-info h3 {
+    font-size: 25px;
+    margin-bottom: 10px;
+    color: var(--accent-color);
+  }
+
+  .shop-info p {
+    font-size: 20px;
+    line-height: 1.6;
+    color: var(--text-color);
+  }
+
 
   /* Стили для полей ввода при редактировании */
   .edit-input {
@@ -1118,7 +1148,7 @@
   }
 
   .card-info-section {
-    padding: 0px 0;
+    padding: 30px 0;
   }
 
   .card-info-columns {
