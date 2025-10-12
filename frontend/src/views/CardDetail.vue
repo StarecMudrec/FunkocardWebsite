@@ -1017,12 +1017,12 @@
 
   .card-detail-image {
     width: 100%;
-    height: 571px;
-    object-fit: contain; /* Changed from 'fill' to 'contain' */
-    border-radius: 17px;
-    border: 10px solid var(--bg-color);
+    height: 100%;
+    object-fit: contain;
+    /* border-radius: 17px; */
+    /* border: 10px solid var(--bg-color); */
     background-color: #1e1e1e;
-    /* cursor: pointer;  */
+    /* cursor: pointer;
   }
 
   .image-placeholder {
