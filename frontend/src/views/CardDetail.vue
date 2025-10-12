@@ -107,6 +107,8 @@
   import { fetchCardInfo, checkUserPermission, fetchUserInfo, fetchCardsByCategory } from '@/api'
   import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
   import { useRouter } from 'vue-router'
+  import $ from 'jquery';
+  import 'jquery-textfill';
 
   export default {
     props: {
@@ -264,6 +266,62 @@
       }
 
       const adjustFontSize = () => {
+        nextTick(() => {
+          if (!cardNameRef.value) return;
+          
+          const $element = $(cardNameRef.value);
+          const container = cardNameRef.value.parentElement;
+          
+          if (!container) return;
+          
+          // Reset styles
+          $element.css({
+            'fontSize': '',
+            'whiteSpace': 'nowrap',
+            'lineHeight': '1',
+            'width': 'auto',
+            'height': 'auto'
+          }).removeClass('wrapped');
+          
+          const maxWidth = 350;
+          const maxHeight = 150;
+          
+          // Use jQuery textfill plugin
+          $element.textfill({
+            maxFontPixels: 60,
+            minFontPixels: 24,
+            widthOnly: false,
+            explicitWidth: maxWidth,
+            explicitHeight: maxHeight,
+            success: function() {
+              // Check if text needed wrapping
+              const element = $element[0];
+              const needsWrap = element.scrollHeight > maxHeight * 0.8; // heuristic
+              
+              if (needsWrap) {
+                $element.addClass('wrapped')
+                  .css({
+                    'whiteSpace': 'normal',
+                    'lineHeight': '1.1',
+                    'width': '100%'
+                  });
+              }
+              
+              console.log('Textfill completed', 
+                'Font size:', $element.css('font-size'),
+                'Wrapped:', needsWrap,
+                'Text:', element.textContent
+              );
+            },
+            fail: function() {
+              console.log('Textfill failed to find optimal size');
+              // Fallback to our algorithm
+              fallbackAdjustFontSize();
+            }
+          });
+        });
+      };
+      const fallbackAdjustFontSize  = () => {
         nextTick(() => {
           if (!cardNameRef.value) return;
           

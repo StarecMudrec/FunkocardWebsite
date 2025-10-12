@@ -12,7 +12,9 @@
     "gsap": "^3.13.0",
     "vue": "^3.3.0",
     "vue-router": "^4.2.0",
-    "vuex": "^4.1.0"
+    "vuex": "^4.1.0",
+    "jquery": "^3.6.0",
+    "jquery-textfill": "^0.6.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",
