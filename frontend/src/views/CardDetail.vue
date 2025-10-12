@@ -40,23 +40,7 @@
               <div class="card-header-section">
                 <div class="title-container">
                   <h1 ref="cardNameRef">
-                    
-                    <span v-if="!editing.name">{{ card.name }}</span>
-                    <input 
-                      v-else
-                      v-model="editableCard.name"
-                      @blur="saveField('name')"
-                      @keyup.enter="saveField('name')"
-                      ref="nameInput"
-                      class="edit-input"
-                      maxlength="100"
-                    >
-                    <span v-if="isUserAllowed" class="edit-icon" @click="startEditing('name')">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                    </span>
+                    <span>{{ card.name }}</span>
                   </h1>
                 </div>
                 <div v-if="nameError" class="error-message">{{ nameError }}</div>
@@ -64,64 +48,18 @@
               </div>
               
               <!-- Rarity and Points section under main divider -->
-              <div class="card-info-section">
-                <div class="card-info-columns">
-                  <div class="card-info-column">
-                    <h3>
-                      <strong>Rarity: </strong>{{ card.category }}
-                      <span v-if="isUserAllowed" class="edit-icon" @click.stop="toggleEdit('category')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                      </span>
-                    </h3>
-                    <!-- <div class="category-container">
-                      <p v-if="!editing.category">{{ card.category }}</p>
-                      <input
-                        v-else
-                        v-model="editableCard.category"
-                        @blur="saveField('category')"
-                        @keyup.enter="saveField('category')"
-                        @keyup.esc="cancelEdit('category')"
-                        ref="categoryInput"
-                        class="edit-input"
-                        maxlength="20"
-                      >
-                    </div> -->
-                    <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
-                  </div>
-                  <!-- Add Points column if needed -->
-                  <!-- <div class="card-info-column">
-                    <h3>Points:</h3>
-                    <p>{{ card.points || '0' }}</p>
-                  </div> -->
-                </div>
-              </div>
+              <h3 style="margin: 0; margin-top: 40px;">
+                <strong>Rarity: </strong>{{ card.category }}
+              </h3>
+              <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
               
-              <!-- Описание карточки -->
-              <div class="card-description-section">
-                <div class="card-description">
-                  <p v-if="!editing.description">{{ card.description }}</p>
-                  <textarea
-                    v-else
-                    v-model="editableCard.description"
-                    @blur="saveField('description')"
-                    @keyup.enter="saveField('description')"
-                    ref="descriptionInput"
-                    maxlength="1000"
-                    class="edit-textarea"
-                  ></textarea>
-                  <span v-if="isUserAllowed" class="edit-icon" @click="startEditing('description')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                  </span>
-                </div>
-                <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
-                <div class="secondary-divider"></div>
+              <div class="card-description">
+                <p style="margin: 0;">{{ card.description }}</p>
               </div>
+              <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
+
+              
+              <div class="secondary-divider"></div>
               
               <!-- Available at shop section under secondary divider -->
               <div class="shop-section">
@@ -915,7 +853,7 @@
   }
 
   .shop-section {
-    padding: 20px 0;
+    /* padding: 20px 0; */
     text-align: center;
   }
 
