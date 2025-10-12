@@ -644,6 +644,7 @@
         preloadError,
         showTransition,
         formatShopInfo,
+        isShopAvailable,
       }
     }
   }
