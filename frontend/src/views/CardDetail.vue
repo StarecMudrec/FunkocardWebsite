@@ -1007,7 +1007,7 @@
     grid-template-columns: 1fr 1fr; /* Change from 1fr 2fr to equal columns */
     gap: 40px;
     background-color: var(--card-bg);
-    padding: 20px; /* Change from padding-left to padding all around */
+    padding-left: 40px;
     border-radius: 17px;
     border: 2px var(--hover-border-color);
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
