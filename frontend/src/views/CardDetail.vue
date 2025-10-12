@@ -825,6 +825,8 @@
         showTransition,
         formatShopInfo,
         isShopAvailable,
+        goBackToCategory,
+        previousCategoryName
       }
     }
   }
