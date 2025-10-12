@@ -271,7 +271,7 @@
       const resizeText = ({ 
         element, 
         minSize = 32, 
-        maxSize = 60, 
+        maxSize = 72, 
         step = 1,
         maxWidth = 350,
         maxHeight = 150
@@ -368,7 +368,7 @@
           const { optimalSize, needsWrap } = resizeText({
             element: element,
             minSize: 32,
-            maxSize: 60,
+            maxSize: 72,
             step: 1,
             maxWidth: 350,
             maxHeight: 150
@@ -415,7 +415,7 @@
           // Get the actual text content
           const text = element.textContent || element.innerText;
           
-          let fontSize = 60;
+          let fontSize = 72;
           let needsWrap = false;
           
           // Create a temporary clone to measure text more accurately
@@ -427,7 +427,7 @@
           
           // First, try without wrapping
           let foundFit = false;
-          for (let testSize = 60; testSize >= 32; testSize -= 2) {
+          for (let testSize = 72; testSize >= 32; testSize -= 2) {
             tempElement.style.fontSize = `${testSize}px`;
             
             // Force reflow
@@ -448,7 +448,7 @@
             tempElement.style.width = `${maxWidth}px`;
             
             // Reset to find best size with wrapping
-            for (let testSize = 60; testSize >= 32; testSize -= 2) {
+            for (let testSize = 72; testSize >= 32; testSize -= 2) {
               tempElement.style.fontSize = `${testSize}px`;
               
               // Force reflow
