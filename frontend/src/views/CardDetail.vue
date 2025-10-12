@@ -1025,6 +1025,7 @@
     /* border: 10px solid var(--bg-color); */
     background-color: #1e1e1e;
     /* cursor: pointer; */
+    height: 736px;
   }
 
   .image-placeholder {
