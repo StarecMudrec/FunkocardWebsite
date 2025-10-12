@@ -265,14 +265,97 @@
         return false;
       }
 
+      const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
+        scrollWidth > clientWidth || scrollHeight > clientHeight
+
+      const resizeText = ({ 
+        element, 
+        minSize = 24, 
+        maxSize = 60, 
+        step = 1,
+        maxWidth = 350,
+        maxHeight = 150
+      }) => {
+        // Create a temporary parent container for measurement
+        const tempParent = document.createElement('div');
+        tempParent.style.width = `${maxWidth}px`;
+        tempParent.style.height = `${maxHeight}px`;
+        tempParent.style.visibility = 'hidden';
+        tempParent.style.position = 'absolute';
+        tempParent.style.top = '0';
+        tempParent.style.left = '0';
+        tempParent.style.overflow = 'hidden';
+        
+        const tempElement = element.cloneNode(true);
+        tempElement.style.whiteSpace = 'nowrap';
+        tempElement.style.width = 'auto';
+        tempElement.style.height = 'auto';
+        tempElement.style.lineHeight = '1';
+        
+        tempParent.appendChild(tempElement);
+        document.body.appendChild(tempParent);
+        
+        // Try without wrapping first
+        let i = minSize;
+        let overflow = false;
+        let needsWrap = false;
+        
+        while (!overflow && i < maxSize) {
+          tempElement.style.fontSize = `${i}px`;
+          
+          // Force reflow
+          void tempElement.offsetWidth;
+          
+          // Check for overflow
+          overflow = isOverflown({
+            clientWidth: maxWidth,
+            clientHeight: maxHeight,
+            scrollWidth: tempElement.scrollWidth,
+            scrollHeight: tempElement.scrollHeight
+          });
+          
+          if (!overflow) i += step;
+        }
+        
+        let optimalSize = overflow ? i - step : i;
+        
+        // If text doesn't fit even at minimum size, try with text wrapping
+        if (optimalSize <= minSize && overflow) {
+          // Reset for wrapped text
+          tempElement.style.whiteSpace = 'normal';
+          tempElement.style.lineHeight = '1.1';
+          tempElement.style.width = '100%';
+          
+          i = minSize;
+          overflow = false;
+          
+          while (!overflow && i < maxSize) {
+            tempElement.style.fontSize = `${i}px`;
+            
+            // Force reflow
+            void tempElement.offsetWidth;
+            
+            // Check only vertical overflow for wrapped text
+            overflow = tempElement.scrollHeight > maxHeight;
+            
+            if (!overflow) i += step;
+          }
+          
+          optimalSize = overflow ? i - step : i;
+          needsWrap = true;
+        }
+        
+        // Clean up
+        document.body.removeChild(tempParent);
+        
+        return { optimalSize, needsWrap };
+      }
+
       const adjustFontSize = () => {
         nextTick(() => {
           if (!cardNameRef.value) return;
           
           const element = cardNameRef.value;
-          const container = element.parentElement;
-          
-          if (!container) return;
           
           // Reset styles
           element.style.fontSize = '';
@@ -282,84 +365,14 @@
           element.style.height = 'auto';
           element.classList.remove('wrapped');
           
-          const maxWidth = 350;
-          const maxHeight = 150;
-          
-          // Get the actual text content
-          const text = element.textContent || element.innerText;
-          
-          if (!text.trim()) return;
-          
-          // Create a temporary clone to measure text without affecting the DOM
-          const tempElement = element.cloneNode(true);
-          tempElement.style.visibility = 'hidden';
-          tempElement.style.position = 'absolute';
-          tempElement.style.top = '0';
-          tempElement.style.left = '0';
-          tempElement.style.whiteSpace = 'nowrap';
-          tempElement.style.width = 'auto';
-          tempElement.style.height = 'auto';
-          document.body.appendChild(tempElement);
-          
-          // Binary search for optimal font size
-          let minFontSize = 24;
-          let maxFontSize = 60;
-          let optimalSize = minFontSize;
-          let needsWrap = false;
-          
-          // First, try without wrapping
-          let foundFit = false;
-          
-          while (minFontSize <= maxFontSize) {
-            const testSize = Math.floor((minFontSize + maxFontSize) / 2);
-            tempElement.style.fontSize = `${testSize}px`;
-            
-            // Force reflow
-            void tempElement.offsetWidth;
-            
-            if (tempElement.scrollWidth <= maxWidth) {
-              // Text fits horizontally at this size
-              optimalSize = testSize;
-              minFontSize = testSize + 1; // Try larger sizes
-              foundFit = true;
-            } else {
-              // Text is too wide, try smaller sizes
-              maxFontSize = testSize - 1;
-            }
-          }
-          
-          // If no fit found without wrapping, try with wrapping
-          if (!foundFit) {
-            // Reset search range for wrapped text
-            minFontSize = 24;
-            maxFontSize = 60;
-            optimalSize = minFontSize;
-            needsWrap = true;
-            
-            tempElement.style.whiteSpace = 'normal';
-            tempElement.style.lineHeight = '1.1';
-            tempElement.style.width = `${maxWidth}px`;
-            
-            while (minFontSize <= maxFontSize) {
-              const testSize = Math.floor((minFontSize + maxFontSize) / 2);
-              tempElement.style.fontSize = `${testSize}px`;
-              
-              // Force reflow
-              void tempElement.offsetWidth;
-              
-              if (tempElement.scrollHeight <= maxHeight) {
-                // Text fits vertically at this size
-                optimalSize = testSize;
-                minFontSize = testSize + 1; // Try larger sizes
-              } else {
-                // Text is too tall, try smaller sizes
-                maxFontSize = testSize - 1;
-              }
-            }
-          }
-          
-          // Clean up temporary element
-          document.body.removeChild(tempElement);
+          const { optimalSize, needsWrap } = resizeText({
+            element: element,
+            minSize: 24,
+            maxSize: 60,
+            step: 1,
+            maxWidth: 350,
+            maxHeight: 150
+          });
           
           // Apply the calculated size to the actual element
           element.style.fontSize = `${optimalSize}px`;
@@ -375,7 +388,7 @@
             element.style.width = 'auto';
           }
           
-          console.log('Binary search result - Font size:', optimalSize, 'Wrapped:', needsWrap, 'Text:', text);
+          console.log('Configurable approach - Font size:', optimalSize, 'Wrapped:', needsWrap);
         });
       };
       const fallbackAdjustFontSize  = () => {
