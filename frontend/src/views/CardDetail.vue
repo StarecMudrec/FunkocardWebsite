@@ -1011,9 +1011,12 @@
     border-radius: 17px;
     border: 2px var(--hover-border-color);
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
-    /* Add these lines to ensure full height */
-    height: 736px;
+    /* Remove fixed height and use auto or min-height */
+    height: auto; /* Change from 736px to auto */
+    min-height: 600px; /* Set a reasonable min-height */
+    max-height: 90vh; /* Limit maximum height to viewport */
     align-items: stretch;
+    overflow: hidden; /* Prevent content from overflowing */
   }
 
   .card-image-container {
@@ -1027,7 +1030,7 @@
   .card-detail-image {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Changed from contain to cover to fill the space */
+    object-fit: contain; /* Changed from contain to cover to fill the space */
     border-top-right-radius: 17px;
     border-bottom-right-radius: 17px;
     background-color: #1e1e1e;
