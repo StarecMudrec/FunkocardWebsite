@@ -1223,17 +1223,19 @@
     }
 
     .card-content-wrapper {
+      max-width: 100%;
+      width: 100%; /* Full width on mobile */
       padding: 0 15px;
     }
     .title-container {
-      width: 100%;
+      max-width: 100%;
       overflow: hidden;
       position: relative;
       bottom: auto;
     }
 
     .card-header-section h1 {
-      font-size: 100px;
+      font-size: 36px;
       line-height: 1.1;
       margin: 0;
       padding: 0;
