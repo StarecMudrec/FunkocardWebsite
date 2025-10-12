@@ -991,14 +991,17 @@
   .card-detail-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 30px;
+    padding: 67px;
   }
 
   .card-detail {
     display: grid;
     grid-template-columns: 1fr 2fr;
     gap: 40px;
-    margin-top: 140px;
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 17px;
+    border: 2px var(--hover-border-color);
   }
 
   .card-image-container {
