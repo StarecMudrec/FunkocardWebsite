@@ -31,7 +31,7 @@
           <strong>DISCORD</strong> - <a href="https://discord.gg/your-invite-link" target="_blank" rel="noopener noreferrer">FUNKOCARD</a>
         </p> -->
         <p class="signature">
-          Website by <a href="https://t.me/StarecMudrec" target="_blank" rel="noopener noreferrer" class="signature-link">@StarecMudrec</a>
+          WEBSITE BY <a href="https://t.me/StarecMudrec" target="_blank" rel="noopener noreferrer" class="signature-link">@StarecMudrec</a>
         </p>
       </div>
     </div>
