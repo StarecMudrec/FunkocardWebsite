@@ -986,6 +986,7 @@
     background-size: cover;
     background-position: center 57%;
     z-index: -1;
+    filter: blur(10px);
   }
 
   .card-detail-container {
