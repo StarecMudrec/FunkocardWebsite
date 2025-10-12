@@ -53,7 +53,7 @@
               </h3>
               <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
               
-              <p style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">{{ card.description }}</p>
+              <p style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);" v-html="formatDescription(card.description)"></p>
               <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
 
               
@@ -161,6 +161,12 @@
         // Convert both IDs to strings for comparison
         const currentCardId = card.value.id.toString();
         return sortedCards.value.findIndex(c => c.id.toString() === currentCardId);
+      }
+      
+      const formatDescription = (description) => {
+        if (!description) return '';
+        // Make "Points:" bold
+        return description.replace(/Points:/g, '<strong>Points:</strong>');
       }
 
       const loadSortedCards = async () => {
@@ -779,6 +785,7 @@
         showTransition,
         formatShopInfo,
         isShopAvailable,
+        formatDescription,
       }
     }
   }
