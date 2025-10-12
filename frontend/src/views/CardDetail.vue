@@ -1010,7 +1010,7 @@
     backdrop-filter: blur(5px);
     padding-left: 40px;
     border-radius: 17px;
-    border: 2px solid #323232;
+    border: 2px solid #333;
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
     /* Set a fixed height for the card */
     height: 600px; /* Fixed height for consistency */
@@ -1090,7 +1090,7 @@
   .main-divider {
     height: 2px;
     width: 100%;
-    background-color: #323232;
+    background-color: #333;
     top: 20%;
     position: relative;
     bottom: -20px;
@@ -1113,7 +1113,7 @@
     width: 90%;
     transform: translateX(-50%);
     margin-left: 50%;
-    background-color: #323232;
+    background-color: #333;
     margin-top: 30px;
   }
 

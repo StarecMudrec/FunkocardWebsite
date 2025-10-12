@@ -104,7 +104,9 @@ export default {
   backdrop-filter: blur(5px);
   border-color: #2B2B2B;
   border-width: 2px;
-  border-radius: 10px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-top: 2px solid #333;
   width: 100vw;
   height: 34vh;
 }

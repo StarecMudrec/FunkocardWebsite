@@ -81,7 +81,7 @@ export default {
   padding: 30px 40px;
   background-color: var(--card-bg);
   border-radius: 20px;
-  border: 1px solid var(--border-color);
+  border: 1px solid #333;
   text-align: center;
   box-shadow: 2px 4px 5px rgba(0, 0, 0, 0.24);
   z-index: 2; /* Ensure it's above the blurred background */
@@ -94,7 +94,7 @@ h1 {
   font-size: 38px;
   border-bottom-width: 1px;
   border-bottom-style: solid;
-  border-bottom-color: #323232;
+  border-bottom-color: #333;
   padding-bottom: 12px;
 }
 
