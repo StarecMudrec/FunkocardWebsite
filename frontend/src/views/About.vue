@@ -178,7 +178,7 @@ p {
   content: '';
   position: absolute;
   width: 0;
-  height: 1px; /* 1px wide */
+  height: 2px; 
   bottom: -2px;
   left: 50%;
   background-color: #29b6f6; /* Same color as signature */
