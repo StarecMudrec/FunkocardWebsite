@@ -254,13 +254,13 @@
           const containerHeight = 150; // Fixed container height
           const maxWidth = 350; // Fixed container width
           
-          // Start with a reasonable font size
-          let fontSize = 48;
+          // Start with a larger maximum font size
+          let fontSize = 72; // Increased from 48
           let needsWrap = false;
           let bestFitSize = 24; // Minimum size
           
           // Test different font sizes to find the largest that fits horizontally
-          for (let testSize = 48; testSize >= 24; testSize -= 2) {
+          for (let testSize = 72; testSize >= 24; testSize -= 2) { // Start from 72 instead of 48
             element.style.fontSize = `${testSize}px`;
             element.style.whiteSpace = 'nowrap';
             
