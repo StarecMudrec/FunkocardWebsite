@@ -842,13 +842,6 @@
     font-size: 20px;
     text-align: center;
   }
-  .category-container p {
-    color: white;
-    font-size: 20px;
-    margin: 0;
-    word-break: break-word;
-    text-align: center;
-  }
 
   .shop-section {
     /* padding: 20px 0; */
