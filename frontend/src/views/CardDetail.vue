@@ -48,14 +48,12 @@
               </div>
               
               <!-- Rarity and Points section under main divider -->
-              <h3 style="margin: 0; margin-top: 40px;">
+              <h3 style="margin: 40px 0px 0px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: center;position: relative;font-weight: normal;">
                 <strong>Rarity: </strong>{{ card.category }}
               </h3>
               <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
               
-              <div class="card-description">
-                <p style="margin: 0;">{{ card.description }}</p>
-              </div>
+              <p style="margin: 0;">{{ card.description }}</p>
               <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
 
               
