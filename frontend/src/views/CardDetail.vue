@@ -48,12 +48,12 @@
               </div>
               
               <!-- Rarity and Points section under main divider -->
-              <h3 style="margin: 50px 0px 0px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: center;position: relative;font-weight: normal;">
+              <h3 style="margin: 50px 0px 0px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: center;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
                 <strong>Rarity: </strong>{{ card.category }}
               </h3>
               <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
               
-              <p style="margin: 0;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: center;position: relative;font-weight: normal;">{{ card.description }}</p>
+              <p style="margin: 0;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: center;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">{{ card.description }}</p>
               <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
 
               
@@ -846,6 +846,7 @@
   .shop-section {
     /* padding: 20px 0; */
     text-align: center;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
   }
 
   .shop-info h3 {
