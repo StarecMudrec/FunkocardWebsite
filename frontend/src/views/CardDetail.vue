@@ -53,7 +53,7 @@
               </h3>
               <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
               
-              <p style="margin: 0;">{{ card.description }}</p>
+              <p style="margin: 0;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: center;position: relative;font-weight: normal;">{{ card.description }}</p>
               <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
 
               
