@@ -1068,6 +1068,7 @@
     position: absolute;
     bottom: 17px;
     width: 100%;
+    text-align: center;
   }
 
   .card-header-section h1 {
