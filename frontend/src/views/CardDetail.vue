@@ -969,7 +969,7 @@
   .shop-info p {
     font-size: 20px;
     line-height: 1.6;
-    color: var(--text-color);
+    color: #888888;
     margin: 0;
     margin-bottom: 30px;
   }
