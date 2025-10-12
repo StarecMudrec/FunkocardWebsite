@@ -1004,7 +1004,7 @@
     grid-template-columns: 1fr 2fr;
     gap: 40px;
     background-color: var(--card-bg);
-    padding: 20px;
+    padding-left: 20px;
     border-radius: 17px;
     border: 2px var(--hover-border-color);
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
