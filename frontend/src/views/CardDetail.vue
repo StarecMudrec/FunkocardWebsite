@@ -269,56 +269,113 @@
         nextTick(() => {
           if (!cardNameRef.value) return;
           
-          const $element = $(cardNameRef.value);
-          const container = cardNameRef.value.parentElement;
+          const element = cardNameRef.value;
+          const container = element.parentElement;
           
           if (!container) return;
           
           // Reset styles
-          $element.css({
-            'fontSize': '',
-            'whiteSpace': 'nowrap',
-            'lineHeight': '1',
-            'width': 'auto',
-            'height': 'auto'
-          }).removeClass('wrapped');
+          element.style.fontSize = '';
+          element.style.whiteSpace = 'nowrap';
+          element.style.lineHeight = '1';
+          element.style.width = 'auto';
+          element.style.height = 'auto';
+          element.classList.remove('wrapped');
           
           const maxWidth = 350;
           const maxHeight = 150;
           
-          // Use jQuery textfill plugin
-          $element.textfill({
-            maxFontPixels: 60,
-            minFontPixels: 24,
-            widthOnly: false,
-            explicitWidth: maxWidth,
-            explicitHeight: maxHeight,
-            success: function() {
-              // Check if text needed wrapping
-              const element = $element[0];
-              const needsWrap = element.scrollHeight > maxHeight * 0.8; // heuristic
-              
-              if (needsWrap) {
-                $element.addClass('wrapped')
-                  .css({
-                    'whiteSpace': 'normal',
-                    'lineHeight': '1.1',
-                    'width': '100%'
-                  });
-              }
-              
-              console.log('Textfill completed', 
-                'Font size:', $element.css('font-size'),
-                'Wrapped:', needsWrap,
-                'Text:', element.textContent
-              );
-            },
-            fail: function() {
-              console.log('Textfill failed to find optimal size');
-              // Fallback to our algorithm
-              fallbackAdjustFontSize();
+          // Get the actual text content
+          const text = element.textContent || element.innerText;
+          
+          if (!text.trim()) return;
+          
+          // Create a temporary clone to measure text without affecting the DOM
+          const tempElement = element.cloneNode(true);
+          tempElement.style.visibility = 'hidden';
+          tempElement.style.position = 'absolute';
+          tempElement.style.top = '0';
+          tempElement.style.left = '0';
+          tempElement.style.whiteSpace = 'nowrap';
+          tempElement.style.width = 'auto';
+          tempElement.style.height = 'auto';
+          document.body.appendChild(tempElement);
+          
+          // Binary search for optimal font size
+          let minFontSize = 24;
+          let maxFontSize = 60;
+          let optimalSize = minFontSize;
+          let needsWrap = false;
+          
+          // First, try without wrapping
+          let foundFit = false;
+          
+          while (minFontSize <= maxFontSize) {
+            const testSize = Math.floor((minFontSize + maxFontSize) / 2);
+            tempElement.style.fontSize = `${testSize}px`;
+            
+            // Force reflow
+            void tempElement.offsetWidth;
+            
+            if (tempElement.scrollWidth <= maxWidth) {
+              // Text fits horizontally at this size
+              optimalSize = testSize;
+              minFontSize = testSize + 1; // Try larger sizes
+              foundFit = true;
+            } else {
+              // Text is too wide, try smaller sizes
+              maxFontSize = testSize - 1;
             }
-          });
+          }
+          
+          // If no fit found without wrapping, try with wrapping
+          if (!foundFit) {
+            // Reset search range for wrapped text
+            minFontSize = 24;
+            maxFontSize = 60;
+            optimalSize = minFontSize;
+            needsWrap = true;
+            
+            tempElement.style.whiteSpace = 'normal';
+            tempElement.style.lineHeight = '1.1';
+            tempElement.style.width = `${maxWidth}px`;
+            
+            while (minFontSize <= maxFontSize) {
+              const testSize = Math.floor((minFontSize + maxFontSize) / 2);
+              tempElement.style.fontSize = `${testSize}px`;
+              
+              // Force reflow
+              void tempElement.offsetWidth;
+              
+              if (tempElement.scrollHeight <= maxHeight) {
+                // Text fits vertically at this size
+                optimalSize = testSize;
+                minFontSize = testSize + 1; // Try larger sizes
+              } else {
+                // Text is too tall, try smaller sizes
+                maxFontSize = testSize - 1;
+              }
+            }
+          }
+          
+          // Clean up temporary element
+          document.body.removeChild(tempElement);
+          
+          // Apply the calculated size to the actual element
+          element.style.fontSize = `${optimalSize}px`;
+          
+          if (needsWrap) {
+            element.classList.add('wrapped');
+            element.style.whiteSpace = 'normal';
+            element.style.lineHeight = '1.1';
+            element.style.width = '100%';
+          } else {
+            element.style.whiteSpace = 'nowrap';
+            element.style.lineHeight = '1';
+            element.style.width = 'auto';
+          }
+          
+          console.log('Binary search result - Font size:', optimalSize, 'Wrapped:', needsWrap, 'Text:', text);
         });
       };
       const fallbackAdjustFontSize  = () => {
