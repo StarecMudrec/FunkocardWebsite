@@ -1004,6 +1004,7 @@
     padding: 20px;
     border-radius: 17px;
     border: 2px var(--hover-border-color);
+    box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
   }
 
   .card-image-container {
