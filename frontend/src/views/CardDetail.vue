@@ -35,19 +35,6 @@
       <transition :name="showTransition ? transitionName : ''">
         <div :key="card.id" class="card-detail-container">
           <div class="card-detail">
-            <div class="card-image-container">
-              <img 
-                v-if="card.img && !imageError" 
-                :src="`/api/card_image/${card.img}`" 
-                :alt="card.name" 
-                class="card-detail-image"
-                @error="imageError = true"
-                @dblclick="handleImageDoubleClick"
-              />
-              <!-- <button v-if="isUserAllowed" class="replace-image-button">Replace Image</button> -->
-              <div v-else class="image-placeholder">No image available</div>
-            </div>
-            
             <div class="card-content-wrapper">
               <!-- Название карточки и главная разделительная линия -->
               <div class="card-header-section">
@@ -130,6 +117,19 @@
                   </div>
                 </div>
               </div>
+            </div>
+            
+            <div class="card-image-container">
+              <img 
+                v-if="card.img && !imageError" 
+                :src="`/api/card_image/${card.img}`" 
+                :alt="card.name" 
+                class="card-detail-image"
+                @error="imageError = true"
+                @dblclick="handleImageDoubleClick"
+              />
+              <!-- <button v-if="isUserAllowed" class="replace-image-button">Replace Image</button> -->
+              <div v-else class="image-placeholder">No image available</div>
             </div>
           </div>
         </div>
