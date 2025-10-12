@@ -1009,7 +1009,7 @@
     background-color: var(--card-bg);
     padding-left: 40px;
     border-radius: 17px;
-    border: 2px var(--hover-border-color);
+    border: 2px solid #2C2C2C;
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
     /* Set a fixed height for the card */
     height: 600px; /* Fixed height for consistency */
