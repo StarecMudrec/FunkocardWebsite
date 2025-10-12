@@ -240,7 +240,7 @@
         
         // If shop data is a simple string, return it as is
         if (typeof shopData === 'string') {
-          return shopData;
+          return "Availible";
         }
         
         // If shop data is an object or needs formatting, handle it here
