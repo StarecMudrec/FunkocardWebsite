@@ -3,6 +3,20 @@
     <!-- Background container -->
     <div class="background-container"></div>
     
+    <!-- Scroll to top button -->
+    <transition name="fade">
+      <button 
+        v-if="showScrollTop" 
+        @click="scrollToTop" 
+        class="scroll-top-button"
+        aria-label="Scroll to top"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m18 15-6-6-6 6"/>
+        </svg>
+      </button>
+    </transition>
+
     <div class="page-header">
       <!-- Centered category title and info -->
       <div class="category-header-content">
@@ -183,7 +197,9 @@ export default {
         'Plain😼': 8,
         'Force🤷‍♂️': 9,
         'Scarface - Tony Montana': 10
-      }
+      },
+      showScrollTop: false,
+      scrollThreshold: 300
     }
   },
   computed: {
@@ -196,6 +212,13 @@ export default {
     // Use the external debounce function
     this.debouncedSearch = debounce(this.performSearch, 300)
     await this.loadCategoryCards()
+    
+    // Add scroll event listener
+    window.addEventListener('scroll', this.handleScroll)
+  },
+  beforeUnmount() {
+    // Remove scroll event listener when component is destroyed
+    window.removeEventListener('scroll', this.handleScroll)
   },
   watch: {
     categoryId: {
@@ -223,6 +246,18 @@ export default {
       }
     },
     
+    handleScroll() {
+      // Show the button when user has scrolled past the threshold
+      this.showScrollTop = window.scrollY > this.scrollThreshold
+    },
+    
+    scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      })
+    },
+
     getCategoryName(categoryId) {
       // Extract category name from categoryId
       if (categoryId === 'all') return 'All Cards'
@@ -327,6 +362,71 @@ export default {
 </script>
 
 <style scoped>
+/* Scroll to top button styles */
+.scroll-top-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 50px;
+  height: 50px;
+  background: var(--accent-color);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.scroll-top-button:hover {
+  background: var(--accent-color-dark);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.scroll-top-button:active {
+  transform: translateY(-1px);
+}
+
+/* Fade transition for the button */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .scroll-top-button {
+    bottom: 20px;
+    right: 20px;
+    width: 45px;
+    height: 45px;
+  }
+}
+
+@media (max-width: 480px) {
+  .scroll-top-button {
+    bottom: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .scroll-top-button svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
 /* Your existing styles remain the same */
 .category-cards-page {
   min-height: 100vh;
