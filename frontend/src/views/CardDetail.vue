@@ -1018,7 +1018,7 @@
   .card-detail-image {
     width: 100%;
     height: 571px;
-    object-fit: fill;
+    object-fit: contain; /* Changed from 'fill' to 'contain' */
     border-radius: 17px;
     border: 10px solid var(--bg-color);
     background-color: #1e1e1e;
@@ -1027,7 +1027,7 @@
 
   .image-placeholder {
     width: 100%;
-    height: 400px;
+    height: 571px; /* Match the image height */
     display: flex;
     align-items: center;
     justify-content: center;
