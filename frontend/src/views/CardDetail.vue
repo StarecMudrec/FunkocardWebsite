@@ -1004,57 +1004,55 @@
 
   .card-detail {
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 1fr 1fr; /* Change from 1fr 2fr to equal columns */
     gap: 40px;
     background-color: var(--card-bg);
-    padding-left: 20px;
+    padding: 20px; /* Change from padding-left to padding all around */
     border-radius: 17px;
     border: 2px var(--hover-border-color);
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
-    /* Remove fixed height and use auto or min-height */
-    height: auto; /* Change from 736px to auto */
-    min-height: 600px; /* Set a reasonable min-height */
-    max-height: 90vh; /* Limit maximum height to viewport */
+    /* Set a fixed height for the card */
+    height: 600px; /* Fixed height for consistency */
+    max-width: 1200px; /* Limit maximum width */
+    width: 100%;
     align-items: stretch;
-    overflow: hidden; /* Prevent content from overflowing */
+    overflow: hidden;
   }
 
   .card-image-container {
     position: relative;
-    /* Add these lines to fill container height */
     height: 100%;
     display: flex;
-    align-items: stretch;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
 
   .card-detail-image {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* Changed from contain to cover to fill the space */
-    border-top-right-radius: 17px;
-    border-bottom-right-radius: 17px;
+    max-height: 100%; /* Limit height to container */
+    max-width: 100%; /* Limit width to container */
+    width: auto; /* Let width adjust based on aspect ratio */
+    height: auto; /* Let height adjust based on aspect ratio */
+    object-fit: contain; /* Ensure entire image is visible */
+    /* border-radius: 17px; */
     background-color: #1e1e1e;
-    /* Remove fixed height and let it fill container */
-    /* height: 736px; REMOVE THIS LINE */
   }
 
   .image-placeholder {
     width: 100%;
-    height: 100%; /* Changed from fixed height to 100% */
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: #1e1e1e;
     color: #666;
-    border-top-right-radius: 17px;
-    border-bottom-right-radius: 17px;
-    /* Remove border to eliminate gaps */
-    /* border: 10px solid var(--bg-color); REMOVE THIS LINE */
+    border-radius: 17px;
   }
 
   .card-content-wrapper {
     display: flex;
     flex-direction: column;
+    height: 100%; /* Make content wrapper take full height */
   }
 
   .card-header-section {
