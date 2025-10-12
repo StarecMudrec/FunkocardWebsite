@@ -41,7 +41,7 @@ export default {
   color: var(--accent-color);
   text-decoration: none;
   font-weight: 500;
-  font-size: 25px; /* Increased font size */
+  font-size: 30px; /* Increased font size */
   font-family: 'Afacad', sans-serif;
   letter-spacing: 1px; /* Slightly increased letter spacing for better readability with outline */
   position: relative;

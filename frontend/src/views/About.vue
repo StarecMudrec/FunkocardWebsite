@@ -121,7 +121,7 @@ h1 {
   justify-content: center;
   gap: 140px;
   margin-top: 26px;
-  margin-bottom: 27px;
+  margin-bottom: 10px;
 }
 
 .column {
@@ -156,16 +156,16 @@ p {
 }
 
 .signature {
-  color: #494949;
-  font-style: italic;
+  color: #ffffff;
   text-shadow: none;
-  justify-content: flex-end;
+  font-weight: bold;
+  justify-content: center;
   margin-right: 3vw;
-  font-size: 17px;
+  font-size: 1.4rem;
 }
 
 .signature-link {
-  color: #494949 !important;
+  color: #4fc3f7 !important;
   text-decoration: none;
   position: relative;
   transition: all 0.3s ease;
@@ -186,7 +186,7 @@ p {
 }
 
 .signature-link:hover {
-  color: #494949 !important;
+  color: #4fc3f7 !important;
   transform: scale(1.05);
 }
 
