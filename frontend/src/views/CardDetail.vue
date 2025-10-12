@@ -1020,6 +1020,8 @@
     height: 100%;
     object-fit: contain;
     /* border-radius: 17px; */
+    border-top-right-radius: 17px;
+    border-bottom-right-radius: 17px;
     /* border: 10px solid var(--bg-color); */
     background-color: #1e1e1e;
     /* cursor: pointer; */
