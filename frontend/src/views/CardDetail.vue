@@ -1022,7 +1022,7 @@
     /* border-radius: 17px; */
     /* border: 10px solid var(--bg-color); */
     background-color: #1e1e1e;
-    /* cursor: pointer;
+    /* cursor: pointer; */
   }
 
   .image-placeholder {
