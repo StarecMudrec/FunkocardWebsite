@@ -1089,7 +1089,7 @@
   .main-divider {
     height: 2px;
     width: 100%;
-    background-color: var(--card-border-color);
+    background-color: #2C2C2C;
     top: 20%;
     position: relative;
     bottom: -20px;
@@ -1108,9 +1108,11 @@
   }
 
   .secondary-divider {
-    height: 1px;
-    width: 100%;
-    background-color: var(--card-border-color);
+    height: 2px;
+    width: 90%;
+    transform: translateX(-50%);
+    margin-left: 50%;
+    background-color: #2C2C2C;
     margin-top: 30px;
   }
 
