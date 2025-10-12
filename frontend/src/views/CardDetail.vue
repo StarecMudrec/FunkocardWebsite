@@ -1016,11 +1016,13 @@
   .card-content-wrapper {
     display: flex;
     flex-direction: column;
-    height: 100%; /* Make content wrapper take full height */
+    height: 100%;
+    max-width: 350px;
+    justify-content: center;
   }
 
   .card-header-section {
-    margin-top: 64px;
+    /* margin-top: 64px; */
     position: relative;
     min-height: 150px;
     display: flex;
