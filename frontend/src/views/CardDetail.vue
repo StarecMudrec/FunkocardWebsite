@@ -589,6 +589,8 @@
           // Component finished loading, adjust font size with delays
           setTimeout(adjustFontSize, 100);
           setTimeout(adjustFontSize, 500);
+          setTimeout(adjustFontSize, 1000);
+          setTimeout(adjustFontSize, 1500);
         }
       });
 
