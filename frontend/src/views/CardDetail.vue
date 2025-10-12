@@ -287,16 +287,11 @@
           // Get the actual text content
           const text = element.textContent || element.innerText;
           
-          // Check if text contains parentheses or special characters that might affect wrapping
-          const hasSpecialChars = /[()\-&]/.test(text);
-          const isLongText = text.length > 15;
-          
-          // Start with a more conservative maximum font size
-          let fontSize = 60; // Reduced from 72 to be more conservative
+          let fontSize = 60; // Start with maximum size
           let needsWrap = false;
-          let bestFitSize = 24; // Minimum size
           
-          // First pass: check without wrapping
+          // First, try without wrapping
+          let foundFit = false;
           for (let testSize = 60; testSize >= 24; testSize -= 2) {
             element.style.fontSize = `${testSize}px`;
             element.style.whiteSpace = 'nowrap';
@@ -305,21 +300,20 @@
             void element.offsetWidth;
             
             if (element.scrollWidth <= maxWidth && element.scrollHeight <= containerHeight) {
-              bestFitSize = testSize;
+              fontSize = testSize;
+              foundFit = true;
               break;
             }
           }
           
-          // Second pass: if no good fit without wrapping, try with wrapping
-          if (bestFitSize <= 30 || (hasSpecialChars && isLongText)) {
+          // If no fit found without wrapping, try with wrapping
+          if (!foundFit) {
             needsWrap = true;
             element.style.whiteSpace = 'normal';
             element.style.lineHeight = '1.1';
             element.style.width = '100%';
             
-            // Reset best fit size for wrapped text
-            bestFitSize = 60;
-            
+            // Reset to find best size with wrapping
             for (let testSize = 60; testSize >= 24; testSize -= 2) {
               element.style.fontSize = `${testSize}px`;
               
@@ -327,29 +321,28 @@
               void element.offsetWidth;
               
               if (element.scrollHeight <= containerHeight && element.scrollWidth <= maxWidth) {
-                bestFitSize = testSize;
+                fontSize = testSize;
+                foundFit = true;
                 break;
               }
-              
-              // If we reach minimum size and it still doesn't fit, use the best we can
-              if (testSize === 24) {
-                bestFitSize = 24;
-                // Ensure it doesn't exceed container height by reducing line height if needed
-                if (element.scrollHeight > containerHeight) {
-                  element.style.lineHeight = '1';
-                }
-              }
+            }
+            
+            // If still no fit, use minimum size and adjust line height
+            if (!foundFit) {
+              fontSize = 24;
+              element.style.lineHeight = '1';
             }
           }
           
-          fontSize = bestFitSize;
           element.style.fontSize = `${fontSize}px`;
           
           if (needsWrap) {
             element.classList.add('wrapped');
           }
           
-          console.log('Final font size:', fontSize, 'Wrapped:', needsWrap, 'Text:', text);
+          console.log('Final font size:', fontSize, 'Wrapped:', needsWrap, 'Text:', text, 
+                      'ScrollWidth:', element.scrollWidth, 'MaxWidth:', maxWidth,
+                      'ScrollHeight:', element.scrollHeight, 'ContainerHeight:', containerHeight);
         });
       };
 
