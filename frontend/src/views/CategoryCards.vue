@@ -66,8 +66,8 @@
                 <div class="sort-option" @click="sortBy('id', 'desc')">New first</div>
                 <div class="sort-option" @click="sortBy('amount', 'asc')">Points (Low to High)</div>
                 <div class="sort-option" @click="sortBy('amount', 'desc')">Points (High to Low)</div>
-                <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'asc')">Rarity (Force🤷‍♂️ to Vinyl Figure💫)</div>
-                <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'desc')">Rarity (Vinyl Figure💫 to Force🤷‍♂️)</div>
+                <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'asc')">Rarity (Vinyl Figure💫 to Force🤷‍♂️)</div>
+                <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'desc')">Rarity (Force🤷‍♂️ to Vinyl Figure💫)</div>
                 <div class="sort-option" @click="sortBy('name', 'asc')">Name (A-Z)</div>
                 <div class="sort-option" @click="sortBy('name', 'desc')">Name (Z-A)</div>
               </div>
