@@ -1192,7 +1192,10 @@
 
   .card-header-section h1.wrapped {
     white-space: normal;
-    line-height: 1.2;
+    line-height: 1.1;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
 
   .main-divider {
@@ -1336,9 +1339,9 @@
       transition: all 0.3s ease;
       word-break: break-word;
     }
-    .card-header-section h1.force-wrap {
-      white-space: normal;
-      line-height: 1.3;
+    .card-header-section h1.wrapped {
+      line-height: 1.2;
+      word-break: break-word;
     }
 
     .main-divider {
