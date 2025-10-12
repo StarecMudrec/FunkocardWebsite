@@ -170,6 +170,7 @@ p {
   position: relative;
   transition: all 0.3s ease;
   display: inline-block;
+  font-weight: normal;
 }
 
 /* Custom underline for signature link */
@@ -180,13 +181,13 @@ p {
   height: 1px; /* 1px wide */
   bottom: -2px;
   left: 50%;
-  background-color: #494949; /* Same color as signature */
+  background-color: #29b6f6; /* Same color as signature */
   transition: all 0.3s ease;
   transform: translateX(-50%);
 }
 
 .signature-link:hover {
-  color: #4fc3f7 !important;
+  color: #29b6f6 !important;
   transform: scale(1.05);
 }
 
