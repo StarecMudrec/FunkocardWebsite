@@ -48,7 +48,7 @@
               </div>
               
               <!-- Rarity and Points section under main divider -->
-              <h3 style="margin: 40px 0px 0px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: center;position: relative;font-weight: normal;">
+              <h3 style="margin: 50px 0px 0px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: center;position: relative;font-weight: normal;">
                 <strong>Rarity: </strong>{{ card.category }}
               </h3>
               <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
@@ -1073,7 +1073,7 @@
     transform: translateX(-50%);
     margin-left: 50%;
     background-color: #333;
-    margin-top: 30px;
+    margin-top: 20px;
   }
 
   .card-info-section {
