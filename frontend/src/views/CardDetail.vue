@@ -851,14 +851,16 @@
 
   .shop-info h3 {
     font-size: 25px;
-    margin-bottom: 10px;
     color: var(--accent-color);
+    margin: 0;
+    margin-top: 17px;
   }
 
   .shop-info p {
     font-size: 20px;
     line-height: 1.6;
     color: var(--text-color);
+    margin: 0;
   }
 
 
