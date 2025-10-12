@@ -280,69 +280,58 @@
           element.style.width = 'auto';
           element.style.height = 'auto';
           
-          const containerWidth = container.clientWidth;
-          const containerHeight = 150;
           const maxWidth = 350;
-          
-          // Get the actual text content
+          const maxHeight = 150;
           const text = element.textContent || element.innerText;
           
-          let fontSize = 60;
+          // jQuery textfill-like algorithm
+          let minFontSize = 24;
+          let maxFontSize = 60;
+          let fontSize = maxFontSize;
           let needsWrap = false;
           
-          // Create a temporary clone to measure text more accurately
-          const tempElement = element.cloneNode(true);
-          tempElement.style.visibility = 'hidden';
-          tempElement.style.position = 'absolute';
-          tempElement.style.whiteSpace = 'nowrap';
-          document.body.appendChild(tempElement);
-          
-          // First, try without wrapping
-          let foundFit = false;
-          for (let testSize = 60; testSize >= 24; testSize -= 2) {
-            tempElement.style.fontSize = `${testSize}px`;
+          // Binary search for optimal font size
+          while (minFontSize <= maxFontSize) {
+            const currentSize = Math.floor((minFontSize + maxFontSize) / 2);
             
-            // Force reflow
-            void tempElement.offsetWidth;
+            // Test without wrapping first
+            element.style.fontSize = `${currentSize}px`;
+            element.style.whiteSpace = 'nowrap';
+            element.style.lineHeight = '1';
+            element.style.width = 'auto';
             
-            if (tempElement.scrollWidth <= maxWidth) {
-              fontSize = testSize;
-              foundFit = true;
-              break;
-            }
-          }
-          
-          // If no fit found without wrapping, try with wrapping
-          if (!foundFit) {
-            needsWrap = true;
-            tempElement.style.whiteSpace = 'normal';
-            tempElement.style.lineHeight = '1.1';
-            tempElement.style.width = `${maxWidth}px`;
+            void element.offsetWidth; // Force reflow
             
-            // Reset to find best size with wrapping
-            for (let testSize = 60; testSize >= 24; testSize -= 2) {
-              tempElement.style.fontSize = `${testSize}px`;
+            const fitsWithoutWrap = element.scrollWidth <= maxWidth && element.scrollHeight <= maxHeight;
+            
+            if (fitsWithoutWrap) {
+              // This size fits without wrapping, try larger
+              fontSize = currentSize;
+              needsWrap = false;
+              minFontSize = currentSize + 1;
+            } else {
+              // Doesn't fit without wrapping, try with wrapping
+              element.style.whiteSpace = 'normal';
+              element.style.lineHeight = '1.1';
+              element.style.width = '100%';
               
-              // Force reflow
-              void tempElement.offsetWidth;
+              void element.offsetWidth; // Force reflow
               
-              if (tempElement.scrollHeight <= containerHeight) {
-                fontSize = testSize;
-                foundFit = true;
-                break;
+              const fitsWithWrap = element.scrollHeight <= maxHeight && element.scrollWidth <= maxWidth;
+              
+              if (fitsWithWrap) {
+                // This size fits with wrapping
+                fontSize = currentSize;
+                needsWrap = true;
+                minFontSize = currentSize + 1;
+              } else {
+                // Doesn't fit even with wrapping, try smaller
+                maxFontSize = currentSize - 1;
               }
             }
-            
-            // If still no fit, use minimum size
-            if (!foundFit) {
-              fontSize = 24;
-            }
           }
           
-          // Clean up temporary element
-          document.body.removeChild(tempElement);
-          
-          // Apply the calculated size to the actual element
+          // Apply final styles
           element.style.fontSize = `${fontSize}px`;
           
           if (needsWrap) {
