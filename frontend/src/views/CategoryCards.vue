@@ -369,7 +369,7 @@ export default {
   right: 30px;
   width: 50px;
   height: 50px;
-  background: var(--accent-color);
+  background: var(--card-bg);
   border: none;
   border-radius: 50%;
   color: white;
@@ -380,6 +380,11 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   z-index: 1000;
+}
+
+.scroll-top-button svg {
+  width: 48px; /* Increased from 24px */
+  height: 48px; /* Increased from 24px */
 }
 
 .scroll-top-button:hover {
