@@ -862,6 +862,7 @@
     line-height: 1.6;
     color: var(--text-color);
     margin: 0;
+    margin-bottom: 30px;
   }
 
 
