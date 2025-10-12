@@ -38,7 +38,7 @@
             <div class="card-image-container">
               <img 
                 v-if="card.img && !imageError" 
-                :src="`/card_imgs/${card.img}`" 
+                :src="`/api/card_image/${card.img}`" 
                 :alt="card.name" 
                 class="card-detail-image"
                 @error="imageError = true"
@@ -623,6 +623,9 @@
     height: 100vh;
     width: 100vw;
     font-family: 'Afacad', sans-serif;
+    display: flex; /* Add this */
+    align-items: center; /* Add this for vertical centering */
+    justify-content: center; /* Add this for horizontal centering */
   }
 
   /* Transition styles */
