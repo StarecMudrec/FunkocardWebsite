@@ -569,6 +569,15 @@
         }
       });
 
+      // Add this to your existing watchers
+      watch(() => loading.value, (newLoading) => {
+        if (!newLoading) {
+          // Component finished loading, adjust font size with delays
+          setTimeout(adjustFontSize, 100);
+          setTimeout(adjustFontSize, 500);
+        }
+      });
+
       return {
         card,
         editableCard,
