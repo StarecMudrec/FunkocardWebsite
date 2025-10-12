@@ -107,8 +107,8 @@
   import { fetchCardInfo, checkUserPermission, fetchUserInfo, fetchCardsByCategory } from '@/api'
   import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
   import { useRouter } from 'vue-router'
-  import $ from 'jquery';
-  import 'jquery-textfill';
+  // import $ from 'jquery';
+  // import 'jquery-textfill';
 
   export default {
     props: {
