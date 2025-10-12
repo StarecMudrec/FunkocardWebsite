@@ -248,31 +248,69 @@
           element.style.whiteSpace = 'nowrap';
           element.style.lineHeight = '1';
           element.style.width = 'auto';
+          element.style.height = 'auto';
           
           const containerWidth = container.clientWidth;
+          const containerHeight = 150; // Fixed container height
           const maxWidth = 350; // Fixed container width
           
           // Start with a reasonable font size
-          let fontSize = 48; // Start smaller for the fixed container
+          let fontSize = 48;
           let needsWrap = false;
+          let bestFitSize = 24; // Minimum size
           
-          // Test different font sizes
+          // Test different font sizes to find the largest that fits horizontally
           for (let testSize = 48; testSize >= 24; testSize -= 2) {
             element.style.fontSize = `${testSize}px`;
+            element.style.whiteSpace = 'nowrap';
             
             // Force reflow
             void element.offsetWidth;
             
             if (element.scrollWidth <= maxWidth) {
-              fontSize = testSize;
+              bestFitSize = testSize;
               break;
             }
+          }
+          
+          // Now check if we need to wrap and consider vertical space
+          fontSize = bestFitSize;
+          element.style.fontSize = `${fontSize}px`;
+          element.style.whiteSpace = 'nowrap';
+          
+          // Force reflow
+          void element.offsetWidth;
+          
+          // If it fits horizontally without wrapping, use that size
+          if (element.scrollWidth <= maxWidth && element.scrollHeight <= containerHeight) {
+            // Perfect fit without wrapping
+          } else {
+            // Try with wrapping to see if we can use a larger font size
+            needsWrap = true;
+            element.style.whiteSpace = 'normal';
+            element.style.lineHeight = '1.1';
+            element.style.width = '100%';
             
-            // If we reach the minimum size and it still doesn't fit, enable wrapping
-            if (testSize === 24 && element.scrollWidth > maxWidth) {
-              fontSize = 24;
-              needsWrap = true;
-              break;
+            // Test larger font sizes with wrapping
+            for (let testSize = bestFitSize + 10; testSize >= 24; testSize -= 2) {
+              element.style.fontSize = `${testSize}px`;
+              
+              // Force reflow
+              void element.offsetWidth;
+              
+              if (element.scrollHeight <= containerHeight && element.scrollWidth <= maxWidth) {
+                fontSize = testSize;
+                break;
+              }
+              
+              // If we reach minimum size and it still doesn't fit, use the best we can
+              if (testSize === 24) {
+                fontSize = 24;
+                // Ensure it doesn't exceed container height by reducing line height if needed
+                if (element.scrollHeight > containerHeight) {
+                  element.style.lineHeight = '1';
+                }
+              }
             }
           }
           
@@ -280,22 +318,9 @@
           
           if (needsWrap) {
             element.classList.add('wrapped');
-            element.style.whiteSpace = 'normal';
-            element.style.lineHeight = '1.1';
-            element.style.width = '100%';
-            
-            // Further reduce font size if wrapped text is still too tall
-            const lineHeight = parseInt(getComputedStyle(element).lineHeight);
-            const maxLines = 3; // Maximum number of lines allowed
-            const maxHeight = lineHeight * maxLines;
-            
-            if (element.scrollHeight > maxHeight) {
-              // Reduce font size to fit within max lines
-              const heightRatio = maxHeight / element.scrollHeight;
-              const adjustedSize = Math.max(18, Math.floor(fontSize * heightRatio * 0.9));
-              element.style.fontSize = `${adjustedSize}px`;
-            }
           }
+          
+          console.log('Final font size:', fontSize, 'Wrapped:', needsWrap);
         });
       };
 
