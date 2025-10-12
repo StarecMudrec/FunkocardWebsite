@@ -1004,15 +1004,16 @@
 
   .card-detail {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0; /* Change from 40px to 0 to remove gap between sections */
+    grid-template-columns: 1fr 1fr; /* Change from 1fr 2fr to equal columns */
+    gap: 40px;
     background-color: var(--card-bg);
     padding-left: 40px;
     border-radius: 17px;
-    border: 2px solid var(--hover-border-color);
+    border: 2px var(--hover-border-color);
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
-    height: 600px;
-    max-width: 1200px;
+    /* Set a fixed height for the card */
+    height: 600px; /* Fixed height for consistency */
+    max-width: 1200px; /* Limit maximum width */
     width: 100%;
     align-items: stretch;
     overflow: hidden;
@@ -1025,8 +1026,6 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    /* Remove any border from image container */
-    border: none;
   }
 
   .card-detail-image {
@@ -1053,9 +1052,7 @@
   .card-content-wrapper {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    /* Add border to the right to separate from image */
-    border-right: 2px solid var(--hover-border-color);
+    height: 100%; /* Make content wrapper take full height */
   }
 
   .card-header-section {
