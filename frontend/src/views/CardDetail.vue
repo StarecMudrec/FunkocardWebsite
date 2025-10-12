@@ -240,13 +240,19 @@
           const element = cardNameRef.value;
           const container = element.parentElement;
           
+          if (!container) return;
+          
           element.style.fontSize = '';
+          element.classList.remove('wrapped');
           element.style.whiteSpace = 'nowrap';
+          element.style.lineHeight = '1';
           
           const containerWidth = container.clientWidth;
           let fontSize = 100;
           
           element.style.fontSize = `${fontSize}px`;
+          
+          // Force reflow
           void element.offsetWidth;
           
           if (element.scrollWidth > containerWidth) {
@@ -260,9 +266,9 @@
             );
             element.style.fontSize = `${fontSize}px`;
             
+            // Check if we still need to wrap
             if (element.scrollWidth > containerWidth * 1.05) {
-              element.style.whiteSpace = 'normal';
-              element.style.lineHeight = '1.2';
+              element.classList.add('wrapped');
             }
           }
         });
@@ -410,46 +416,44 @@
 
       const goToPreviousCard = () => {
         if (isFirstCard.value || currentCardIndex.value === -1) return;
-        showTransition.value = true; // Set flag before navigation
+        showTransition.value = true;
         transitionName.value = 'slide-right';
         const prevCard = sortedCards.value[currentCardIndex.value - 1];
         
         if (prevCard && preloadedCards.value[prevCard.id]) {
-          // Use preloaded data if available
           card.value = preloadedCards.value[prevCard.id];
           editableCard.value = { ...card.value };
           currentCardIndex.value = currentCardIndex.value - 1;
           
-          // Update URL without triggering a full reload
           router.replace(`/card/${prevCard.id}`);
           
-          // Preload new adjacent cards
+          // Add this line
+          setTimeout(adjustFontSize, 300);
+          
           preloadAdjacentCards();
         } else if (prevCard) {
-          // Fallback to regular navigation if not preloaded
           router.push(`/card/${prevCard.id}`);
         }
       }
 
       const goToNextCard = () => {
         if (isLastCard.value || currentCardIndex.value === -1) return;
-        showTransition.value = true; // Set flag before navigation
+        showTransition.value = true;
         transitionName.value = 'slide-left';
         const nextCard = sortedCards.value[currentCardIndex.value + 1];
         
         if (nextCard && preloadedCards.value[nextCard.id]) {
-          // Use preloaded data if available
           card.value = preloadedCards.value[nextCard.id];
           editableCard.value = { ...card.value };
           currentCardIndex.value = currentCardIndex.value + 1;
           
-          // Update URL without triggering a full reload
           router.replace(`/card/${nextCard.id}`);
           
-          // Preload new adjacent cards
+          // Add this line
+          setTimeout(adjustFontSize, 300);
+          
           preloadAdjacentCards();
         } else if (nextCard) {
-          // Fallback to regular navigation if not preloaded
           router.push(`/card/${nextCard.id}`);
         }
       }
@@ -498,6 +502,20 @@
           categoryError.value = 'Category cannot exceed 20 characters.';
         } else {
           categoryError.value = null;
+        }
+      });
+
+      // Add this to your existing watchers
+      watch(() => card.value.name, (newName, oldName) => {
+        if (newName !== oldName) {
+          setTimeout(adjustFontSize, 100);
+        }
+      });
+
+      watch(showTransition, (newVal) => {
+        if (!newVal) {
+          // Transition ended, adjust font size
+          setTimeout(adjustFontSize, 50);
         }
       });
 
@@ -1048,9 +1066,14 @@
     display: inline-block;
     vertical-align: bottom;
     transform-origin: left bottom;
-    transition: font-size 0.2s ease;
-    transition: color 0.3s ease, box-shadow 0.3s ease;
+    transition: font-size 0.3s ease, line-height 0.3s ease, white-space 0.3s ease;
     text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+    word-break: break-word; /* Add this for better text wrapping */
+  }
+
+  .card-header-section h1.wrapped {
+    white-space: normal;
+    line-height: 1.2;
   }
 
   .main-divider {
