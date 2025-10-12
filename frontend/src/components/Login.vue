@@ -94,7 +94,7 @@ h1 {
   font-size: 38px;
   border-bottom-width: 1px;
   border-bottom-style: solid;
-  border-bottom-color: #2C2C2C;
+  border-bottom-color: #323232;
   padding-bottom: 12px;
 }
 

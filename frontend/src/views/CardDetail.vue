@@ -1007,9 +1007,10 @@
     grid-template-columns: 1fr 1fr; /* Change from 1fr 2fr to equal columns */
     gap: 40px;
     background-color: var(--card-bg);
+    backdrop-filter: blur(5px);
     padding-left: 40px;
     border-radius: 17px;
-    border: 2px solid #2C2C2C;
+    border: 2px solid #323232;
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
     /* Set a fixed height for the card */
     height: 600px; /* Fixed height for consistency */
@@ -1089,7 +1090,7 @@
   .main-divider {
     height: 2px;
     width: 100%;
-    background-color: #2C2C2C;
+    background-color: #323232;
     top: 20%;
     position: relative;
     bottom: -20px;
@@ -1112,7 +1113,7 @@
     width: 90%;
     transform: translateX(-50%);
     margin-left: 50%;
-    background-color: #2C2C2C;
+    background-color: #323232;
     margin-top: 30px;
   }
 

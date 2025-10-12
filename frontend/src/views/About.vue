@@ -101,6 +101,7 @@ export default {
 
 .info-container {
   background-color: rgb(30, 30, 30, 0.95);
+  backdrop-filter: blur(5px);
   border-color: #2B2B2B;
   border-width: 2px;
   border-radius: 10px;
