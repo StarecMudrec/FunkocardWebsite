@@ -213,7 +213,7 @@
 
 /* Rarity Categories with subtle shine overlay */
 .category-card.rarity {
-  background-image: url('/All.png');
+  background-image: url('/rarity.png');
   position: relative;
 }
 
