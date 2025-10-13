@@ -131,6 +131,7 @@
   padding: 30px 20px;
   max-width: 1200px;
   margin: 0 auto;
+  margin-top: 100px;
 }
 
 .category-card {
