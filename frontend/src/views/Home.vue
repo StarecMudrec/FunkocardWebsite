@@ -30,17 +30,13 @@
           v-for="category in categories" 
           :key="category.id"
           class="category-card"
+          :class="getCategoryBackgroundClass(category)"
           @click="navigateToCategory(category)"
         >
           <div class="category-card__content">
             <div class="category-card__header">
               <h3 class="category-card__title">{{ category.name }}</h3>
               <span class="category-card__count">{{ category.count }}</span>
-            </div>
-            <div class="category-card__type">
-              <span class="category-badge" :class="getCategoryTypeClass(category.type)">
-                {{ formatCategoryType(category.type) }}
-              </span>
             </div>
           </div>
         </div>
@@ -137,22 +133,41 @@
 }
 
 .category-card {
-  background: var(--card-bg);
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  min-height: 120px;
+  position: relative;
+}
+
+.category-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%);
+  z-index: 1;
+}
+
+.category-card__content {
+  padding: 20px;
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .category-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-}
-
-.category-card__content {
-  padding: 20px;
 }
 
 .category-card__header {
@@ -165,50 +180,99 @@
 .category-card__title {
   font-size: 1.3rem;
   font-weight: 600;
-  color: var(--text-color);
+  color: white;
   margin: 0;
   flex: 1;
   margin-right: 10px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
 }
 
 .category-card__count {
-  background: rgb(30 30 30 / 0%);
+  background: rgba(30, 30, 30, 0.7);
   color: white;
   padding: 4px 8px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 0.9rem;
   font-weight: 600;
   min-width: 40px;
   text-align: center;
+  backdrop-filter: blur(5px);
 }
 
-.category-card__type {
-  margin-top: 10px;
+/* All Cards Category */
+.category-card.all-cards {
+  background-image: url('/All.png');
 }
 
-.category-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+/* Shop Category */
+.category-card.shop {
+  background-image: url('/shop.png');
 }
 
-.category-badge.general {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+/* Rarity Categories with progressively intensive gradients */
+.category-card.rarity-1 {
+  background-image: url('/All.png');
+  position: relative;
 }
 
-.category-badge.shop {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
+.category-card.rarity-1::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.3) 0%, rgba(0, 242, 254, 0.3) 100%);
+  z-index: 1;
 }
 
-.category-badge.rarity {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
+.category-card.rarity-2 {
+  background-image: url('/All.png');
+  position: relative;
+}
+
+.category-card.rarity-2::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.5) 0%, rgba(0, 242, 254, 0.5) 100%);
+  z-index: 1;
+}
+
+.category-card.rarity-3 {
+  background-image: url('/All.png');
+  position: relative;
+}
+
+.category-card.rarity-3::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.7) 0%, rgba(0, 242, 254, 0.7) 100%);
+  z-index: 1;
+}
+
+.category-card.rarity-4 {
+  background-image: url('/All.png');
+  position: relative;
+}
+
+.category-card.rarity-4::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.9) 0%, rgba(0, 242, 254, 0.9) 100%);
+  z-index: 1;
 }
 
 .error-message {
@@ -334,17 +398,20 @@ export default {
       this.$router.push(`/category/${category.id}`);
     },
     
-    getCategoryTypeClass(type) {
-      return type.toLowerCase();
-    },
-    
-    formatCategoryType(type) {
-      const typeMap = {
-        'general': 'General',
-        'shop': 'Shop',
-        'rarity': 'Rarity'
-      };
-      return typeMap[type.toLowerCase()] || type;
+    getCategoryBackgroundClass(category) {
+      const name = category.name.toLowerCase();
+      
+      if (name.includes('all') || name.includes('general')) {
+        return 'all-cards';
+      } else if (name.includes('shop')) {
+        return 'shop';
+      } else {
+        // For rarity categories, assign progressively intensive gradients
+        // You might want to adjust this logic based on your actual category data
+        const rarityLevels = ['rarity-1', 'rarity-2', 'rarity-3', 'rarity-4'];
+        const index = category.id % rarityLevels.length;
+        return rarityLevels[index];
+      }
     },
     
     scrollToContent() {
