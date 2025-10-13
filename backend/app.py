@@ -322,7 +322,7 @@ def get_categories():
     try:
         with connection.cursor() as cursor:
             # Define hidden categories to exclude
-            hidden_categories = ['Scarface - Tony Montana']
+            hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
             
             # Get total card count (excluding hidden categories)
             cursor.execute("""
@@ -397,7 +397,7 @@ def get_cards_by_category(category_id):
         sort_direction = request.args.get('direction', 'asc')
         
         # Define hidden categories to exclude
-        hidden_categories = ['Scarface - Tony Montana']
+        hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
         
         with connection.cursor() as cursor:
             # Handle different category types
@@ -476,7 +476,7 @@ def get_rarity_newest_cards():
     
     try:
         # Define hidden categories to exclude
-        hidden_categories = ['Scarface - Tony Montana']
+        hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
         
         with connection.cursor() as cursor:
             # Get the newest card (highest ID) for each rarity
@@ -542,7 +542,7 @@ def get_card_info(card_id):
                 return jsonify({'error': 'Card not found'}), 404
             
             # Check if card is in hidden category
-            hidden_categories = ['Scarface - Tony Montana']
+            hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
             if row['rarity'] in hidden_categories:
                 return jsonify({'error': 'Card not found'}), 404
 
