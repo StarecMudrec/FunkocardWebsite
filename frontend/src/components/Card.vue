@@ -22,7 +22,7 @@
           <h3 class="card-title">{{ card.name }}</h3>
         </div>
         <div class="card-meta">
-          <p class="card-category">{{ card.category }}</p>
+          <p class="card-category">{{ card.category || card.rarity || 'Unknown' }}</p>
         </div>
       </div>
     </div>

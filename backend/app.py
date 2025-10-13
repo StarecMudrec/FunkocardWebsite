@@ -466,15 +466,19 @@ def get_cards_by_category(category_id):
             # Transform to match frontend expectations
             transformed_cards = []
             for card in cards:
-                transformed_cards.append({
+                transformed_card = {
                     'id': card['id'],
                     'uuid': card['id'],
                     'img': card['photo'],
                     'name': card['name'],
                     'rarity': card['rarity'],
-                    'category': card['rarity'],
+                    'category': card['rarity'],  # This should set category to rarity
                     'points': card['points']
-                })
+                }
+                # Debug: Log Limited cards specifically
+                if card['rarity'] == 'Limited ⚠️':
+                    logging.debug(f"Limited card transformation: {transformed_card}")
+                transformed_cards.append(transformed_card)
             
             return jsonify({
                 'cards': transformed_cards,
