@@ -472,6 +472,7 @@ def get_cards_by_category(category_id):
                     'img': card['photo'],
                     'name': card['name'],
                     'rarity': card['rarity'],
+                    'category': card['rarity'],
                     'points': card['points']
                 })
             
