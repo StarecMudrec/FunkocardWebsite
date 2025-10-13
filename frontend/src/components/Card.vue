@@ -1,7 +1,6 @@
 <template>
   <div
     class="card"
-    :data-limited="card.rarity === 'Limited ⚠️'"
     :class="{ 
       'selected': isSelected,
       'selected-animation': isSelected && !isMobile
@@ -9,9 +8,6 @@
     v-if="card"
     @click="handleCardClick"
   >
-    <div class="debug-info" style="position: absolute; top: 0; left: 0; background: red; color: white; padding: 2px; font-size: 8px;">
-      {{ card.id }} - {{ card.img ? 'has img' : 'no img' }}
-    </div>
     <div class="card-inner-content">
       <div class="image-wrapper">
         <img
@@ -65,16 +61,6 @@ export default {
   mounted() {
     this.checkMobile();
     window.addEventListener('resize', this.checkMobile);
-    if (this.card.rarity === 'Limited ⚠️') {
-      console.log('🔄 Limited Card Mounted:', {
-        id: this.card.id,
-        name: this.card.name,
-        img: this.card.img,
-        category: this.card.category,
-        rarity: this.card.rarity,
-        fullCard: this.card
-      });
-    }
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.checkMobile);
@@ -126,11 +112,6 @@ export default {
   position: relative; /* Added for absolute positioning of the button */
   transition: transform 0.2s ease, border 0.2s ease;
   margin: 15px;
-}
-
-.card[data-limited] {
-  border: 3px solid red !important;
-  background: yellow !important;
 }
 
 .card:hover {
