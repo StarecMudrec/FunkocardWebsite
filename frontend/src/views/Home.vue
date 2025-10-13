@@ -30,7 +30,7 @@
           v-for="(category, index) in sortedCategories" 
           :key="category.id"
           class="category-card"
-          :class="getCategoryBackgroundClass(category, index)"
+          :class="[getCategoryBackgroundClass(category, index), { 'blurred-bg': shouldBlurBackground(category) }]"
           @click="navigateToCategory(category)"
         >
           <div class="category-card__content">
@@ -141,9 +141,13 @@
   overflow: hidden;
   background-size: cover;
   background-position: center;
-  backdrop-filter: blur(10px);
+  /* backdrop-filter: blur(10px); */
   min-height: 470px;
   position: relative;
+}
+
+.category-card.blurred-bg {
+  filter: blur(10px);
 }
 
 .category-card::before {
@@ -495,6 +499,13 @@ export default {
     navigateToCategory(category) {
       console.log('Navigating to category:', category);
       this.$router.push(`/category/${category.id}`);
+    },
+    
+    // Method to determine if background should be blurred
+    shouldBlurBackground(category) {
+      const name = category.name.toLowerCase();
+      // Blur all category backgrounds except maybe some specific ones
+      return !name.includes('shop'); // Example: don't blur shop category
     },
     
     getCategoryBackgroundClass(category, index) {
