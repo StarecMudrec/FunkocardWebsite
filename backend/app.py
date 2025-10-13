@@ -321,14 +321,14 @@ def get_categories():
     
     try:
         with connection.cursor() as cursor:
-            # Define hidden categories to exclude
-            hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
+            # Define hidden categories to exclude - only Scarface remains hidden
+            hidden_categories = ['Scarface - Tony Montana']
             
             # Get total card count (excluding hidden categories)
             cursor.execute("""
                 SELECT COUNT(*) as total 
                 FROM files 
-                WHERE rare NOT IN (%s, %s, %s)
+                WHERE rare NOT IN (%s)
             """, hidden_categories)
             total_cards = cursor.fetchone()['total']
             
@@ -337,7 +337,7 @@ def get_categories():
                 SELECT COUNT(*) as shop_count 
                 FROM files 
                 WHERE shop != '-' AND shop IS NOT NULL 
-                AND rare NOT IN (%s, %s, %s)
+                AND rare NOT IN (%s)
             """, hidden_categories)
             shop_count = cursor.fetchone()['shop_count']
             
@@ -345,7 +345,7 @@ def get_categories():
             cursor.execute("""
                 SELECT rare, COUNT(*) as count 
                 FROM files 
-                WHERE rare NOT IN (%s, %s, %s)
+                WHERE rare NOT IN (%s)
                 GROUP BY rare 
                 ORDER BY count DESC
             """, hidden_categories)
@@ -396,8 +396,8 @@ def get_cards_by_category(category_id):
         sort_field = request.args.get('sort', 'id')
         sort_direction = request.args.get('direction', 'asc')
         
-        # Define hidden categories to exclude
-        hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
+        # Define hidden categories to exclude - only Scarface remains hidden
+        hidden_categories = ['Scarface - Tony Montana']
         
         with connection.cursor() as cursor:
             # Handle different category types
@@ -406,7 +406,7 @@ def get_cards_by_category(category_id):
                 query = f"""
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
-                    WHERE rare NOT IN (%s, %s, %s)
+                    WHERE rare NOT IN (%s)
                     ORDER BY {sort_field} {sort_direction}
                 """
                 cursor.execute(query, hidden_categories)
@@ -417,7 +417,7 @@ def get_cards_by_category(category_id):
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
                     WHERE shop != '-' AND shop IS NOT NULL
-                    AND rare NOT IN (%s, %s, %s)
+                    AND rare NOT IN (%s)
                     ORDER BY {sort_field} {sort_direction}
                 """
                 cursor.execute(query, hidden_categories)
@@ -475,8 +475,8 @@ def get_rarity_newest_cards():
         return jsonify({'error': 'Database connection failed'}), 500
     
     try:
-        # Define hidden categories to exclude
-        hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
+        # Define hidden categories to exclude - only Scarface remains hidden
+        hidden_categories = ['Scarface - Tony Montana']
         
         with connection.cursor() as cursor:
             # Get the newest card (highest ID) for each rarity
@@ -486,7 +486,7 @@ def get_rarity_newest_cards():
                 INNER JOIN (
                     SELECT rare, MAX(id) as max_id
                     FROM files 
-                    WHERE rare NOT IN (%s, %s, %s)
+                    WHERE rare NOT IN (%s)
                     GROUP BY rare
                 ) f2 ON f1.rare = f2.rare AND f1.id = f2.max_id
                 ORDER BY f1.rare
@@ -542,7 +542,7 @@ def get_card_info(card_id):
                 return jsonify({'error': 'Card not found'}), 404
             
             # Check if card is in hidden category
-            hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
+            hidden_categories = ['Scarface - Tony Montana']
             if row['rarity'] in hidden_categories:
                 return jsonify({'error': 'Card not found'}), 404
 
