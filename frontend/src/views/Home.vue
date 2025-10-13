@@ -146,34 +146,6 @@
   position: relative;
 }
 
-/* Add a pseudo-element for the blurred background */
-.category-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-size: cover;
-  background-position: center;
-  filter: blur(10px);
-  z-index: 0;
-}
-
-/* Apply specific backgrounds to the pseudo-element */
-.category-card.all-cards::after {
-  background-image: url('/All.png');
-}
-
-.category-card.shop::after {
-  background-image: url('/shop.png');
-}
-
-.category-card.rarity::after {
-  background-image: url('/rarity.png');
-}
-
-
 .category-card::before {
   content: '';
   position: absolute;
