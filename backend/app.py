@@ -249,6 +249,14 @@ def serve_card_image(file_id):
     """Serve card images from local cache, downloading from Telegram if not cached"""
     TOKEN = os.getenv("CARDS_BOT_TOKEN")
     
+    # DEBUG: Check if token is available
+    if not TOKEN:
+        logging.error("CARDS_BOT_TOKEN environment variable is not set!")
+        return send_from_directory('public', 'placeholder.jpg')
+    
+    logging.debug(f"Attempting to serve image for file_id: {file_id}")
+    logging.debug(f"Using bot token: {TOKEN[:10]}...")  # Log first 10 chars for security
+    
     # Create cache directory if it doesn't exist
     cache_dir = 'backend/card_images'
     os.makedirs(cache_dir, exist_ok=True)
@@ -259,7 +267,7 @@ def serve_card_image(file_id):
     # Check if image is already cached
     if os.path.exists(cache_file):
         try:
-            logging.debug(f"Serving cached image for {file_id}")
+            logging.debug(f"Serving from cache: {cache_file}")
             return send_from_directory(cache_dir, f"{file_id}.jpg")
         except Exception as e:
             logging.warning(f"Error serving cached image for {file_id}: {str(e)}")
@@ -270,7 +278,8 @@ def serve_card_image(file_id):
         logging.debug(f"Calling Telegram API: {api_url}")
         response = requests.get(api_url)
         
-        logging.debug(f"Telegram API response for {file_id}: {response.status_code} - {response.text}")
+        logging.debug(f"Telegram API response status: {response.status_code}")
+        logging.debug(f"Telegram API response body: {response.text}")
         
         if response.status_code != 200:
             logging.warning(f"Failed to get file info for file_id {file_id}: {response.text}")
@@ -278,7 +287,8 @@ def serve_card_image(file_id):
         
         file_info = response.json()
         if not file_info.get("ok"):
-            logging.warning(f"Telegram API error for file_id {file_id}: {file_info}")
+            error_description = file_info.get('description', 'Unknown error')
+            logging.warning(f"Telegram API error for file_id {file_id}: {error_description}")
             
             # Special handling for CgAC files that don't work with getFile
             if file_id.startswith('CgAC'):
@@ -290,19 +300,24 @@ def serve_card_image(file_id):
             logging.warning(f"file_path not found for file_id {file_id}")
             return send_from_directory('public', 'placeholder.jpg')
         
+        logging.debug(f"File path obtained: {file_path}")
+        
         # Download the file from Telegram
         file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
+        logging.debug(f"Downloading from: {file_url}")
         file_response = requests.get(file_url)
         
+        logging.debug(f"Download response status: {file_response.status_code}")
+        
         if file_response.status_code != 200:
-            logging.warning(f"Failed to download file for file_id {file_id}: {file_response.text}")
+            logging.warning(f"Failed to download file for file_id {file_id}: {file_response.status_code} - {file_response.text}")
             return send_from_directory('public', 'placeholder.jpg')
         
         # Cache the image locally for future requests
         try:
             with open(cache_file, 'wb') as f:
                 f.write(file_response.content)
-            logging.debug(f"Cached image for file_id {file_id}")
+            logging.debug(f"Cached image for file_id {file_id} at {cache_file}")
         except Exception as e:
             logging.warning(f"Failed to cache image for {file_id}: {str(e)}")
         
@@ -310,10 +325,11 @@ def serve_card_image(file_id):
         response = make_response(file_response.content)
         response.headers.set('Content-Type', 'image/jpeg')
         response.headers.set('Cache-Control', 'public, max-age=3600')
+        logging.debug(f"Successfully served image for {file_id}")
         return response
         
     except Exception as e:
-        logging.error(f"Error serving card image for {file_id}: {str(e)}")
+        logging.error(f"Error serving card image for {file_id}: {str(e)}", exc_info=True)
         return send_from_directory('public', 'placeholder.jpg')
 
 
