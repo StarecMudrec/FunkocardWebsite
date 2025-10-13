@@ -135,7 +135,7 @@
 
 .category-card {
   border-radius: 12px;
-  box-shadow: 2px 7px 10px 0px rgba(0, 0, 0, 0.4);
+  box-shadow: 2px 7px 10px 2px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
