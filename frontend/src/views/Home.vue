@@ -37,8 +37,8 @@
             <div class="category-card__header">
               <h3 class="category-card__title">{{ category.name }}</h3>
             </div>
-            <span class="category-card__count">{{ category.count }}</span>
           </div>
+          <span class="category-card__count">{{ category.count }}</span>
         </div>
       </div>
     </div>
