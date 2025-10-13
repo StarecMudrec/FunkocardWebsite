@@ -31,9 +31,9 @@
           :key="category.id"
           class="category-card"
           :class="getCategoryBackgroundClass(category, index)"
-          :style="getCategoryBackgroundStyle(category)"
           @click="navigateToCategory(category)"
         >
+          <div class="category-card__background" :style="getCategoryBackgroundStyle(category)"></div>
           <div class="category-card__content">
             <div class="category-card__header">
               <h3 class="category-card__title">{{ category.name }}</h3>
@@ -144,9 +144,8 @@
   position: relative;
 }
 
-/* Pseudo-element for blurred background */
-.category-card::after {
-  content: '';
+/* Background element for better control */
+.category-card__background {
   position: absolute;
   top: 0;
   left: 0;
@@ -155,23 +154,27 @@
   background-size: cover;
   background-position: center;
   z-index: 0;
+  transition: all 0.3s ease;
+}
+
+/* Apply specific backgrounds and blur effects */
+.category-card.all-cards .category-card__background {
+  background-image: url('/All.png');
   filter: blur(5px);
 }
 
-/* Apply specific backgrounds to the pseudo-element */
-.category-card.all-cards::after {
-  background-image: url('/All.png');
-}
-
-.category-card.shop::after {
+.category-card.shop .category-card__background {
   background-image: url('/shop.png');
-  filter: blur(5px); /* No blur for shop category */
+  filter: blur(0px); /* No blur for shop category */
 }
 
-.category-card.rarity::after {
-  background-image: url('/rarity.png');
+.category-card.rarity .category-card__background {
+  background-size: cover;
+  background-position: center;
+  filter: blur(8px); /* Stronger blur for rarity cards */
 }
 
+/* Gradient overlay for better text readability */
 .category-card::before {
   content: '';
   position: absolute;
@@ -179,7 +182,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%);
+  background: linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.4) 100%);
   z-index: 1;
 }
 
@@ -198,6 +201,10 @@
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
 }
 
+.category-card:hover .category-card__background {
+  transform: scale(1.05);
+}
+
 .category-card__header {
   display: flex;
   justify-content: space-between;
@@ -213,7 +220,6 @@
   color: white;
   margin: 0;
   flex: 1;
-  /* margin-right: 10px; */
   text-shadow: 0px 7px 10px rgba(0, 0, 0, 0.7);
 }
 
@@ -236,7 +242,7 @@
 }
 
 /* Base flashy shine effect for all rarity cards */
-.category-card.rarity::before {
+.category-card.rarity::after {
   content: '';
   position: absolute;
   top: 0;
@@ -255,7 +261,7 @@
 }
 
 /* REVERSED Progressive flashy intensity for rarity cards - first card glows most */
-.category-card.rarity-intensity-1::before {
+.category-card.rarity-intensity-1::after {
   opacity: 1.0;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.8) 0%, 
@@ -270,7 +276,7 @@
   animation: subtle-pulse 3s ease-in-out infinite;
 }
 
-.category-card.rarity-intensity-2::before {
+.category-card.rarity-intensity-2::after {
   opacity: 0.9;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.7) 0%, 
@@ -282,7 +288,7 @@
   box-shadow: inset 0 0 60px rgba(100, 200, 255, 0.4);
 }
 
-.category-card.rarity-intensity-3::before {
+.category-card.rarity-intensity-3::after {
   opacity: 0.8;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.6) 0%, 
@@ -293,7 +299,7 @@
   filter: brightness(1.4);
 }
 
-.category-card.rarity-intensity-4::before {
+.category-card.rarity-intensity-4::after {
   opacity: 0.7;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.5) 0%, 
@@ -304,7 +310,7 @@
   filter: brightness(1.3);
 }
 
-.category-card.rarity-intensity-5::before {
+.category-card.rarity-intensity-5::after {
   opacity: 0.6;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.4) 0%, 
@@ -315,7 +321,7 @@
   filter: brightness(1.2);
 }
 
-.category-card.rarity-intensity-6::before {
+.category-card.rarity-intensity-6::after {
   opacity: 0.5;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.3) 0%, 
@@ -339,12 +345,12 @@
 }
 
 /* Additional shine effect for hover states */
-.category-card.rarity:hover::before {
+.category-card.rarity:hover::after {
   filter: brightness(1.8) contrast(1.2);
   transition: all 0.3s ease;
 }
 
-.category-card.rarity-intensity-1:hover::before {
+.category-card.rarity-intensity-1:hover::after {
   animation-duration: 1.5s;
   filter: brightness(2.0) contrast(1.3);
 }
@@ -544,7 +550,7 @@ export default {
         const totalRarities = rarityCards.length;
         
         if (rarityIndex !== -1 && totalRarities > 0) {
-          const intensityLevel = Math.min(6, Math.max(3, Math.floor((rarityIndex / totalRarities) * 6) + 1));
+          const intensityLevel = Math.min(6, Math.max(1, Math.floor((rarityIndex / totalRarities) * 6) + 1));
           return `rarity rarity-intensity-${intensityLevel}`;
         }
         
