@@ -505,20 +505,21 @@ export default {
       } else if (name.includes('shop')) {
         return 'shop';
       } else {
-        // For rarity categories, calculate intensity based on position in rarity array
-        const rarityIndex = this.rarityCategories.findIndex(cat => cat.id === category.id);
-        const totalRarities = this.rarityCategories.length;
+        // For rarity categories, get only the rarity cards (excluding All Cards and Shop)
+        const rarityCards = this.sortedCategories.filter(cat => 
+          !cat.name.toLowerCase().includes('all') && 
+          !cat.name.toLowerCase().includes('general') && 
+          !cat.name.toLowerCase().includes('shop')
+        );
+        
+        // Find the position of this category in the rarity cards only
+        const rarityIndex = rarityCards.findIndex(cat => cat.id === category.id);
+        const totalRarities = rarityCards.length;
         
         if (rarityIndex !== -1 && totalRarities > 0) {
-          // Calculate intensity level (1-6) based on position in sorted order
-          const sortedRarityIndex = this.sortedCategories
-            .filter(cat => !cat.name.toLowerCase().includes('all') && 
-                          !cat.name.toLowerCase().includes('general') && 
-                          !cat.name.toLowerCase().includes('shop'))
-            .findIndex(cat => cat.id === category.id);
-          
-          // REVERSED: First card gets highest intensity (6), last card gets lowest (1)
-          const intensityLevel = Math.min(6, Math.max(1, 7 - Math.ceil((sortedRarityIndex + 1) / totalRarities * 6)));
+          // REVERSED: First rarity card (index 0) gets highest intensity (1)
+          // Last rarity card gets lowest intensity (6)
+          const intensityLevel = Math.min(6, Math.max(1, Math.floor((rarityIndex / totalRarities) * 6) + 1));
           return `rarity rarity-intensity-${intensityLevel}`;
         }
         
