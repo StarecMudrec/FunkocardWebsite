@@ -210,12 +210,13 @@
   background-image: url('/shop.png');
 }
 
-/* Rarity Categories with progressively intensive gradients */
+/* Rarity Categories with subtle shine overlay */
 .category-card.rarity {
   background-image: url('/All.png');
   position: relative;
 }
 
+/* Subtle shine effect for all rarity cards */
 .category-card.rarity::after {
   content: '';
   position: absolute;
@@ -223,33 +224,61 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.3) 0%, rgba(0, 242, 254, 0.3) 100%);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 50%, 
+    rgba(255, 255, 255, 0) 100%);
   z-index: 1;
+  opacity: 0.6;
 }
 
-/* Dynamic rarity intensity classes */
+/* Progressive intensity for rarity cards */
 .category-card.rarity-intensity-1::after {
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.2) 0%, rgba(0, 242, 254, 0.2) 100%);
+  opacity: 0.3;
+  background: linear-gradient(135deg, 
+    rgba(120, 200, 255, 0.15) 0%, 
+    rgba(100, 180, 255, 0.1) 50%, 
+    rgba(80, 160, 255, 0.05) 100%);
 }
 
 .category-card.rarity-intensity-2::after {
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.35) 0%, rgba(0, 242, 254, 0.35) 100%);
+  opacity: 0.4;
+  background: linear-gradient(135deg, 
+    rgba(120, 200, 255, 0.2) 0%, 
+    rgba(100, 180, 255, 0.15) 50%, 
+    rgba(80, 160, 255, 0.1) 100%);
 }
 
 .category-card.rarity-intensity-3::after {
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.5) 0%, rgba(0, 242, 254, 0.5) 100%);
+  opacity: 0.5;
+  background: linear-gradient(135deg, 
+    rgba(120, 200, 255, 0.25) 0%, 
+    rgba(100, 180, 255, 0.2) 50%, 
+    rgba(80, 160, 255, 0.15) 100%);
 }
 
 .category-card.rarity-intensity-4::after {
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.65) 0%, rgba(0, 242, 254, 0.65) 100%);
+  opacity: 0.6;
+  background: linear-gradient(135deg, 
+    rgba(120, 200, 255, 0.3) 0%, 
+    rgba(100, 180, 255, 0.25) 50%, 
+    rgba(80, 160, 255, 0.2) 100%);
 }
 
 .category-card.rarity-intensity-5::after {
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.8) 0%, rgba(0, 242, 254, 0.8) 100%);
+  opacity: 0.7;
+  background: linear-gradient(135deg, 
+    rgba(120, 200, 255, 0.35) 0%, 
+    rgba(100, 180, 255, 0.3) 50%, 
+    rgba(80, 160, 255, 0.25) 100%);
 }
 
 .category-card.rarity-intensity-6::after {
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.9) 0%, rgba(0, 242, 254, 0.9) 100%);
+  opacity: 0.8;
+  background: linear-gradient(135deg, 
+    rgba(120, 200, 255, 0.4) 0%, 
+    rgba(100, 180, 255, 0.35) 50%, 
+    rgba(80, 160, 255, 0.3) 100%);
 }
 
 .error-message {
