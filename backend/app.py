@@ -246,10 +246,6 @@ def db_status():
 
 @app.route('/api/card_image/<path:file_id>')
 def serve_card_image(file_id):
-    if file_id.startswith('CgAC'):
-        logging.info(f"Special file type detected: {file_id}, using placeholder")
-        return send_from_directory('public', 'placeholder.jpg')
-    
     """Serve card images from local cache, downloading from Telegram if not cached"""
     TOKEN = os.getenv("CARDS_BOT_TOKEN")
     
@@ -263,6 +259,7 @@ def serve_card_image(file_id):
     # Check if image is already cached
     if os.path.exists(cache_file):
         try:
+            logging.debug(f"Serving cached image for {file_id}")
             return send_from_directory(cache_dir, f"{file_id}.jpg")
         except Exception as e:
             logging.warning(f"Error serving cached image for {file_id}: {str(e)}")
@@ -270,6 +267,7 @@ def serve_card_image(file_id):
     try:
         # First, get file path from Telegram API
         api_url = f"https://api.telegram.org/bot{TOKEN}/getFile?file_id={file_id}"
+        logging.debug(f"Calling Telegram API: {api_url}")
         response = requests.get(api_url)
         
         logging.debug(f"Telegram API response for {file_id}: {response.status_code} - {response.text}")
@@ -282,7 +280,7 @@ def serve_card_image(file_id):
         if not file_info.get("ok"):
             logging.warning(f"Telegram API error for file_id {file_id}: {file_info}")
             
-            # Special handling for certain file types that might not work with getFile
+            # Special handling for CgAC files that don't work with getFile
             if file_id.startswith('CgAC'):
                 logging.info(f"File {file_id} appears to be a special type (sticker/animation), using placeholder")
             return send_from_directory('public', 'placeholder.jpg')
@@ -317,6 +315,7 @@ def serve_card_image(file_id):
     except Exception as e:
         logging.error(f"Error serving card image for {file_id}: {str(e)}")
         return send_from_directory('public', 'placeholder.jpg')
+
 
 @app.route("/api/categories")
 def get_categories():
