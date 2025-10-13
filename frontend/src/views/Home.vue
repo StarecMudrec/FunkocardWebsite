@@ -214,7 +214,7 @@
   margin: 0;
   flex: 1;
   /* margin-right: 10px; */
-  text-shadow: 2px 4px 7px rgba(0, 0, 0, 0.7);
+  text-shadow: 0px 7px 10px rgba(0, 0, 0, 0.7);
 }
 
 .category-card__count {
