@@ -19,6 +19,7 @@
           :alt="card.name"
           class="card-image"
           @error="handleImageError"
+          @load="handleImageLoad"
         >
       </div>
       <div class="card-content">
@@ -84,7 +85,23 @@ export default {
       this.isMobile = window.innerWidth <= 768;
     },
     handleImageError(e) {
+      console.error('❌ IMAGE LOAD ERROR for Limited card:', {
+        name: this.card.name,
+        img: this.card.img,
+        attemptedUrl: e.target.src,
+        cardId: this.card.id
+      });
+      console.error('Error details:', e);
       e.target.src = '/placeholder.jpg';
+    },
+    
+    handleImageLoad(e) {
+      console.log('✅ IMAGE LOAD SUCCESS for Limited card:', {
+        name: this.card.name,
+        img: this.card.img,
+        url: e.target.src,
+        cardId: this.card.id
+      });
     },
     handleCardClick(event) {
       // Если карточка выделена, не выполняем никаких действий (кроме обработки клика по чекбоксу, которая уже есть)
