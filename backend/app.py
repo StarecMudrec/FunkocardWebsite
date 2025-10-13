@@ -467,9 +467,9 @@ def get_cards_by_category(category_id):
         connection.close()
 
 
-@app.route("/api/rarity_newest_cards")
-def get_rarity_newest_cards():
-    """Get the newest card image for each rarity category"""
+@app.route("/api/rarity_popular_cards")
+def get_rarity_popular_cards():
+    """Get the most popular card (highest points) for each rarity category"""
     connection = get_db_conn()
     if not connection:
         return jsonify({'error': 'Database connection failed'}), 500
@@ -479,37 +479,38 @@ def get_rarity_newest_cards():
         hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
         
         with connection.cursor() as cursor:
-            # Get the newest card (highest ID) for each rarity
+            # Get the card with highest fame/points for each rarity
             cursor.execute("""
-                SELECT f1.rare, f1.tg_id as photo, f1.name
+                SELECT f1.rare, f1.tg_id as photo, f1.name, f1.fame as points
                 FROM files f1
                 INNER JOIN (
-                    SELECT rare, MAX(id) as max_id
+                    SELECT rare, MAX(fame) as max_fame
                     FROM files 
                     WHERE rare NOT IN (%s, %s, %s)
                     GROUP BY rare
-                ) f2 ON f1.rare = f2.rare AND f1.id = f2.max_id
+                ) f2 ON f1.rare = f2.rare AND f1.fame = f2.max_fame
                 ORDER BY f1.rare
             """, hidden_categories)
             
-            newest_cards = cursor.fetchall()
+            popular_cards = cursor.fetchall()
             
             # Convert to dictionary with rarity as key
             result = {}
-            for card in newest_cards:
+            for card in popular_cards:
                 result[card['rare']] = {
                     'photo': card['photo'],
-                    'name': card['name']
+                    'name': card['name'],
+                    'points': card['points']
                 }
             
             return jsonify(result), 200
             
     except Exception as e:
-        logging.error(f"Error fetching newest rarity cards: {str(e)}")
-        return jsonify({'error': 'Failed to fetch newest cards'}), 500
+        logging.error(f"Error fetching popular rarity cards: {str(e)}")
+        return jsonify({'error': 'Failed to fetch popular cards'}), 500
     finally:
         connection.close()
-        
+
 
 @app.route('/api/check_permission', methods=['GET'])
 def check_permission():
