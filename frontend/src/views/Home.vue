@@ -141,7 +141,8 @@
   overflow: hidden;
   background-size: cover;
   background-position: center;
-  min-height: 120px;
+  backdrop-filter: blur(10px);
+  min-height: 470px;
   position: relative;
 }
 
