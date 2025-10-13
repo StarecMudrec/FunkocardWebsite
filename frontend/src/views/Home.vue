@@ -37,7 +37,6 @@
           <div class="category-card__content">
             <div class="category-card__header">
               <h3 class="category-card__title">{{ category.name }}</h3>
-              <div class="category-card__count">{{ category.count }}</div>
             </div>
           </div>
         </div>
@@ -143,13 +142,10 @@
   overflow: hidden;
   min-height: 470px;
   position: relative;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
 }
 
-/* Pseudo-element for blurred background - only for rarity cards */
-.category-card.rarity::after {
+/* Pseudo-element for blurred background */
+.category-card::after {
   content: '';
   position: absolute;
   top: 0;
@@ -159,20 +155,23 @@
   background-size: cover;
   background-position: center;
   z-index: 0;
-  filter: blur(8px);
-  opacity: 0.9;
+  filter: blur(5px);
 }
 
-/* Static backgrounds for non-rarity categories */
-.category-card.all-cards {
+/* Apply specific backgrounds to the pseudo-element */
+.category-card.all-cards::after {
   background-image: url('/All.png');
 }
 
-.category-card.shop {
+.category-card.shop::after {
   background-image: url('/shop.png');
+  filter: blur(5px); /* No blur for shop category */
 }
 
-/* Overlay for all cards */
+.category-card.rarity::after {
+  background-image: url('/rarity.png');
+}
+
 .category-card::before {
   content: '';
   position: absolute;
@@ -214,6 +213,7 @@
   color: white;
   margin: 0;
   flex: 1;
+  /* margin-right: 10px; */
   text-shadow: 0px 7px 10px rgba(0, 0, 0, 0.7);
 }
 
@@ -228,7 +228,6 @@
   min-width: 40px;
   text-align: center;
   backdrop-filter: blur(5px);
-  margin-top: 10px;
 }
 
 /* Rarity Categories with flashy shine overlay */
@@ -545,7 +544,7 @@ export default {
         const totalRarities = rarityCards.length;
         
         if (rarityIndex !== -1 && totalRarities > 0) {
-          const intensityLevel = Math.min(6, Math.max(1, Math.floor((rarityIndex / totalRarities) * 6) + 1));
+          const intensityLevel = Math.min(6, Math.max(3, Math.floor((rarityIndex / totalRarities) * 6) + 1));
           return `rarity rarity-intensity-${intensityLevel}`;
         }
         
@@ -561,7 +560,7 @@ export default {
         const newestCard = this.rarityNewestCards[category.name];
         if (newestCard && newestCard.photo) {
           return {
-            '--rarity-bg-image': `url(/api/card_image/${newestCard.photo})`
+            backgroundImage: `url(/api/card_image/${newestCard.photo})`
           };
         }
       }
