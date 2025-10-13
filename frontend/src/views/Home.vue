@@ -36,8 +36,8 @@
           <div class="category-card__content">
             <div class="category-card__header">
               <h3 class="category-card__title">{{ category.name }}</h3>
-              <span class="category-card__count">{{ category.count }}</span>
             </div>
+            <span class="category-card__count">{{ category.count }}</span>
           </div>
         </div>
       </div>
@@ -126,7 +126,8 @@
 .categories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+  row-gap: 40px;
+  column-gap: 67px;
   padding: 30px 20px;
   max-width: 1200px;
   margin: 0 auto;
@@ -205,7 +206,8 @@
 }
 
 .category-card__title {
-  font-size: 2.8rem;
+  font-size: 3.3rem;
+  text-align: center;
   font-weight: 600;
   color: white;
   margin: 0;
