@@ -31,6 +31,7 @@
           :key="category.id"
           class="category-card"
           :class="getCategoryBackgroundClass(category, index)"
+          :style="getCategoryBackgroundStyle(category)"
           @click="navigateToCategory(category)"
         >
           <div class="category-card__content">
@@ -38,7 +39,6 @@
               <h3 class="category-card__title">{{ category.name }}</h3>
             </div>
           </div>
-          <!-- <span class="category-card__count">{{ category.count }}</span> -->
         </div>
       </div>
     </div>
@@ -470,17 +470,17 @@ export default {
         'Plain😼': 8,
         'Force🤷‍♂️': 9,
         'Scarface - Tony Montana': 10
-      }
+      },
+      rarityNewestCards: {} // Store newest card images for each rarity
     }
   },
   computed: {
     ...mapState({
-      categories: state => state.categories || [], // Safe access
+      categories: state => state.categories || [],
       loading: state => state.loading,
       error: state => state.error
     }),
     
-    // Get only rarity categories for dynamic intensity calculation
     rarityCategories() {
       return this.categories.filter(category => {
         const name = category.name.toLowerCase();
@@ -488,7 +488,6 @@ export default {
       });
     },
     
-    // Sort categories according to rarity order
     sortedCategories() {
       if (!this.categories || this.categories.length === 0) return [];
       
@@ -496,19 +495,31 @@ export default {
         const orderA = this.rarityOrder[a.name] || 999;
         const orderB = this.rarityOrder[b.name] || 999;
         
-        // Put "All Cards" and "Shop" categories first
         if (a.name.toLowerCase().includes('all') || a.name.toLowerCase().includes('general')) return -1;
         if (b.name.toLowerCase().includes('all') || b.name.toLowerCase().includes('general')) return 1;
         if (a.name.toLowerCase().includes('shop')) return -1;
         if (b.name.toLowerCase().includes('shop')) return 1;
         
-        // Then sort by rarity order
         return orderA - orderB;
       });
     }
   },
   methods: {
     ...mapActions(['fetchCategories']),
+    
+    async fetchRarityNewestCards() {
+      try {
+        const response = await fetch('/api/rarity_newest_cards');
+        if (response.ok) {
+          this.rarityNewestCards = await response.json();
+          console.log('Newest rarity cards:', this.rarityNewestCards);
+        } else {
+          console.error('Failed to fetch newest rarity cards');
+        }
+      } catch (error) {
+        console.error('Error fetching newest rarity cards:', error);
+      }
+    },
     
     navigateToCategory(category) {
       console.log('Navigating to category:', category);
@@ -523,27 +534,38 @@ export default {
       } else if (name.includes('shop')) {
         return 'shop';
       } else {
-        // For rarity categories, get only the rarity cards (excluding All Cards and Shop)
         const rarityCards = this.sortedCategories.filter(cat => 
           !cat.name.toLowerCase().includes('all') && 
           !cat.name.toLowerCase().includes('general') && 
           !cat.name.toLowerCase().includes('shop')
         );
         
-        // Find the position of this category in the rarity cards only
         const rarityIndex = rarityCards.findIndex(cat => cat.id === category.id);
         const totalRarities = rarityCards.length;
         
         if (rarityIndex !== -1 && totalRarities > 0) {
-          // REVERSED: First rarity card (index 0) gets highest intensity (1)
-          // Last rarity card gets lowest intensity (6)
           const intensityLevel = Math.min(6, Math.max(3, Math.floor((rarityIndex / totalRarities) * 6) + 1));
           return `rarity rarity-intensity-${intensityLevel}`;
         }
         
-        // Fallback if something goes wrong
         return 'rarity rarity-intensity-3';
       }
+    },
+    
+    getCategoryBackgroundStyle(category) {
+      const name = category.name.toLowerCase();
+      
+      // For rarity categories, use the newest card image
+      if (!name.includes('all') && !name.includes('general') && !name.includes('shop')) {
+        const newestCard = this.rarityNewestCards[category.name];
+        if (newestCard && newestCard.photo) {
+          return {
+            backgroundImage: `url(/api/card_image/${newestCard.photo})`
+          };
+        }
+      }
+      
+      return {};
     },
     
     scrollToContent() {
@@ -559,6 +581,7 @@ export default {
   async mounted() {
     try {
       await this.fetchCategories();
+      await this.fetchRarityNewestCards(); // Fetch newest cards after categories
       console.log('Categories after fetch:', this.categories);
       console.log('Sorted categories:', this.sortedCategories);
       console.log('Rarity categories:', this.rarityCategories);

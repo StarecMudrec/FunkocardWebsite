@@ -467,6 +467,50 @@ def get_cards_by_category(category_id):
         connection.close()
 
 
+@app.route("/api/rarity_newest_cards")
+def get_rarity_newest_cards():
+    """Get the newest card image for each rarity category"""
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        # Define hidden categories to exclude
+        hidden_categories = ['Nameless 📛', 'Scarface - Tony Montana', 'Limited ⚠️']
+        
+        with connection.cursor() as cursor:
+            # Get the newest card (highest ID) for each rarity
+            cursor.execute("""
+                SELECT f1.rare, f1.tg_id as photo, f1.name
+                FROM files f1
+                INNER JOIN (
+                    SELECT rare, MAX(id) as max_id
+                    FROM files 
+                    WHERE rare NOT IN (%s, %s, %s)
+                    GROUP BY rare
+                ) f2 ON f1.rare = f2.rare AND f1.id = f2.max_id
+                ORDER BY f1.rare
+            """, hidden_categories)
+            
+            newest_cards = cursor.fetchall()
+            
+            # Convert to dictionary with rarity as key
+            result = {}
+            for card in newest_cards:
+                result[card['rare']] = {
+                    'photo': card['photo'],
+                    'name': card['name']
+                }
+            
+            return jsonify(result), 200
+            
+    except Exception as e:
+        logging.error(f"Error fetching newest rarity cards: {str(e)}")
+        return jsonify({'error': 'Failed to fetch newest cards'}), 500
+    finally:
+        connection.close()
+        
+
 @app.route('/api/check_permission', methods=['GET'])
 def check_permission():
     username = request.args.get('username')
