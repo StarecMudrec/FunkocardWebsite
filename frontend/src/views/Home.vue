@@ -30,7 +30,7 @@
           v-for="(category, index) in sortedCategories" 
           :key="category.id"
           class="category-card"
-          :class="[getCategoryBackgroundClass(category, index), { 'blurred-bg': shouldBlurBackground(category) }]"
+          :class="getCategoryBackgroundClass(category, index)"
           @click="navigateToCategory(category)"
         >
           <div class="category-card__content">
@@ -137,17 +137,37 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
-  /* border: 1px solid rgba(255, 255, 255, 0.1); */
   overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  /* backdrop-filter: blur(10px); */
   min-height: 470px;
   position: relative;
 }
 
-.category-card.blurred-bg {
+/* Pseudo-element for blurred background */
+.category-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
   filter: blur(10px);
+}
+
+/* Apply specific backgrounds to the pseudo-element */
+.category-card.all-cards::after {
+  background-image: url('/All.png');
+}
+
+.category-card.shop::after {
+  background-image: url('/shop.png');
+  filter: blur(0px); /* No blur for shop category */
+}
+
+.category-card.rarity::after {
+  background-image: url('/rarity.png');
 }
 
 .category-card::before {
@@ -205,24 +225,13 @@
   backdrop-filter: blur(5px);
 }
 
-/* All Cards Category */
-.category-card.all-cards {
-  background-image: url('/All.png');
-}
-
-/* Shop Category */
-.category-card.shop {
-  background-image: url('/shop.png');
-}
-
 /* Rarity Categories with flashy shine overlay */
 .category-card.rarity {
-  background-image: url('/rarity.png');
   position: relative;
 }
 
 /* Base flashy shine effect for all rarity cards */
-.category-card.rarity::after {
+.category-card.rarity::before {
   content: '';
   position: absolute;
   top: 0;
@@ -241,7 +250,7 @@
 }
 
 /* REVERSED Progressive flashy intensity for rarity cards - first card glows most */
-.category-card.rarity-intensity-1::after {
+.category-card.rarity-intensity-1::before {
   opacity: 1.0;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.8) 0%, 
@@ -256,7 +265,7 @@
   animation: subtle-pulse 3s ease-in-out infinite;
 }
 
-.category-card.rarity-intensity-2::after {
+.category-card.rarity-intensity-2::before {
   opacity: 0.9;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.7) 0%, 
@@ -268,7 +277,7 @@
   box-shadow: inset 0 0 60px rgba(100, 200, 255, 0.4);
 }
 
-.category-card.rarity-intensity-3::after {
+.category-card.rarity-intensity-3::before {
   opacity: 0.8;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.6) 0%, 
@@ -279,7 +288,7 @@
   filter: brightness(1.4);
 }
 
-.category-card.rarity-intensity-4::after {
+.category-card.rarity-intensity-4::before {
   opacity: 0.7;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.5) 0%, 
@@ -290,7 +299,7 @@
   filter: brightness(1.3);
 }
 
-.category-card.rarity-intensity-5::after {
+.category-card.rarity-intensity-5::before {
   opacity: 0.6;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.4) 0%, 
@@ -301,7 +310,7 @@
   filter: brightness(1.2);
 }
 
-.category-card.rarity-intensity-6::after {
+.category-card.rarity-intensity-6::before {
   opacity: 0.5;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.3) 0%, 
@@ -325,12 +334,12 @@
 }
 
 /* Additional shine effect for hover states */
-.category-card.rarity:hover::after {
+.category-card.rarity:hover::before {
   filter: brightness(1.8) contrast(1.2);
   transition: all 0.3s ease;
 }
 
-.category-card.rarity-intensity-1:hover::after {
+.category-card.rarity-intensity-1:hover::before {
   animation-duration: 1.5s;
   filter: brightness(2.0) contrast(1.3);
 }
@@ -499,13 +508,6 @@ export default {
     navigateToCategory(category) {
       console.log('Navigating to category:', category);
       this.$router.push(`/category/${category.id}`);
-    },
-    
-    // Method to determine if background should be blurred
-    shouldBlurBackground(category) {
-      const name = category.name.toLowerCase();
-      // Blur all category backgrounds except maybe some specific ones
-      return !name.includes('shop'); // Example: don't blur shop category
     },
     
     getCategoryBackgroundClass(category, index) {
