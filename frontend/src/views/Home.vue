@@ -23,11 +23,11 @@
       <div id="categories-container" class="categories-grid">
         <div v-if="loading" class="loading">Loading categories...</div>
         <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
-        <div v-else-if="categories.length === 0" class="loading">No categories found</div>
+        <div v-else-if="sortedCategories.length === 0" class="loading">No categories found</div>
         
         <!-- Category Cards -->
         <div 
-          v-for="(category, index) in categories" 
+          v-for="(category, index) in sortedCategories" 
           :key="category.id"
           class="category-card"
           :class="getCategoryBackgroundClass(category, index)"
@@ -439,6 +439,22 @@
 import { mapActions, mapState } from 'vuex'
 
 export default {
+  data() {
+    return {
+      rarityOrder: {
+        'Vinyl Figure💫': 1,
+        'Legendary🧡': 2,
+        'Special 🌟': 3,
+        'Nameless 📛': 4,
+        'Limited ⚠️': 5,
+        'SuperCool🤟': 6,
+        'Cool👍': 7,
+        'Plain😼': 8,
+        'Force🤷‍♂️': 9,
+        'Scarface - Tony Montana': 10
+      }
+    }
+  },
   computed: {
     ...mapState({
       categories: state => state.categories || [], // Safe access
@@ -451,6 +467,25 @@ export default {
       return this.categories.filter(category => {
         const name = category.name.toLowerCase();
         return !name.includes('all') && !name.includes('general') && !name.includes('shop');
+      });
+    },
+    
+    // Sort categories according to rarity order
+    sortedCategories() {
+      if (!this.categories || this.categories.length === 0) return [];
+      
+      return [...this.categories].sort((a, b) => {
+        const orderA = this.rarityOrder[a.name] || 999;
+        const orderB = this.rarityOrder[b.name] || 999;
+        
+        // Put "All Cards" and "Shop" categories first
+        if (a.name.toLowerCase().includes('all') || a.name.toLowerCase().includes('general')) return -1;
+        if (b.name.toLowerCase().includes('all') || b.name.toLowerCase().includes('general')) return 1;
+        if (a.name.toLowerCase().includes('shop')) return -1;
+        if (b.name.toLowerCase().includes('shop')) return 1;
+        
+        // Then sort by rarity order
+        return orderA - orderB;
       });
     }
   },
@@ -475,8 +510,14 @@ export default {
         const totalRarities = this.rarityCategories.length;
         
         if (rarityIndex !== -1 && totalRarities > 0) {
-          // Calculate intensity level (1-6) based on position
-          const intensityLevel = Math.min(6, Math.max(1, Math.ceil((rarityIndex + 1) / totalRarities * 6)));
+          // Calculate intensity level (1-6) based on position in sorted order
+          const sortedRarityIndex = this.sortedCategories
+            .filter(cat => !cat.name.toLowerCase().includes('all') && 
+                          !cat.name.toLowerCase().includes('general') && 
+                          !cat.name.toLowerCase().includes('shop'))
+            .findIndex(cat => cat.id === category.id);
+          
+          const intensityLevel = Math.min(6, Math.max(1, Math.ceil((sortedRarityIndex + 1) / totalRarities * 6)));
           return `rarity rarity-intensity-${intensityLevel}`;
         }
         
@@ -499,6 +540,7 @@ export default {
     try {
       await this.fetchCategories();
       console.log('Categories after fetch:', this.categories);
+      console.log('Sorted categories:', this.sortedCategories);
       console.log('Rarity categories:', this.rarityCategories);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
