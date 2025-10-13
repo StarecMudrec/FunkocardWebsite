@@ -188,12 +188,18 @@
 }
 
 .category-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: white;
+  background-image: url('All.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .category-badge.general {
@@ -202,13 +208,127 @@
 }
 
 .category-badge.shop {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
+  background-image: url('shop.png');
 }
 
-.category-badge.rarity {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
+/* Rarity categories with progressively more intensive gradient shine */
+.category-badge.rarity-1 {
+  background-image: url('all.png');
+  position: relative;
+  overflow: hidden;
+}
+
+.category-badge.rarity-1::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shine 2s infinite;
+}
+
+.category-badge.rarity-2 {
+  background-image: url('all.png');
+  position: relative;
+  overflow: hidden;
+}
+
+.category-badge.rarity-2::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shine 1.5s infinite;
+}
+
+.category-badge.rarity-3 {
+  background-image: url('all.png');
+  position: relative;
+  overflow: hidden;
+}
+
+.category-badge.rarity-3::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shine 1s infinite;
+}
+
+.category-badge.rarity-4 {
+  background-image: url('all.png');
+  position: relative;
+  overflow: hidden;
+}
+
+.category-badge.rarity-4::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  animation: shine 0.75s infinite;
+}
+
+.category-badge.rarity-5 {
+  background-image: url('all.png');
+  position: relative;
+  overflow: hidden;
+}
+
+.category-badge.rarity-5::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  animation: shine 0.5s infinite;
+}
+
+@keyframes shine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .error-message {
