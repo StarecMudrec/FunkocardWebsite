@@ -471,7 +471,7 @@ export default {
         'Force🤷‍♂️': 9,
         'Scarface - Tony Montana': 10
       },
-      rarityNewestCards: {} // Store newest card images for each rarity
+      rarityPopularCards: {} // Store popular card images for each rarity
     }
   },
   computed: {
@@ -507,17 +507,17 @@ export default {
   methods: {
     ...mapActions(['fetchCategories']),
     
-    async fetchRarityNewestCards() {
+    async fetchRarityPopularCards() {
       try {
-        const response = await fetch('/api/rarity_newest_cards');
+        const response = await fetch('/api/rarity_popular_cards');
         if (response.ok) {
-          this.rarityNewestCards = await response.json();
-          console.log('Newest rarity cards:', this.rarityNewestCards);
+          this.rarityPopularCards = await response.json();
+          console.log('Popular rarity cards:', this.rarityPopularCards);
         } else {
-          console.error('Failed to fetch newest rarity cards');
+          console.error('Failed to fetch popular rarity cards');
         }
       } catch (error) {
-        console.error('Error fetching newest rarity cards:', error);
+        console.error('Error fetching popular rarity cards:', error);
       }
     },
     
@@ -555,12 +555,12 @@ export default {
     getCategoryBackgroundStyle(category) {
       const name = category.name.toLowerCase();
       
-      // For rarity categories, use the newest card image
+      // For rarity categories, use the most popular card image from that rarity
       if (!name.includes('all') && !name.includes('general') && !name.includes('shop')) {
-        const newestCard = this.rarityNewestCards[category.name];
-        if (newestCard && newestCard.photo) {
+        const popularCard = this.rarityPopularCards[category.name];
+        if (popularCard && popularCard.photo) {
           return {
-            backgroundImage: `url(/api/card_image/${newestCard.photo})`
+            backgroundImage: `url(/api/card_image/${popularCard.photo})`
           };
         }
       }
@@ -581,10 +581,10 @@ export default {
   async mounted() {
     try {
       await this.fetchCategories();
-      await this.fetchRarityNewestCards(); // Fetch newest cards after categories
+      await this.fetchRarityPopularCards(); // Fetch popular cards after categories
       console.log('Categories after fetch:', this.categories);
       console.log('Sorted categories:', this.sortedCategories);
-      console.log('Rarity categories:', this.rarityCategories);
+      console.log('Popular cards by rarity:', this.rarityPopularCards);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
     }
