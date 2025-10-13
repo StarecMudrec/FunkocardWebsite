@@ -211,13 +211,13 @@
   background-image: url('/shop.png');
 }
 
-/* Rarity Categories with subtle shine overlay */
+/* Rarity Categories with flashy shine overlay */
 .category-card.rarity {
   background-image: url('/rarity.png');
   position: relative;
 }
 
-/* Subtle shine effect for all rarity cards */
+/* Base flashy shine effect for all rarity cards */
 .category-card.rarity::after {
   content: '';
   position: absolute;
@@ -226,60 +226,109 @@
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.1) 0%, 
-    rgba(255, 255, 255, 0.05) 50%, 
-    rgba(255, 255, 255, 0) 100%);
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(200, 230, 255, 0.6) 25%,
+    rgba(100, 200, 255, 0.8) 50%,
+    rgba(50, 150, 255, 0.6) 75%,
+    rgba(255, 255, 255, 0.4) 100%);
   z-index: 1;
-  opacity: 0.6;
+  opacity: 0.7;
+  mix-blend-mode: overlay;
 }
 
-/* Progressive intensity for rarity cards */
+/* Progressive flashy intensity for rarity cards */
 .category-card.rarity-intensity-1::after {
-  opacity: 0.3;
+  opacity: 0.5;
   background: linear-gradient(135deg, 
-    rgba(120, 200, 255, 0.15) 0%, 
-    rgba(100, 180, 255, 0.1) 50%, 
-    rgba(80, 160, 255, 0.05) 100%);
+    rgba(255, 255, 255, 0.3) 0%, 
+    rgba(180, 220, 255, 0.5) 25%,
+    rgba(80, 180, 255, 0.7) 50%,
+    rgba(40, 140, 255, 0.5) 75%,
+    rgba(255, 255, 255, 0.3) 100%);
+  filter: brightness(1.1);
 }
 
 .category-card.rarity-intensity-2::after {
-  opacity: 0.4;
+  opacity: 0.6;
   background: linear-gradient(135deg, 
-    rgba(120, 200, 255, 0.2) 0%, 
-    rgba(100, 180, 255, 0.15) 50%, 
-    rgba(80, 160, 255, 0.1) 100%);
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(190, 225, 255, 0.6) 25%,
+    rgba(90, 190, 255, 0.8) 50%,
+    rgba(45, 145, 255, 0.6) 75%,
+    rgba(255, 255, 255, 0.4) 100%);
+  filter: brightness(1.2);
 }
 
 .category-card.rarity-intensity-3::after {
-  opacity: 0.5;
+  opacity: 0.7;
   background: linear-gradient(135deg, 
-    rgba(120, 200, 255, 0.25) 0%, 
-    rgba(100, 180, 255, 0.2) 50%, 
-    rgba(80, 160, 255, 0.15) 100%);
+    rgba(255, 255, 255, 0.5) 0%, 
+    rgba(200, 230, 255, 0.7) 25%,
+    rgba(100, 200, 255, 0.9) 50%,
+    rgba(50, 150, 255, 0.7) 75%,
+    rgba(255, 255, 255, 0.5) 100%);
+  filter: brightness(1.3);
 }
 
 .category-card.rarity-intensity-4::after {
-  opacity: 0.6;
+  opacity: 0.8;
   background: linear-gradient(135deg, 
-    rgba(120, 200, 255, 0.3) 0%, 
-    rgba(100, 180, 255, 0.25) 50%, 
-    rgba(80, 160, 255, 0.2) 100%);
+    rgba(255, 255, 255, 0.6) 0%, 
+    rgba(210, 235, 255, 0.8) 25%,
+    rgba(110, 210, 255, 1.0) 50%,
+    rgba(55, 155, 255, 0.8) 75%,
+    rgba(255, 255, 255, 0.6) 100%);
+  filter: brightness(1.4);
 }
 
 .category-card.rarity-intensity-5::after {
-  opacity: 0.7;
+  opacity: 0.9;
   background: linear-gradient(135deg, 
-    rgba(120, 200, 255, 0.35) 0%, 
-    rgba(100, 180, 255, 0.3) 50%, 
-    rgba(80, 160, 255, 0.25) 100%);
+    rgba(255, 255, 255, 0.7) 0%, 
+    rgba(220, 240, 255, 0.9) 25%,
+    rgba(120, 220, 255, 1.0) 50%,
+    rgba(60, 160, 255, 0.9) 75%,
+    rgba(255, 255, 255, 0.7) 100%);
+  filter: brightness(1.5);
+  box-shadow: inset 0 0 60px rgba(100, 200, 255, 0.4);
 }
 
 .category-card.rarity-intensity-6::after {
-  opacity: 0.8;
+  opacity: 1.0;
   background: linear-gradient(135deg, 
-    rgba(120, 200, 255, 0.4) 0%, 
-    rgba(100, 180, 255, 0.35) 50%, 
-    rgba(80, 160, 255, 0.3) 100%);
+    rgba(255, 255, 255, 0.8) 0%, 
+    rgba(230, 245, 255, 1.0) 25%,
+    rgba(130, 230, 255, 1.0) 50%,
+    rgba(65, 165, 255, 1.0) 75%,
+    rgba(255, 255, 255, 0.8) 100%);
+  filter: brightness(1.6);
+  box-shadow: 
+    inset 0 0 80px rgba(100, 200, 255, 0.6),
+    inset 0 0 40px rgba(255, 255, 255, 0.4);
+  animation: subtle-pulse 3s ease-in-out infinite;
+}
+
+/* Add a subtle pulse animation for the highest rarity */
+@keyframes subtle-pulse {
+  0%, 100% {
+    opacity: 1.0;
+    filter: brightness(1.6);
+  }
+  50% {
+    opacity: 0.9;
+    filter: brightness(1.8);
+  }
+}
+
+/* Additional shine effect for hover states */
+.category-card.rarity:hover::after {
+  filter: brightness(1.8) contrast(1.2);
+  transition: all 0.3s ease;
+}
+
+.category-card.rarity-intensity-6:hover::after {
+  animation-duration: 1.5s;
+  filter: brightness(2.0) contrast(1.3);
 }
 
 .error-message {
