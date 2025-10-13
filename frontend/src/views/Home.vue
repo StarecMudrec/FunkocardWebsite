@@ -27,10 +27,10 @@
         
         <!-- Category Cards -->
         <div 
-          v-for="category in categories" 
+          v-for="(category, index) in categories" 
           :key="category.id"
           class="category-card"
-          :class="getCategoryBackgroundClass(category)"
+          :class="getCategoryBackgroundClass(category, index)"
           @click="navigateToCategory(category)"
         >
           <div class="category-card__content">
@@ -211,12 +211,12 @@
 }
 
 /* Rarity Categories with progressively intensive gradients */
-.category-card.rarity-1 {
+.category-card.rarity {
   background-image: url('/All.png');
   position: relative;
 }
 
-.category-card.rarity-1::after {
+.category-card.rarity::after {
   content: '';
   position: absolute;
   top: 0;
@@ -227,52 +227,29 @@
   z-index: 1;
 }
 
-.category-card.rarity-2 {
-  background-image: url('/All.png');
-  position: relative;
+/* Dynamic rarity intensity classes */
+.category-card.rarity-intensity-1::after {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.2) 0%, rgba(0, 242, 254, 0.2) 100%);
 }
 
-.category-card.rarity-2::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+.category-card.rarity-intensity-2::after {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.35) 0%, rgba(0, 242, 254, 0.35) 100%);
+}
+
+.category-card.rarity-intensity-3::after {
   background: linear-gradient(135deg, rgba(79, 172, 254, 0.5) 0%, rgba(0, 242, 254, 0.5) 100%);
-  z-index: 1;
 }
 
-.category-card.rarity-3 {
-  background-image: url('/All.png');
-  position: relative;
+.category-card.rarity-intensity-4::after {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.65) 0%, rgba(0, 242, 254, 0.65) 100%);
 }
 
-.category-card.rarity-3::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.7) 0%, rgba(0, 242, 254, 0.7) 100%);
-  z-index: 1;
+.category-card.rarity-intensity-5::after {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.8) 0%, rgba(0, 242, 254, 0.8) 100%);
 }
 
-.category-card.rarity-4 {
-  background-image: url('/All.png');
-  position: relative;
-}
-
-.category-card.rarity-4::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+.category-card.rarity-intensity-6::after {
   background: linear-gradient(135deg, rgba(79, 172, 254, 0.9) 0%, rgba(0, 242, 254, 0.9) 100%);
-  z-index: 1;
 }
 
 .error-message {
@@ -388,7 +365,15 @@ export default {
       categories: state => state.categories || [], // Safe access
       loading: state => state.loading,
       error: state => state.error
-    })
+    }),
+    
+    // Get only rarity categories for dynamic intensity calculation
+    rarityCategories() {
+      return this.categories.filter(category => {
+        const name = category.name.toLowerCase();
+        return !name.includes('all') && !name.includes('general') && !name.includes('shop');
+      });
+    }
   },
   methods: {
     ...mapActions(['fetchCategories']),
@@ -398,7 +383,7 @@ export default {
       this.$router.push(`/category/${category.id}`);
     },
     
-    getCategoryBackgroundClass(category) {
+    getCategoryBackgroundClass(category, index) {
       const name = category.name.toLowerCase();
       
       if (name.includes('all') || name.includes('general')) {
@@ -406,11 +391,18 @@ export default {
       } else if (name.includes('shop')) {
         return 'shop';
       } else {
-        // For rarity categories, assign progressively intensive gradients
-        // You might want to adjust this logic based on your actual category data
-        const rarityLevels = ['rarity-1', 'rarity-2', 'rarity-3', 'rarity-4'];
-        const index = category.id % rarityLevels.length;
-        return rarityLevels[index];
+        // For rarity categories, calculate intensity based on position in rarity array
+        const rarityIndex = this.rarityCategories.findIndex(cat => cat.id === category.id);
+        const totalRarities = this.rarityCategories.length;
+        
+        if (rarityIndex !== -1 && totalRarities > 0) {
+          // Calculate intensity level (1-6) based on position
+          const intensityLevel = Math.min(6, Math.max(1, Math.ceil((rarityIndex + 1) / totalRarities * 6)));
+          return `rarity rarity-intensity-${intensityLevel}`;
+        }
+        
+        // Fallback if something goes wrong
+        return 'rarity rarity-intensity-3';
       }
     },
     
@@ -428,6 +420,7 @@ export default {
     try {
       await this.fetchCategories();
       console.log('Categories after fetch:', this.categories);
+      console.log('Rarity categories:', this.rarityCategories);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
     }
