@@ -155,7 +155,7 @@
   background-size: cover;
   background-position: center;
   z-index: 0;
-  filter: blur(10px);
+  filter: blur(5px);
 }
 
 /* Apply specific backgrounds to the pseudo-element */
@@ -165,7 +165,7 @@
 
 .category-card.shop::after {
   background-image: url('/shop.png');
-  filter: blur(10px); /* No blur for shop category */
+  filter: blur(5px); /* No blur for shop category */
 }
 
 .category-card.rarity::after {
