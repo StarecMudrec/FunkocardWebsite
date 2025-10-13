@@ -188,6 +188,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
 .category-card:hover {
@@ -198,17 +199,18 @@
 .category-card__header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 15px;
+  flex-direction: column;
 }
 
 .category-card__title {
-  font-size: 1.3rem;
+  font-size: 2.8rem;
   font-weight: 600;
   color: white;
   margin: 0;
   flex: 1;
-  margin-right: 10px;
+  /* margin-right: 10px; */
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
 }
 
