@@ -165,7 +165,7 @@
 
 .category-card.shop .category-card__background {
   background-image: url('/shop.png');
-  filter: blur(0px); /* No blur for shop category */
+  filter: blur(5px); /* No blur for shop category */
 }
 
 .category-card.rarity .category-card__background {
