@@ -536,7 +536,7 @@ export default {
         if (rarityIndex !== -1 && totalRarities > 0) {
           // REVERSED: First rarity card (index 0) gets highest intensity (1)
           // Last rarity card gets lowest intensity (6)
-          const intensityLevel = Math.min(6, Math.max(1, Math.floor((rarityIndex / totalRarities) * 6) + 1));
+          const intensityLevel = Math.min(6, Math.max(3, Math.floor((rarityIndex / totalRarities) * 6) + 1));
           return `rarity rarity-intensity-${intensityLevel}`;
         }
         
