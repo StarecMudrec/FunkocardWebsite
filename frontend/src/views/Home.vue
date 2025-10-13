@@ -163,7 +163,7 @@
 
 .category-card.shop::after {
   background-image: url('/shop.png');
-  filter: blur(0px); /* No blur for shop category */
+  filter: blur(10px); /* No blur for shop category */
 }
 
 .category-card.rarity::after {
