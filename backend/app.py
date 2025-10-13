@@ -246,8 +246,12 @@ def db_status():
 
 @app.route('/api/card_image/<path:file_id>')
 def serve_card_image(file_id):
+    if file_id.startswith('CgAC'):
+        logging.info(f"Special file type detected: {file_id}, using placeholder")
+        return send_from_directory('public', 'placeholder.jpg')
+    
     """Serve card images from local cache, downloading from Telegram if not cached"""
-    TOKEN = os.getenv("CARDS_BOT_TOKEN")  # Replace with your actual bot token
+    TOKEN = os.getenv("CARDS_BOT_TOKEN")
     
     # Create cache directory if it doesn't exist
     cache_dir = 'backend/card_images'
@@ -259,16 +263,16 @@ def serve_card_image(file_id):
     # Check if image is already cached
     if os.path.exists(cache_file):
         try:
-            # Serve from local cache
             return send_from_directory(cache_dir, f"{file_id}.jpg")
         except Exception as e:
             logging.warning(f"Error serving cached image for {file_id}: {str(e)}")
-            # Fall through to download again
     
     try:
         # First, get file path from Telegram API
         api_url = f"https://api.telegram.org/bot{TOKEN}/getFile?file_id={file_id}"
         response = requests.get(api_url)
+        
+        logging.debug(f"Telegram API response for {file_id}: {response.status_code} - {response.text}")
         
         if response.status_code != 200:
             logging.warning(f"Failed to get file info for file_id {file_id}: {response.text}")
@@ -277,6 +281,10 @@ def serve_card_image(file_id):
         file_info = response.json()
         if not file_info.get("ok"):
             logging.warning(f"Telegram API error for file_id {file_id}: {file_info}")
+            
+            # Special handling for certain file types that might not work with getFile
+            if file_id.startswith('CgAC'):
+                logging.info(f"File {file_id} appears to be a special type (sticker/animation), using placeholder")
             return send_from_directory('public', 'placeholder.jpg')
         
         file_path = file_info.get("result", {}).get("file_path")
@@ -299,7 +307,6 @@ def serve_card_image(file_id):
             logging.debug(f"Cached image for file_id {file_id}")
         except Exception as e:
             logging.warning(f"Failed to cache image for {file_id}: {str(e)}")
-            # Continue to serve the image even if caching fails
         
         # Return the image with appropriate headers
         response = make_response(file_response.content)
@@ -310,7 +317,6 @@ def serve_card_image(file_id):
     except Exception as e:
         logging.error(f"Error serving card image for {file_id}: {str(e)}")
         return send_from_directory('public', 'placeholder.jpg')
-
 
 @app.route("/api/categories")
 def get_categories():
