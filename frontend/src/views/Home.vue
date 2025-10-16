@@ -182,25 +182,25 @@
   object-fit: cover;
   z-index: 0;
   transition: all 0.3s ease;
-  /*filter: blur(8px); /* Apply same blur as rarity cards */
+  filter: blur(1px); /* Apply same blur as rarity cards */
 }
 
 /* Apply specific backgrounds and blur effects */
 .category-card.all-cards .category-card__background {
   background-image: url('/All.png');
-  /*filter: blur(5px);*/
+  filter: blur(1px);
 }
 
 .category-card.shop .category-card__background {
   background-image: url('/shop.png');
-  /*filter: blur(5px); /* No blur for shop category */
+  filter: blur(1px); /* No blur for shop category */
 }
 
 .category-card.rarity .category-card__background,
 .category-card.rarity .category-card__video {
   background-size: cover;
   background-position: center;
-  /*filter: blur(8px); /* Stronger blur for rarity cards */
+  filter: blur(1px); /* Stronger blur for rarity cards */
 }
 
 /* Gradient overlay for better text readability */
