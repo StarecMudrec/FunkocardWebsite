@@ -20,6 +20,7 @@
     
     <!-- Основной контент -->
     <div id="content-section" class="content">
+      <h1 class="categoryies-title">Categories : </h1>
       <div id="categories-container" class="categories-grid">
         <div v-if="loading" class="loading">Loading categories...</div>
         <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
