@@ -75,7 +75,7 @@
                   <!--<svg class="back-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m15 18-6-6 6-6"/>
                   </svg>-->
-                  ← Back to {{ card.category }}
+                  ← Back to {{ getCategoryDisplayName() }}
                 </button>
               </div>
             </div>
@@ -169,6 +169,23 @@
         // Convert both IDs to strings for comparison
         const currentCardId = card.value.id.toString();
         return sortedCards.value.findIndex(c => c.id.toString() === currentCardId);
+      }
+
+      const getCategoryDisplayName = () => {
+        const previousCategory = sessionStorage.getItem('previousCategory');
+        
+        if (previousCategory) {
+          // Convert the stored category ID to a display name
+          if (previousCategory === 'all') return 'All Cards';
+          if (previousCategory === 'shop') return 'Available at Shop';
+          if (previousCategory.startsWith('rarity_')) {
+            return previousCategory.replace('rarity_', '');
+          }
+          return previousCategory;
+        } else {
+          // Fallback to card's category
+          return card.value?.category || 'Category';
+        }
       }
       
       const formatDescription = (description) => {
@@ -834,6 +851,7 @@
         formatShopInfo,
         isShopAvailable,
         formatDescription,
+        getCategoryDisplayName, // Add this to the return object
       }
     }
   }
