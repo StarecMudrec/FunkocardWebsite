@@ -190,12 +190,10 @@
           console.log('Loading cards for category ID:', categoryId);
           
           const cards = await fetchCardsByCategory(categoryId, 'id', 'asc');
-          
-          // Ensure cards is an array, fallback to empty array if not
-          sortedCards.value = Array.isArray(cards) ? cards : [];
+          sortedCards.value = cards;
           currentCardIndex.value = findCurrentCardIndex();
           
-          console.log('Loaded cards by category:', sortedCards.value);
+          console.log('Loaded cards by category:', cards);
           console.log('Current card ID:', card.value.id);
           console.log('Current card index:', currentCardIndex.value);
           console.log('Card IDs in sortedCards:', sortedCards.value.map(c => c.id));
@@ -204,8 +202,6 @@
           preloadAdjacentCards();
         } catch (error) {
           console.error('Error loading sorted cards by category:', error);
-          // Set to empty array on error to prevent future errors
-          sortedCards.value = [];
           // Don't throw the error here, just log it
           // This allows the card detail to still load even if navigation fails
         }
