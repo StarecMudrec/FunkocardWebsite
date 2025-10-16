@@ -198,21 +198,10 @@
 }
 
 /* Apply specific backgrounds and blur effects */
-.category-card.all-cards .category-card__background {
-  background-image: url('/All.png');
-  filter: blur(2px);
-}
-
-.category-card.shop .category-card__background {
-  background-image: url('/shop.png');
-  filter: blur(2px); /* No blur for shop category */
-}
-
-.category-card.rarity .category-card__background,
-.category-card.rarity .category-card__video {
-  background-size: cover;
-  background-position: center;
-  filter: blur(2px); /* Stronger blur for rarity cards */
+.category-card.all-cards .category-card__background,
+.category-card.shop .category-card__background,
+.category-card.rarity .category-card__background {
+  filter: blur(2px); /* Consistent blur for all category types */
 }
 
 /* Gradient overlay for better text readability */
@@ -400,7 +389,8 @@ export default {
         'Force🤷‍♂️': 9,
         'Scarface - Tony Montana': 10
       },
-      rarityNewestCards: {} // Store newest card images for each rarity
+      rarityNewestCards: {}, // Store newest card images for each category
+      allCategoriesNewestCards: {} // Store newest cards for all categories
     }
   },
   computed: {
@@ -450,6 +440,20 @@ export default {
       }
     },
     
+    async fetchAllCategoriesNewestCards() {
+      try {
+        const response = await fetch('/api/all_categories_newest_cards');
+        if (response.ok) {
+          this.allCategoriesNewestCards = await response.json();
+          console.log('Newest cards for all categories:', this.allCategoriesNewestCards);
+        } else {
+          console.error('Failed to fetch newest cards for all categories');
+        }
+      } catch (error) {
+        console.error('Error fetching newest cards for all categories:', error);
+      }
+    },
+    
     navigateToCategory(category) {
       console.log('Navigating to category:', category);
       
@@ -476,7 +480,7 @@ export default {
     },
     
     getLimitedVideoSource(category) {
-      const newestCard = this.rarityNewestCards[category.name];
+      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
       if (newestCard && newestCard.photo) {
         return `/api/card_image/${newestCard.photo}`;
       }
@@ -486,14 +490,23 @@ export default {
     getCategoryBackgroundStyle(category) {
       const name = category.name.toLowerCase();
       
-      // For rarity categories (except Limited), use the newest card image
-      if (!name.includes('all') && !name.includes('general') && !name.includes('shop') && category.name !== 'Limited ⚠️') {
-        const newestCard = this.rarityNewestCards[category.name];
-        if (newestCard && newestCard.photo) {
-          return {
-            backgroundImage: `url(/api/card_image/${newestCard.photo})`
-          };
-        }
+      // For all categories (including All Cards and Shop), use the newest card image
+      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
+      if (newestCard && newestCard.photo) {
+        return {
+          backgroundImage: `url(/api/card_image/${newestCard.photo})`
+        };
+      }
+      
+      // Fallback to static images if no newest card found
+      if (name.includes('all') || name.includes('general')) {
+        return {
+          backgroundImage: `url('/All.png')`
+        };
+      } else if (name.includes('shop')) {
+        return {
+          backgroundImage: `url('/shop.png')`
+        };
       }
       
       return {};
@@ -512,7 +525,8 @@ export default {
   async mounted() {
     try {
       await this.fetchCategories();
-      await this.fetchRarityNewestCards(); // Fetch newest cards after categories
+      await this.fetchRarityNewestCards(); // Fetch newest cards for rarity categories
+      await this.fetchAllCategoriesNewestCards(); // Fetch newest cards for all categories
       console.log('Categories after fetch:', this.categories);
       console.log('Sorted categories:', this.sortedCategories);
       console.log('Rarity categories:', this.rarityCategories);
