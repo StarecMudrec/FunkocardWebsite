@@ -249,7 +249,7 @@
   color: white;
   margin: 0;
   flex: 1;
-  text-shadow: 0px 7px 10px rgba(0, 0, 0, 0.7);
+  text-shadow: 0px 7px 16px rgba(0, 0, 0, 1);
 }
 
 .category-card__count {
