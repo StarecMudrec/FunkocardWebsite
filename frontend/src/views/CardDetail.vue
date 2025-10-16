@@ -68,6 +68,16 @@
                   </p>
                 </div>
               </div>
+
+              <!-- Back to category button -->
+              <div class="back-to-category-section">
+                <button @click="goBackToCategory" class="back-to-category-button">
+                  <svg class="back-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 18-6-6 6-6"/>
+                  </svg>
+                  Back to {{ card.category }}
+                </button>
+              </div>
             </div>
             
             <div class="card-image-container">
@@ -274,6 +284,23 @@
         }
         
         return false;
+      }
+
+      // Add the goBackToCategory method
+      const goBackToCategory = () => {
+        // Use the navigation type to indicate we're returning to category
+        if (router.meta) {
+          router.meta.navigationType = 'to-category'
+        }
+        
+        // Navigate back to the category page
+        if (card.value?.category) {
+          const categoryId = `rarity_${card.value.category}`
+          router.push(`/category/${categoryId}`)
+        } else {
+          // Fallback: go back in history
+          router.go(-1)
+        }
       }
 
       const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
@@ -789,6 +816,7 @@
         isLastCard,
         goToPreviousCard,
         goToNextCard,
+        goBackToCategory, // Add this to the return object
         transitionName,
         preloadedCards,
         isPreloading,
@@ -813,6 +841,55 @@
     overflow: hidden;
     width: 100%;
     height: 100%;
+  }
+
+  .back-to-category-section {
+    text-align: center;
+    margin-top: 20px;
+  }
+
+  .back-to-category-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: var(--text-color);
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: 'Afacad', sans-serif;
+    transition: all 0.3s ease;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  }
+
+  .back-to-category-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .back-to-category-button:active {
+    transform: translateY(0);
+  }
+
+  .back-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .back-to-category-button {
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+    
+    .back-icon {
+      width: 14px;
+      height: 14px;
+    }
   }
   /* Hide scrollbar for Chrome, Safari and Opera */
   ::-webkit-scrollbar {
