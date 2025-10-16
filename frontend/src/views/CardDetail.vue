@@ -72,25 +72,36 @@
               <!-- Back to category button -->
               <div class="back-to-category-section">
                 <button @click="goBackToCategory" class="back-to-category-button">
-                  <!--<svg class="back-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m15 18-6-6 6-6"/>
-                  </svg>-->
                   ← Back to {{ getCategoryDisplayName() }}
                 </button>
               </div>
             </div>
             
             <div class="card-image-container">
+              <!-- Video for Limited cards -->
+              <video 
+                v-if="isLimitedCard && card.img && !mediaError" 
+                :src="`/api/card_image/${card.img}`" 
+                class="card-detail-media"
+                autoplay
+                loop
+                muted
+                playsinline
+                @error="mediaError = true"
+                @dblclick="handleMediaDoubleClick"
+              ></video>
+              
+              <!-- Image for non-Limited cards -->
               <img 
-                v-if="card.img && !imageError" 
+                v-else-if="card.img && !mediaError" 
                 :src="`/api/card_image/${card.img}`" 
                 :alt="card.name" 
-                class="card-detail-image"
-                @error="imageError = true"
-                @dblclick="handleImageDoubleClick"
+                class="card-detail-media"
+                @error="mediaError = true"
+                @dblclick="handleMediaDoubleClick"
               />
-              <!-- <button v-if="isUserAllowed" class="replace-image-button">Replace Image</button> -->
-              <div v-else class="image-placeholder">No image available</div>
+              
+              <div v-else class="image-placeholder">No media available</div>
             </div>
           </div>
         </div>
@@ -136,7 +147,7 @@
       const editableCard = ref({})
       const loading = ref(true)
       const error = ref(null)
-      const imageError = ref(false)
+      const mediaError = ref(false) // Changed from imageError to mediaError
       const saveError = ref(null)
       const nameError = ref(null)
       const descriptionError = ref(null)
@@ -162,6 +173,11 @@
       const preloadError = ref(null)
 
       const showTransition = ref(false);
+
+      // Computed property to check if current card is Limited
+      const isLimitedCard = computed(() => {
+        return card.value.category === 'Limited ⚠️';
+      });
 
       const findCurrentCardIndex = () => {
         if (!card.value?.id || !sortedCards.value.length) return -1;
@@ -282,7 +298,7 @@
         
         // If shop data is a simple string, return it as is
         if (typeof shopData === 'string') {
-          return "Availible";
+          return "Available";
         }
         
         // If shop data is an object or needs formatting, handle it here
@@ -327,7 +343,6 @@
           }
         }
       }
-
 
       const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
         scrollWidth > clientWidth || scrollHeight > clientHeight
@@ -455,6 +470,7 @@
           console.log('Configurable approach - Font size:', optimalSize, 'Wrapped:', needsWrap);
         });
       };
+
       const fallbackAdjustFontSize  = () => {
         nextTick(() => {
           if (!cardNameRef.value) return;
@@ -629,7 +645,7 @@
         }
       }
 
-      const handleImageDoubleClick = () => {
+      const handleMediaDoubleClick = () => {
         if (isUserAllowed.value && fileInput.value) {
           fileInput.value.click();
         }
@@ -665,6 +681,7 @@
       const loadData = async () => {
         try {
           loading.value = true;
+          mediaError.value = false; // Reset media error when loading new card
           
           card.value = await fetchCardInfo(props.id);
           editableCard.value = { ...card.value };
@@ -821,7 +838,7 @@
         nameError,
         descriptionError,
         saveError,
-        imageError,
+        mediaError, // Changed from imageError to mediaError
         cardNameRef,
         editing,
         isUserAllowed,
@@ -829,14 +846,14 @@
         descriptionInput,
         categoryInput,
         fileInput,
-        handleImageDoubleClick,
+        handleMediaDoubleClick, // Changed from handleImageDoubleClick
         handleFileChange,
         startEditing,
         saveField,
         toggleEdit,
         cancelEdit,
         fileInput,  
-        handleImageDoubleClick,
+        handleMediaDoubleClick, // Changed from handleImageDoubleClick
         handleFileChange,
         isFirstCard,
         isLastCard,
@@ -852,6 +869,7 @@
         isShopAvailable,
         formatDescription,
         getCategoryDisplayName, // Add this to the return object
+        isLimitedCard, // Add the computed property to return object
       }
     }
   }
@@ -1397,6 +1415,16 @@
     width: auto; /* Let width adjust based on aspect ratio */
     height: auto; /* Let height adjust based on aspect ratio */
     object-fit: contain; /* Ensure entire image is visible */
+    /* border-radius: 17px; */
+    background-color: #1e1e1e;
+  }
+
+  .card-detail-media {
+    max-height: 100%; /* Limit height to container */
+    max-width: 100%; /* Limit width to container */
+    width: auto; /* Let width adjust based on aspect ratio */
+    height: auto; /* Let height adjust based on aspect ratio */
+    object-fit: contain; /* Ensure entire media is visible */
     /* border-radius: 17px; */
     background-color: #1e1e1e;
   }
