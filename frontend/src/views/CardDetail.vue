@@ -89,6 +89,7 @@
                 playsinline
                 @error="mediaError = true"
                 @dblclick="handleMediaDoubleClick"
+                disablePictureInPicture
               ></video>
               
               <!-- Image for non-Limited cards -->

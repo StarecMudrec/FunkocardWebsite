@@ -22,6 +22,7 @@
           preload="metadata"
           @loadeddata="onVideoLoad"
           @error="onMediaError"
+          disablePictureInPicture
         ></video>
         
         <!-- Image for other cards -->
