@@ -154,7 +154,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
-  min-height: 470px;
+  aspect-ratio: 0.8;
   position: relative;
 }
 
