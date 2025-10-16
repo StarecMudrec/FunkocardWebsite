@@ -140,7 +140,7 @@
 
 .categories-title {
   text-align: center;
-  font-size: 7rem;
+  font-size: 6rem;
   font-weight: 700;
   color: white;
   text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.7);
