@@ -560,6 +560,82 @@ def get_rarity_newest_cards():
         connection.close()
         
 
+@app.route("/api/all_categories_newest_cards")
+def get_all_categories_newest_cards():
+    """Get the newest card image for all categories including All Cards and Shop"""
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        # Define hidden categories to exclude - only Scarface remains hidden
+        hidden_categories = ['Scarface - Tony Montana']
+        
+        with connection.cursor() as cursor:
+            result = {}
+            
+            # Get newest card for "All Cards" category (overall newest card)
+            cursor.execute("""
+                SELECT tg_id as photo, name, rare as rarity
+                FROM files 
+                WHERE rare NOT IN (%s)
+                ORDER BY id DESC 
+                LIMIT 1
+            """, hidden_categories)
+            
+            all_cards_newest = cursor.fetchone()
+            if all_cards_newest:
+                result['All Cards'] = {
+                    'photo': all_cards_newest['photo'],
+                    'name': all_cards_newest['name']
+                }
+            
+            # Get newest card for "Shop" category (newest card available in shop)
+            cursor.execute("""
+                SELECT tg_id as photo, name, rare as rarity
+                FROM files 
+                WHERE shop != '-' AND shop IS NOT NULL
+                AND rare NOT IN (%s)
+                ORDER BY id DESC 
+                LIMIT 1
+            """, hidden_categories)
+            
+            shop_newest = cursor.fetchone()
+            if shop_newest:
+                result['Available at Shop'] = {
+                    'photo': shop_newest['photo'],
+                    'name': shop_newest['name']
+                }
+            
+            # Also include all rarity categories for consistency
+            cursor.execute("""
+                SELECT f1.rare, f1.tg_id as photo, f1.name
+                FROM files f1
+                INNER JOIN (
+                    SELECT rare, MAX(id) as max_id
+                    FROM files 
+                    WHERE rare NOT IN (%s)
+                    GROUP BY rare
+                ) f2 ON f1.rare = f2.rare AND f1.id = f2.max_id
+                ORDER BY f1.rare
+            """, hidden_categories)
+            
+            rarity_newest_cards = cursor.fetchall()
+            for card in rarity_newest_cards:
+                result[card['rare']] = {
+                    'photo': card['photo'],
+                    'name': card['name']
+                }
+            
+            return jsonify(result), 200
+            
+    except Exception as e:
+        logging.error(f"Error fetching newest cards for all categories: {str(e)}")
+        return jsonify({'error': 'Failed to fetch newest cards'}), 500
+    finally:
+        connection.close()
+
+
 @app.route('/api/check_permission', methods=['GET'])
 def check_permission():
     username = request.args.get('username')

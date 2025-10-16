@@ -490,7 +490,7 @@ export default {
     getCategoryBackgroundStyle(category) {
       const name = category.name.toLowerCase();
       
-      // For all categories (including All Cards and Shop), use the newest card image
+      // For all categories, use the newest card image
       const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
       if (newestCard && newestCard.photo) {
         return {
@@ -532,6 +532,7 @@ export default {
       console.log('Rarity categories:', this.rarityCategories);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
+      // Continue even if one of the API calls fails
     }
   }
 }
