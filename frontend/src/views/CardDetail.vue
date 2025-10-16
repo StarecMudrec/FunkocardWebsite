@@ -1284,6 +1284,7 @@
   .image-placeholder {
     width: 100%;
     height: 100%;
+    aspect-ratio: 0.8;
     display: flex;
     align-items: center;
     justify-content: center;
