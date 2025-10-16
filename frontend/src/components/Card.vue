@@ -3,19 +3,43 @@
     class="card"
     :class="{ 
       'selected': isSelected,
-      'selected-animation': isSelected && !isMobile
+      'selected-animation': isSelected && !isMobile,
+      'limited-card': isLimitedCard
     }"
     v-if="card"
     @click="handleCardClick"
   >
     <div class="card-inner-content">
       <div class="image-wrapper">
+        <!-- Video for Limited cards -->
+        <video
+          v-if="isLimitedCard && card.img"
+          :src="getMediaUrl(card.img)"
+          class="card-media video-media"
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          @loadeddata="onVideoLoad"
+          @error="onMediaError"
+        ></video>
+        
+        <!-- Image for other cards -->
         <img
-          :src="card.img ? `/api/card_image/${card.img}` : '/placeholder.jpg'"
+          v-else-if="card.img"
+          :src="getMediaUrl(card.img)"
           :alt="card.name"
-          class="card-image"
+          class="card-media image-media"
           @error="handleImageError"
-        >
+        />
+        
+        <!-- Placeholder when no media -->
+        <img
+          v-else
+          src="/placeholder.jpg"
+          alt="Placeholder"
+          class="card-media placeholder-media"
+        />
       </div>
       <div class="card-content">
         <div class="card-info">
@@ -34,7 +58,6 @@
       @click.stop
       v-if="allowSelection"
     >
-
   </div>
 </template>
 
@@ -46,57 +69,126 @@ export default {
       required: true,
       validator: card => 'name' in card && 'img' in card
     },
-    // Add this new prop:
     allowSelection: {
       type: Boolean,
-      default: false // Or whatever default value makes sense
+      default: false
     }
   },
   data() {
     return {
       isSelected: false,
-      isMobile: false
+      isMobile: false,
+      videoObserver: null
     };
+  },
+  computed: {
+    isLimitedCard() {
+      return this.card.rarity === 'Limited ⚠️' || this.card.category === 'Limited ⚠️'
+    }
   },
   mounted() {
     this.checkMobile();
     window.addEventListener('resize', this.checkMobile);
+    
+    // Setup video autoplay for Limited cards
+    if (this.isLimitedCard) {
+      this.setupVideoAutoplay();
+    }
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.checkMobile);
+    
+    // Clean up video observer
+    if (this.videoObserver) {
+      this.videoObserver.disconnect();
+    }
   },
   methods: {
+    getMediaUrl(fileId) {
+      return `/api/card_image/${fileId}`;
+    },
+    
     checkMobile() {
       this.isMobile = window.innerWidth <= 768;
     },
+    
     handleImageError(e) {
       e.target.src = '/placeholder.jpg';
     },
+    
+    onVideoLoad(event) {
+      // Video loaded successfully
+      console.log('Video loaded for Limited card:', this.card.name);
+      const video = event.target;
+      
+      // Try to play the video
+      video.play().catch(error => {
+        console.log('Autoplay prevented, will play when visible:', error);
+      });
+    },
+    
+    onMediaError(event) {
+      console.error('Failed to load media for card:', this.card.name);
+      // Fallback to placeholder
+      if (event.target.tagName === 'VIDEO') {
+        const videoElement = event.target;
+        const imgElement = document.createElement('img');
+        imgElement.src = '/placeholder.jpg';
+        imgElement.className = 'card-media image-media';
+        imgElement.alt = this.card.name;
+        videoElement.parentNode.replaceChild(imgElement, videoElement);
+      } else {
+        event.target.src = '/placeholder.jpg';
+      }
+    },
+    
+    setupVideoAutoplay() {
+      // Use Intersection Observer to play videos only when they're visible
+      this.videoObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const video = entry.target;
+          if (entry.isIntersecting) {
+            video.play().catch(error => {
+              console.log('Video autoplay prevented:', error);
+            });
+          } else {
+            video.pause();
+          }
+        });
+      }, { threshold: 0.5 });
+      
+      // Observe the video element when it's added to DOM
+      this.$nextTick(() => {
+        const videoElement = this.$el.querySelector('.video-media');
+        if (videoElement) {
+          this.videoObserver.observe(videoElement);
+        }
+      });
+    },
+    
     handleCardClick(event) {
-      // Если карточка выделена, не выполняем никаких действий (кроме обработки клика по чекбоксу, которая уже есть)
       if (this.isSelected) {
         return;
       }
-      // Prevent triggering on checkbox click
       if (event.target.classList.contains('selection-checkbox')) {
         return;
       }
-      // Navigate on any click unless it's the checkbox
-      // This handler is primarily for desktop, mobile is handled by handleCardContentClick
       this.$emit('card-clicked', this.card.id);
     },
+    
     handleCheckboxChange(event) {
       this.isSelected = event.target.checked;
       this.$emit('card-selected', this.card.id, this.isSelected);
     },
 
     toggleSelection() {
-      this.isSelected = !this.isSelected; // Toggle selection mapState
+      this.isSelected = !this.isSelected;
       this.$emit('card-selected', this.card.id, this.isSelected);
     },
+    
     deleteCard() {
       this.$emit('delete-card', this.card.id);
-    },
+    }
   }
 }
 </script>
@@ -108,8 +200,8 @@ export default {
   background: var(--card-bg);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Use consistent shadow */
-  position: relative; /* Added for absolute positioning of the button */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
   transition: transform 0.2s ease, border 0.2s ease;
   margin: 15px;
 }
@@ -123,6 +215,16 @@ export default {
   animation: float-shake 2s ease-in-out infinite;
   transform: translateY(-15px);
   z-index: 10;
+}
+
+/* Special styling for Limited cards */
+.card.limited-card {
+  border: 2px solid rgba(255, 193, 7, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+}
+
+.card.limited-card:hover {
+  box-shadow: 0 6px 16px rgba(255, 193, 7, 0.3);
 }
 
 /* Добавляем новые стили для анимации */
@@ -146,20 +248,20 @@ export default {
   position: absolute;
   top: 8px;
   left: 8px;
-  z-index: 1; /* Ensure it's above the image */
+  z-index: 2;
   width: 20px;
   height: 20px;
   cursor: pointer;
-  /* Hide on mobile by default */
   display: none;
 }
 
 /* Show on desktop */
-@media (min-width: 769px) { /* Adjust breakpoint as needed */
+@media (min-width: 769px) {
   .selection-checkbox {
     display: block;
   }
 }
+
 .image-wrapper {
   position: relative;
   width: 100%;
@@ -167,20 +269,32 @@ export default {
   overflow: hidden;
 }
 
-.card-image {
+/* Unified media styles */
+.card-media {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
+  display: block;
+}
+
+/* Video specific styles */
+.video-media {
+  background: #000;
+}
+
+.image-media {
+  background: #f0f0f0;
 }
 
 .card-inner-content {
-  transition: filter 0.3s ease; /* Add transition for blur */
+  transition: filter 0.3s ease;
 }
 
 .card.selected {
   border: 4px solid rgba(255, 42, 42, 0.32);
 }
+
 .card.selected::before {
   content: '';
   position: absolute;
@@ -189,12 +303,14 @@ export default {
   right: 0;
   bottom: 0;
   background-color: rgba(255, 42, 42, 0.24);
-  z-index: 0; /* Lower than checkbox and potential future delete button */
+  z-index: 1;
   filter: blur(4px);
 }
+
 .card.selected .card-inner-content {
   filter: blur(4px) opacity(0.5);
 }
+
 .card-content {
   padding: 10px 16px 10px 16px;
 }
@@ -202,31 +318,32 @@ export default {
 .card-info {
   display: flex;
 }
+
 .card-category {
   font-size: 0.9rem;
   color: #888;
   margin: 0;
 }
 
-
 /* New styles for card info layout */
 .card-info {
- display: flex;
- justify-content: space-between;
- align-items: center;
- margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
 .card-title {
- font-size: 1.1rem;
- margin: 0;
- color: var(--accent-color);
+  font-size: 1.1rem;
+  margin: 0;
+  color: var(--accent-color);
 }
 
 .card-rarity {
   font-size: 0.9rem;
   color: #888;
 }
+
 /* 🟡 НОВЫЕ СТИЛИ ДЛЯ КОМПАКТНОГО ВИДА */
 .card.compact {
   --card-width: 180px;
@@ -238,7 +355,7 @@ export default {
   
   .card-title {
     font-size: 0.9rem;
-    margin-right: 8px; /* Add spacing between title and rarity in compact view */
+    margin-right: 8px;
   }
 }
 
@@ -248,7 +365,7 @@ export default {
     margin: 8px 4px;
 
     .selection-checkbox {
-      display: block; /* Ensure checkbox is visible on mobile */
+      display: block;
     }
   }
   .card.selected-animation {
@@ -266,10 +383,20 @@ export default {
     margin: 8px auto;
 
     .selection-checkbox {
-      display: block; /* Ensure checkbox is visible on mobile */
+      display: block;
       width: 30px;
       height: 30px;
     }
   }
+}
+
+/* Video loading state */
+.video-media:not([src]) {
+  background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
+              linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
+              linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
+              linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 </style>

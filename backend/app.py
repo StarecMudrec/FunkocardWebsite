@@ -246,40 +246,48 @@ def db_status():
 
 @app.route('/api/card_image/<path:file_id>')
 def serve_card_image(file_id):
-    """Serve card images from local cache, downloading from Telegram if not cached"""
+    """Serve card images/videos from local cache, downloading from Telegram if not cached"""
     TOKEN = os.getenv("CARDS_BOT_TOKEN")
     
-    # DEBUG: Check if token is available
     if not TOKEN:
         logging.error("CARDS_BOT_TOKEN environment variable is not set!")
         return send_from_directory('public', 'placeholder.jpg')
     
-    logging.debug(f"Attempting to serve image for file_id: {file_id}")
-    logging.debug(f"Using bot token: {TOKEN[:10]}...")  # Log first 10 chars for security
+    logging.debug(f"Attempting to serve media for file_id: {file_id}")
     
-    # Create cache directory if it doesn't exist
-    cache_dir = 'backend/card_images'
-    os.makedirs(cache_dir, exist_ok=True)
+    # Create cache directories if they don't exist
+    image_cache_dir = 'backend/card_images'
+    video_cache_dir = 'backend/card_videos'
+    os.makedirs(image_cache_dir, exist_ok=True)
+    os.makedirs(video_cache_dir, exist_ok=True)
     
-    # Define local cache file path
-    cache_file = os.path.join(cache_dir, f"{file_id}.jpg")
+    # Check if file is already cached as image
+    image_cache_file = os.path.join(image_cache_dir, f"{file_id}.jpg")
+    video_cache_file = os.path.join(video_cache_dir, f"{file_id}.mp4")
     
-    # Check if image is already cached
-    if os.path.exists(cache_file):
+    # Check image cache first
+    if os.path.exists(image_cache_file):
         try:
-            logging.debug(f"Serving from cache: {cache_file}")
-            return send_from_directory(cache_dir, f"{file_id}.jpg")
+            logging.debug(f"Serving from image cache: {image_cache_file}")
+            return send_from_directory(image_cache_dir, f"{file_id}.jpg")
         except Exception as e:
             logging.warning(f"Error serving cached image for {file_id}: {str(e)}")
+    
+    # Check video cache
+    if os.path.exists(video_cache_file):
+        try:
+            logging.debug(f"Serving from video cache: {video_cache_file}")
+            response = make_response(send_from_directory(video_cache_dir, f"{file_id}.mp4"))
+            response.headers.set('Content-Type', 'video/mp4')
+            response.headers.set('Cache-Control', 'public, max-age=3600')
+            return response
+        except Exception as e:
+            logging.warning(f"Error serving cached video for {file_id}: {str(e)}")
     
     try:
         # First, get file path from Telegram API
         api_url = f"https://api.telegram.org/bot{TOKEN}/getFile?file_id={file_id}"
-        logging.debug(f"Calling Telegram API: {api_url}")
         response = requests.get(api_url)
-        
-        logging.debug(f"Telegram API response status: {response.status_code}")
-        logging.debug(f"Telegram API response body: {response.text}")
         
         if response.status_code != 200:
             logging.warning(f"Failed to get file info for file_id {file_id}: {response.text}")
@@ -290,7 +298,6 @@ def serve_card_image(file_id):
             error_description = file_info.get('description', 'Unknown error')
             logging.warning(f"Telegram API error for file_id {file_id}: {error_description}")
             
-            # Special handling for CgAC files that don't work with getFile
             if file_id.startswith('CgAC'):
                 logging.info(f"File {file_id} appears to be a special type (sticker/animation), using placeholder")
             return send_from_directory('public', 'placeholder.jpg')
@@ -304,32 +311,48 @@ def serve_card_image(file_id):
         
         # Download the file from Telegram
         file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
-        logging.debug(f"Downloading from: {file_url}")
         file_response = requests.get(file_url)
         
-        logging.debug(f"Download response status: {file_response.status_code}")
-        
         if file_response.status_code != 200:
-            logging.warning(f"Failed to download file for file_id {file_id}: {file_response.status_code} - {file_response.text}")
+            logging.warning(f"Failed to download file for file_id {file_id}: {file_response.status_code}")
             return send_from_directory('public', 'placeholder.jpg')
         
-        # Cache the image locally for future requests
-        try:
-            with open(cache_file, 'wb') as f:
-                f.write(file_response.content)
-            logging.debug(f"Cached image for file_id {file_id} at {cache_file}")
-        except Exception as e:
-            logging.warning(f"Failed to cache image for {file_id}: {str(e)}")
+        # Determine if this is a video file based on file path extension
+        is_video = file_path.lower().endswith(('.mp4', '.mov', '.avi', '.webm'))
         
-        # Return the image with appropriate headers
-        response = make_response(file_response.content)
-        response.headers.set('Content-Type', 'image/jpeg')
-        response.headers.set('Cache-Control', 'public, max-age=3600')
-        logging.debug(f"Successfully served image for {file_id}")
-        return response
-        
+        if is_video:
+            # Cache as video
+            try:
+                with open(video_cache_file, 'wb') as f:
+                    f.write(file_response.content)
+                logging.debug(f"Cached video for file_id {file_id} at {video_cache_file}")
+            except Exception as e:
+                logging.warning(f"Failed to cache video for {file_id}: {str(e)}")
+            
+            # Return the video
+            response = make_response(file_response.content)
+            response.headers.set('Content-Type', 'video/mp4')
+            response.headers.set('Cache-Control', 'public, max-age=3600')
+            logging.debug(f"Successfully served video for {file_id}")
+            return response
+        else:
+            # Cache as image
+            try:
+                with open(image_cache_file, 'wb') as f:
+                    f.write(file_response.content)
+                logging.debug(f"Cached image for file_id {file_id} at {image_cache_file}")
+            except Exception as e:
+                logging.warning(f"Failed to cache image for {file_id}: {str(e)}")
+            
+            # Return the image
+            response = make_response(file_response.content)
+            response.headers.set('Content-Type', 'image/jpeg')
+            response.headers.set('Cache-Control', 'public, max-age=3600')
+            logging.debug(f"Successfully served image for {file_id}")
+            return response
+            
     except Exception as e:
-        logging.error(f"Error serving card image for {file_id}: {str(e)}", exc_info=True)
+        logging.error(f"Error serving card media for {file_id}: {str(e)}", exc_info=True)
         return send_from_directory('public', 'placeholder.jpg')
 
 

@@ -565,9 +565,16 @@ export default {
       if (!name.includes('all') && !name.includes('general') && !name.includes('shop')) {
         const newestCard = this.rarityNewestCards[category.name];
         if (newestCard && newestCard.photo) {
-          return {
-            backgroundImage: `url(/api/card_image/${newestCard.photo})`
-          };
+          // Check if this is a Limited card (video)
+          if (category.name === 'Limited ⚠️') {
+            return {
+              backgroundImage: `url(/api/card_image/${newestCard.photo})` // Fallback to first frame
+            };
+          } else {
+            return {
+              backgroundImage: `url(/api/card_image/${newestCard.photo})`
+            };
+          }
         }
       }
       
