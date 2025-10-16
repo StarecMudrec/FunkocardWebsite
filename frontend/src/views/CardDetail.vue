@@ -1290,7 +1290,7 @@
     justify-content: center;
     background-color: #1e1e1e;
     color: #666;
-    border-radius: 17px;
+    /* border-radius: 17px; */
   }
 
   .card-content-wrapper {
