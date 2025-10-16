@@ -199,44 +199,151 @@ export default {
         'Scarface - Tony Montana': 10
       },
       showScrollTop: false,
-      scrollThreshold: 300
+      scrollThreshold: 300,
+      scrollPosition: 0,
+      scrollSaveTimeout: null
     }
   },
   computed: {
     showRaritySort() {
       // Show rarity sort only for 'all' and 'shop' categories
       return this.categoryId === 'all' || this.categoryId === 'shop'
+    },
+    // Generate a unique storage key for this category
+    storageKey() {
+      return `category_state_${this.categoryId}`
     }
   },
   async created() {
-    // Use the external debounce function
     this.debouncedSearch = debounce(this.performSearch, 300)
+    
+    // Load saved state if available
+    this.loadSavedState()
+    
     await this.loadCategoryCards()
     
-    // Add scroll event listener
+    // Restore scroll position after cards are loaded
+    this.$nextTick(() => {
+      this.restoreScrollPosition()
+    })
+    
     window.addEventListener('scroll', this.handleScroll)
   },
   beforeUnmount() {
-    // Remove scroll event listener when component is destroyed
+    // Only save state if we're navigating to a card detail page
+    const navigationType = this.$route.meta?.navigationType
+    if (navigationType === 'to-card-detail') {
+      this.saveState()
+    } else {
+      // Clear state when leaving category completely
+      this.clearSavedState()
+    }
+    
+    if (this.scrollSaveTimeout) {
+      clearTimeout(this.scrollSaveTimeout)
+    }
+    
     window.removeEventListener('scroll', this.handleScroll)
   },
   watch: {
     categoryId: {
       handler: 'loadCategoryCards',
       immediate: false
+    },
+    searchQuery(newQuery) {
+      // Save state when search changes
+      this.saveState()
+    },
+    currentSort: {
+      handler(newSort) {
+        // Save state when sort changes
+        this.saveState()
+      },
+      deep: true
     }
   },
   methods: {
+    // Save current state to sessionStorage
+    saveState() {
+      const state = {
+        searchQuery: this.searchQuery,
+        currentSort: this.currentSort,
+        scrollPosition: this.scrollPosition,
+        timestamp: Date.now()
+      }
+      sessionStorage.setItem(this.storageKey, JSON.stringify(state))
+    },
+    
+    // Load saved state from sessionStorage
+    loadSavedState() {
+      try {
+        const saved = sessionStorage.getItem(this.storageKey)
+        if (saved) {
+          const state = JSON.parse(saved)
+          
+          // Check if state is not too old (e.g., 1 hour)
+          if (Date.now() - state.timestamp < 60 * 60 * 1000) {
+            this.searchQuery = state.searchQuery || ''
+            this.currentSort = state.currentSort || { field: 'id', direction: 'asc' }
+            this.scrollPosition = state.scrollPosition || 0
+          } else {
+            this.clearSavedState()
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load saved state:', error)
+        this.clearSavedState()
+      }
+    },
+    
+    // Clear saved state
+    clearSavedState() {
+      sessionStorage.removeItem(this.storageKey)
+    },
+    
+    // Restore scroll position
+    restoreScrollPosition() {
+      if (this.scrollPosition > 0) {
+        setTimeout(() => {
+          window.scrollTo(0, this.scrollPosition)
+        }, 100)
+      }
+    },
+    
+    // Update scroll position handler
+    handleScroll() {
+      this.scrollPosition = window.scrollY
+      this.showScrollTop = this.scrollPosition > this.scrollThreshold
+      
+      // Throttle saving scroll position to avoid too many writes
+      if (!this.scrollSaveTimeout) {
+        this.scrollSaveTimeout = setTimeout(() => {
+          this.saveState()
+          this.scrollSaveTimeout = null
+        }, 500)
+      }
+    },
+    
+    scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      })
+      this.scrollPosition = 0
+      this.saveState()
+    },
+
     async loadCategoryCards() {
       this.loading = true
       try {
         const response = await fetchCardsByCategory(this.categoryId)
         this.cards = response.cards
-        this.filteredCards = [...this.cards]
+        
+        // Apply saved search and sort
+        this.applySavedFilters()
+        
         this.categoryName = this.getCategoryName(this.categoryId)
-        this.searchQuery = '' // Reset search when category changes
-        // Cancel any pending search
-        this.debouncedSearch?.cancel()
+        
         console.log('Loaded category cards:', this.cards)
       } catch (err) {
         this.error = err
@@ -246,16 +353,19 @@ export default {
       }
     },
     
-    handleScroll() {
-      // Show the button when user has scrolled past the threshold
-      this.showScrollTop = window.scrollY > this.scrollThreshold
-    },
-    
-    scrollToTop() {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      })
+    // Apply saved filters (search and sort) to the loaded cards
+    applySavedFilters() {
+      // First apply search if exists
+      if (this.searchQuery.trim()) {
+        this.performSearch()
+      } else {
+        this.filteredCards = [...this.cards]
+      }
+      
+      // Then apply saved sort
+      if (this.currentSort.field !== 'id' || this.currentSort.direction !== 'asc') {
+        this.sortBy(this.currentSort.field, this.currentSort.direction, true)
+      }
     },
 
     getCategoryName(categoryId) {
@@ -269,6 +379,10 @@ export default {
     },
     
     handleCardClicked(cardId) {
+      // Set navigation type before navigating to card detail
+      if (this.$route.meta) {
+        this.$route.meta.navigationType = 'to-card-detail'
+      }
       this.$router.push(`/card/${cardId}`)
     },
     
@@ -303,6 +417,7 @@ export default {
       this.isSearching = false
       // Cancel any pending debounced search
       this.debouncedSearch?.cancel()
+      this.saveState()
     },
 
     toggleSortDropdown() {
@@ -313,9 +428,12 @@ export default {
       this.showSortDropdown = false
     },
 
-    sortBy(field, direction) {
+    sortBy(field, direction, silent = false) {
       this.currentSort = { field, direction }
-      this.showSortDropdown = false
+      
+      if (!silent) {
+        this.showSortDropdown = false
+      }
       
       let sortedCards = [...this.filteredCards]
       
@@ -356,6 +474,10 @@ export default {
       }
       
       this.filteredCards = sortedCards
+      
+      if (!silent) {
+        this.saveState()
+      }
     }
   }
 }

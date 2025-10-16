@@ -440,6 +440,14 @@ export default {
     
     navigateToCategory(category) {
       console.log('Navigating to category:', category);
+      
+      // Clear any existing category state when navigating to a new category
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('category_state_')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
       this.$router.push(`/category/${category.id}`);
     },
     

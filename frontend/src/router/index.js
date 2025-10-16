@@ -59,4 +59,18 @@ const router = createRouter({
   }
 })
 
+// Add navigation guards to your router
+router.beforeEach((to, from, next) => {
+  // Set navigation type based on route changes
+  if (from.name === 'category' && to.name === 'card-detail') {
+    to.meta.navigationType = 'to-card-detail'
+  } else if (from.name === 'card-detail' && to.name === 'category') {
+    to.meta.navigationType = 'to-category'
+  } else {
+    to.meta.navigationType = 'other'
+  }
+  
+  next()
+})  
+
 export default router

@@ -107,8 +107,6 @@
   import { fetchCardInfo, checkUserPermission, fetchUserInfo, fetchCardsByCategory } from '@/api'
   import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
   import { useRouter } from 'vue-router'
-  // import $ from 'jquery';
-  // import 'jquery-textfill';
 
   export default {
     props: {
@@ -647,7 +645,11 @@
           
           router.replace(`/card/${prevCard.id}`);
           
-          // Add this line
+          // Set navigation type when going to previous card
+          if (router.meta) {
+            router.meta.navigationType = 'from-card-detail';
+          }
+          
           setTimeout(adjustFontSize, 300);
           
           preloadAdjacentCards();
@@ -669,7 +671,11 @@
           
           router.replace(`/card/${nextCard.id}`);
           
-          // Add this line
+          // Set navigation type when going to next card
+          if (router.meta) {
+            router.meta.navigationType = 'from-card-detail';
+          }
+          
           setTimeout(adjustFontSize, 300);
           
           preloadAdjacentCards();
@@ -681,10 +687,20 @@
       onMounted(() => {
         window.addEventListener('resize', adjustFontSize)
         loadData()
+        
+        // Set navigation type when entering card detail
+        if (router.meta) {
+          router.meta.navigationType = 'from-card-detail';
+        }
       })
 
       onUnmounted(() => {
         window.removeEventListener('resize', adjustFontSize)
+        
+        // Set navigation type when leaving card detail to return to category
+        if (router.meta) {
+          router.meta.navigationType = 'to-category';
+        }
       })
 
       // Watch for card changes to preload new adjacent cards
