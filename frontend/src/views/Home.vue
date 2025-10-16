@@ -20,7 +20,7 @@
     
     <!-- Основной контент -->
     <div id="content-section" class="content">
-      <h1 class="categoryies-title">Categories : </h1>
+      <h1 class="categories-title">Categories : </h1>
       <div id="categories-container" class="categories-grid">
         <div v-if="loading" class="loading">Loading categories...</div>
         <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
@@ -138,6 +138,17 @@
   flex: 1;
 }
 
+.categories-title {
+  text-align: center;
+  font-size: 7rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.7);
+  letter-spacing: 3px;
+  line-height: 1;
+  margin-top: 220px; 
+}
+
 .categories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -146,7 +157,7 @@
   padding: 30px 20px;
   max-width: 1200px;
   margin: 0 auto;
-  margin-top: 100px;
+  margin-top: 50px;
 }
 
 .category-card {
