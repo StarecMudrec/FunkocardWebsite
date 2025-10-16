@@ -181,7 +181,7 @@
   object-fit: cover;
   z-index: 0;
   transition: all 0.3s ease;
-  filter: blur(8px); /* Apply same blur as rarity cards */
+  /*filter: blur(8px); /* Apply same blur as rarity cards */
 }
 
 /* Apply specific backgrounds and blur effects */
