@@ -236,125 +236,6 @@
   backdrop-filter: blur(5px);
 }
 
-/* Rarity Categories with flashy shine overlay */
-.category-card.rarity {
-  position: relative;
-}
-
-/* Base flashy shine effect for all rarity cards */
-.category-card.rarity::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.4) 0%, 
-    rgba(200, 230, 255, 0.6) 25%,
-    rgba(100, 200, 255, 0.8) 50%,
-    rgba(50, 150, 255, 0.6) 75%,
-    rgba(255, 255, 255, 0.4) 100%);
-  z-index: 1;
-  opacity: 0.7;
-  mix-blend-mode: overlay;
-}
-
-/* REVERSED Progressive flashy intensity for rarity cards - first card glows most */
-.category-card.rarity-intensity-1::after {
-  opacity: 1.0;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.8) 0%, 
-    rgba(230, 245, 255, 1.0) 25%,
-    rgba(130, 230, 255, 1.0) 50%,
-    rgba(65, 165, 255, 1.0) 75%,
-    rgba(255, 255, 255, 0.8) 100%);
-  filter: brightness(1.6);
-  box-shadow: 
-    inset 0 0 80px rgba(100, 200, 255, 0.6),
-    inset 0 0 40px rgba(255, 255, 255, 0.4);
-  animation: subtle-pulse 3s ease-in-out infinite;
-}
-
-.category-card.rarity-intensity-2::after {
-  opacity: 0.9;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.7) 0%, 
-    rgba(220, 240, 255, 0.9) 25%,
-    rgba(120, 220, 255, 1.0) 50%,
-    rgba(60, 160, 255, 0.9) 75%,
-    rgba(255, 255, 255, 0.7) 100%);
-  filter: brightness(1.5);
-  box-shadow: inset 0 0 60px rgba(100, 200, 255, 0.4);
-}
-
-.category-card.rarity-intensity-3::after {
-  opacity: 0.8;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.6) 0%, 
-    rgba(210, 235, 255, 0.8) 25%,
-    rgba(110, 210, 255, 1.0) 50%,
-    rgba(55, 155, 255, 0.8) 75%,
-    rgba(255, 255, 255, 0.6) 100%);
-  filter: brightness(1.4);
-}
-
-.category-card.rarity-intensity-4::after {
-  opacity: 0.7;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.5) 0%, 
-    rgba(200, 230, 255, 0.7) 25%,
-    rgba(100, 200, 255, 0.9) 50%,
-    rgba(50, 150, 255, 0.7) 75%,
-    rgba(255, 255, 255, 0.5) 100%);
-  filter: brightness(1.3);
-}
-
-.category-card.rarity-intensity-5::after {
-  opacity: 0.6;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.4) 0%, 
-    rgba(190, 225, 255, 0.6) 25%,
-    rgba(90, 190, 255, 0.8) 50%,
-    rgba(45, 145, 255, 0.6) 75%,
-    rgba(255, 255, 255, 0.4) 100%);
-  filter: brightness(1.2);
-}
-
-.category-card.rarity-intensity-6::after {
-  opacity: 0.5;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.3) 0%, 
-    rgba(180, 220, 255, 0.5) 25%,
-    rgba(80, 180, 255, 0.7) 50%,
-    rgba(40, 140, 255, 0.5) 75%,
-    rgba(255, 255, 255, 0.3) 100%);
-  filter: brightness(1.1);
-}
-
-/* Add a subtle pulse animation for the highest rarity (now intensity-1) */
-@keyframes subtle-pulse {
-  0%, 100% {
-    opacity: 1.0;
-    filter: brightness(1.6);
-  }
-  50% {
-    opacity: 0.9;
-    filter: brightness(1.8);
-  }
-}
-
-/* Additional shine effect for hover states */
-.category-card.rarity:hover::after {
-  filter: brightness(1.8) contrast(1.2);
-  transition: all 0.3s ease;
-}
-
-.category-card.rarity-intensity-1:hover::after {
-  animation-duration: 1.5s;
-  filter: brightness(2.0) contrast(1.3);
-}
-
 .error-message {
   text-align: center;
   margin: 50px 0;
@@ -540,21 +421,7 @@ export default {
       } else if (name.includes('shop')) {
         return 'shop';
       } else {
-        const rarityCards = this.sortedCategories.filter(cat => 
-          !cat.name.toLowerCase().includes('all') && 
-          !cat.name.toLowerCase().includes('general') && 
-          !cat.name.toLowerCase().includes('shop')
-        );
-        
-        const rarityIndex = rarityCards.findIndex(cat => cat.id === category.id);
-        const totalRarities = rarityCards.length;
-        
-        if (rarityIndex !== -1 && totalRarities > 0) {
-          const intensityLevel = Math.min(6, Math.max(1, Math.floor((rarityIndex / totalRarities) * 6) + 1));
-          return `rarity rarity-intensity-${intensityLevel}`;
-        }
-        
-        return 'rarity rarity-intensity-3';
+        return 'rarity';
       }
     },
     
