@@ -187,19 +187,19 @@
 /* Apply specific backgrounds and blur effects */
 .category-card.all-cards .category-card__background {
   background-image: url('/All.png');
-  filter: blur(5px);
+  /*filter: blur(5px);*/
 }
 
 .category-card.shop .category-card__background {
   background-image: url('/shop.png');
-  filter: blur(5px); /* No blur for shop category */
+  /*filter: blur(5px); /* No blur for shop category */
 }
 
 .category-card.rarity .category-card__background,
 .category-card.rarity .category-card__video {
   background-size: cover;
   background-position: center;
-  filter: blur(8px); /* Stronger blur for rarity cards */
+  /*filter: blur(8px); /* Stronger blur for rarity cards */
 }
 
 /* Gradient overlay for better text readability */
