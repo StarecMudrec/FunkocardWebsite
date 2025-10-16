@@ -863,6 +863,7 @@
     position: relative;
     padding-bottom: 2px;
     transition: all 0.3s ease;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
   }
 
   .back-to-category-button::after {
