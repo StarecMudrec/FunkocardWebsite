@@ -149,13 +149,14 @@
 }
 
 .category-card {
-  border-radius: 17px;
+  border-radius: 19px;
   box-shadow: 2px 7px 10px 2px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
   aspect-ratio: 0.8;
   position: relative;
+  border: 3px solid #dadada;
 }
 
 /* Background element for better control */
