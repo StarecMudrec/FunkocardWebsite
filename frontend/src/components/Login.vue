@@ -5,7 +5,7 @@
       <p></p>
       <div ref="telegramWidget"></div>
 
-      <router-link to="/" class="back-link">← Back to home</router-link>
+      <router-link to="/" class="back-link">← Back to cards</router-link>
     </div>
   </div>
 </template>
