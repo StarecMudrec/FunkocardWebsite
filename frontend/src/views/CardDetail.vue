@@ -174,7 +174,12 @@
             return;
           }
           
-          const cards = await fetchCardsByCategory(card.value.category, 'id', 'asc');
+          // For navigation, we need to use the category ID format that matches the API
+          // The API expects categories in the format "rarity_{categoryName}"
+          const categoryId = `rarity_${card.value.category}`;
+          console.log('Loading cards for category ID:', categoryId);
+          
+          const cards = await fetchCardsByCategory(categoryId, 'id', 'asc');
           sortedCards.value = cards;
           currentCardIndex.value = findCurrentCardIndex();
           
@@ -187,6 +192,8 @@
           preloadAdjacentCards();
         } catch (error) {
           console.error('Error loading sorted cards by category:', error);
+          // Don't throw the error here, just log it
+          // This allows the card detail to still load even if navigation fails
         }
       }
 
@@ -609,7 +616,11 @@
           card.value = await fetchCardInfo(props.id);
           editableCard.value = { ...card.value };
           
-          await loadSortedCards()
+          // Load sorted cards for navigation, but don't block the UI if it fails
+          loadSortedCards().catch(err => {
+            console.error('Failed to load sorted cards for navigation:', err);
+            // Continue loading the card detail even if navigation fails
+          });
           
           // Check user permissions
           try {
@@ -633,54 +644,38 @@
       }
 
       const goToPreviousCard = () => {
-        if (isFirstCard.value || currentCardIndex.value === -1) return;
+        if (isFirstCard.value || currentCardIndex.value === -1 || sortedCards.value.length === 0) {
+          console.log('Cannot go to previous card - no cards loaded or at beginning');
+          return;
+        }
+        
         showTransition.value = true;
         transitionName.value = 'slide-right';
         const prevCard = sortedCards.value[currentCardIndex.value - 1];
         
-        if (prevCard && preloadedCards.value[prevCard.id]) {
-          card.value = preloadedCards.value[prevCard.id];
-          editableCard.value = { ...card.value };
-          currentCardIndex.value = currentCardIndex.value - 1;
-          
-          router.replace(`/card/${prevCard.id}`);
-          
-          // Set navigation type when going to previous card
-          if (router.meta) {
-            router.meta.navigationType = 'from-card-detail';
-          }
-          
-          setTimeout(adjustFontSize, 300);
-          
-          preloadAdjacentCards();
-        } else if (prevCard) {
+        if (prevCard) {
+          console.log('Navigating to previous card:', prevCard.id);
           router.push(`/card/${prevCard.id}`);
+        } else {
+          console.log('No previous card available');
         }
       }
 
       const goToNextCard = () => {
-        if (isLastCard.value || currentCardIndex.value === -1) return;
+        if (isLastCard.value || currentCardIndex.value === -1 || sortedCards.value.length === 0) {
+          console.log('Cannot go to next card - no cards loaded or at end');
+          return;
+        }
+        
         showTransition.value = true;
         transitionName.value = 'slide-left';
         const nextCard = sortedCards.value[currentCardIndex.value + 1];
         
-        if (nextCard && preloadedCards.value[nextCard.id]) {
-          card.value = preloadedCards.value[nextCard.id];
-          editableCard.value = { ...card.value };
-          currentCardIndex.value = currentCardIndex.value + 1;
-          
-          router.replace(`/card/${nextCard.id}`);
-          
-          // Set navigation type when going to next card
-          if (router.meta) {
-            router.meta.navigationType = 'from-card-detail';
-          }
-          
-          setTimeout(adjustFontSize, 300);
-          
-          preloadAdjacentCards();
-        } else if (nextCard) {
+        if (nextCard) {
+          console.log('Navigating to next card:', nextCard.id);
           router.push(`/card/${nextCard.id}`);
+        } else {
+          console.log('No next card available');
         }
       }
 
