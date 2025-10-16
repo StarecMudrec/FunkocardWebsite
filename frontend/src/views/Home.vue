@@ -256,7 +256,7 @@
   background: rgba(30, 30, 30, 0.7);
   color: white;
   padding: 4px 8px;
-  border-radius: 12px;
+  border-radius: 17px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 0.9rem;
   font-weight: 600;
