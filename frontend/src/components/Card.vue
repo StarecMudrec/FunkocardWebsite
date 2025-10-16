@@ -219,7 +219,7 @@ export default {
 
 /* Special styling for Limited cards */
 .card.limited-card {
-  border: 2px solid rgba(255, 193, 7, 0.3);
+  /*border: 2px solid rgba(255, 193, 7, 0.3);*/
   box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
   transition: 0.3s ease;
 }
