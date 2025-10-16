@@ -33,7 +33,21 @@
           :class="getCategoryBackgroundClass(category, index)"
           @click="navigateToCategory(category)"
         >
-          <div class="category-card__background" :style="getCategoryBackgroundStyle(category)"></div>
+          <!-- Video background for Limited category -->
+          <video 
+            v-if="category.name === 'Limited ⚠️' && getLimitedVideoSource(category)"
+            class="category-card__video"
+            :src="getLimitedVideoSource(category)"
+            autoplay
+            muted
+            loop
+            playsinline
+          ></video>
+          <div 
+            v-else
+            class="category-card__background" 
+            :style="getCategoryBackgroundStyle(category)"
+          ></div>
           <div class="category-card__content">
             <div class="category-card__header">
               <h3 class="category-card__title">{{ category.name }}</h3>
@@ -157,6 +171,19 @@
   transition: all 0.3s ease;
 }
 
+/* Video background for Limited category */
+.category-card__video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  transition: all 0.3s ease;
+  filter: blur(8px); /* Apply same blur as rarity cards */
+}
+
 /* Apply specific backgrounds and blur effects */
 .category-card.all-cards .category-card__background {
   background-image: url('/All.png');
@@ -168,7 +195,8 @@
   filter: blur(5px); /* No blur for shop category */
 }
 
-.category-card.rarity .category-card__background {
+.category-card.rarity .category-card__background,
+.category-card.rarity .category-card__video {
   background-size: cover;
   background-position: center;
   filter: blur(8px); /* Stronger blur for rarity cards */
@@ -201,7 +229,8 @@
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
 }
 
-.category-card:hover .category-card__background {
+.category-card:hover .category-card__background,
+.category-card:hover .category-card__video {
   transform: scale(1.05);
 }
 
@@ -425,23 +454,24 @@ export default {
       }
     },
     
+    getLimitedVideoSource(category) {
+      const newestCard = this.rarityNewestCards[category.name];
+      if (newestCard && newestCard.photo) {
+        return `/api/card_image/${newestCard.photo}`;
+      }
+      return null;
+    },
+    
     getCategoryBackgroundStyle(category) {
       const name = category.name.toLowerCase();
       
-      // For rarity categories, use the newest card image
-      if (!name.includes('all') && !name.includes('general') && !name.includes('shop')) {
+      // For rarity categories (except Limited), use the newest card image
+      if (!name.includes('all') && !name.includes('general') && !name.includes('shop') && category.name !== 'Limited ⚠️') {
         const newestCard = this.rarityNewestCards[category.name];
         if (newestCard && newestCard.photo) {
-          // Check if this is a Limited card (video)
-          if (category.name === 'Limited ⚠️') {
-            return {
-              backgroundImage: `url(/api/card_image/${newestCard.photo})` // Fallback to first frame
-            };
-          } else {
-            return {
-              backgroundImage: `url(/api/card_image/${newestCard.photo})`
-            };
-          }
+          return {
+            backgroundImage: `url(/api/card_image/${newestCard.photo})`
+          };
         }
       }
       
