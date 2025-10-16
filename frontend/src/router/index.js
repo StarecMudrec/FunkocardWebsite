@@ -70,6 +70,8 @@ router.beforeEach((to, from, next) => {
     to.meta.navigationType = 'to-card-detail'
   } else if (from.name === 'CardDetail' && to.name === 'Category') {
     to.meta.navigationType = 'to-category'
+  } else if (to.name === 'CardDetail' && from.name === 'Category') {
+    sessionStorage.setItem('previousCategory', from.params.categoryId);
   } else {
     to.meta.navigationType = 'other'
   }

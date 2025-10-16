@@ -293,15 +293,24 @@
           router.meta.navigationType = 'to-category'
         }
         
-        // Navigate back to the category page
-        if (card.value?.category) {
-          const categoryId = `rarity_${card.value.category}`
-          router.push(`/category/${categoryId}`)
+        // Get the previous category from sessionStorage
+        const previousCategory = sessionStorage.getItem('previousCategory');
+        
+        // Navigate back to the previous category page if available
+        if (previousCategory) {
+          router.push(`/category/${previousCategory}`)
         } else {
-          // Fallback: go back in history
-          router.go(-1)
+          // Fallback: use card's category
+          if (card.value?.category) {
+            const categoryId = `rarity_${card.value.category}`
+            router.push(`/category/${categoryId}`)
+          } else {
+            // Final fallback: go back in history
+            router.go(-1)
+          }
         }
       }
+
 
       const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
         scrollWidth > clientWidth || scrollHeight > clientHeight

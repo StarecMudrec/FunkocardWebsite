@@ -402,6 +402,9 @@ export default {
     },
     
     handleCardClicked(cardId) {
+      // Save the current category ID before navigating to card detail
+      sessionStorage.setItem('previousCategory', this.categoryId);
+      
       // Set navigation type before navigating to card detail
       if (this.$route.meta) {
         this.$route.meta.navigationType = 'to-card-detail'
