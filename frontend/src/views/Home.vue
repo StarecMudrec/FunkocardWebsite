@@ -149,7 +149,7 @@
 }
 
 .category-card {
-  border-radius: 12px;
+  border-radius: 17px;
   box-shadow: 2px 7px 10px 2px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   transition: all 0.3s ease;
@@ -256,7 +256,7 @@
   background: rgba(30, 30, 30, 0.7);
   color: white;
   padding: 4px 8px;
-  border-radius: 17px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 0.9rem;
   font-weight: 600;
