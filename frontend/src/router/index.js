@@ -3,17 +3,17 @@ import Home from '@/views/Home.vue'
 import Login from '@/components/Login.vue'
 import CardDetail from '@/views/CardDetail.vue'
 import AddCard from '@/views/AddCard.vue'
-import CategoryCards from '@/views/CategoryCards.vue' // Add this import
+import CategoryCards from '@/views/CategoryCards.vue'
 
 const routes = [
   {
     path: '/',
-    name: 'Cards',
+    name: 'Home',
     component: Home
   },
   {
     path: '/home',
-    redirect: '/' // Перенаправление с /home на /
+    redirect: '/'
   },
   {
     path: '/login',
@@ -33,15 +33,14 @@ const routes = [
   },
   {
     path: '/category/:categoryId',
-    name: 'CategoryCards',
+    name: 'Category',
     component: CategoryCards,
     props: true
   },
   {
     path: '/logout',
     beforeEnter: (to, from, next) => {
-      // Логика выхода
-      next('/') // Перенаправление на главную после выхода
+      next('/')
     }
   },
   {
@@ -55,22 +54,27 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior (to, from, savedPosition) {
+    // Don't scroll to top when navigating between card detail and category
+    if ((from.name === 'Category' && to.name === 'CardDetail') || 
+        (from.name === 'CardDetail' && to.name === 'Category')) {
+      return false
+    }
     return { top: 0 }
   }
 })
 
-// Add navigation guards to your router
+// Add navigation guards to track navigation type
 router.beforeEach((to, from, next) => {
   // Set navigation type based on route changes
-  if (from.name === 'category' && to.name === 'card-detail') {
+  if (from.name === 'Category' && to.name === 'CardDetail') {
     to.meta.navigationType = 'to-card-detail'
-  } else if (from.name === 'card-detail' && to.name === 'category') {
+  } else if (from.name === 'CardDetail' && to.name === 'Category') {
     to.meta.navigationType = 'to-category'
   } else {
     to.meta.navigationType = 'other'
   }
   
   next()
-})  
+})
 
 export default router

@@ -232,10 +232,14 @@ export default {
   beforeUnmount() {
     // Only save state if we're navigating to a card detail page
     const navigationType = this.$route.meta?.navigationType
+    console.log('CategoryCards unmounting, navigation type:', navigationType)
+    
     if (navigationType === 'to-card-detail') {
+      // Keep state when going to card detail
       this.saveState()
     } else {
       // Clear state when leaving category completely
+      console.log('Clearing category state - navigating away from category')
       this.clearSavedState()
     }
     
@@ -339,17 +343,36 @@ export default {
         const response = await fetchCardsByCategory(this.categoryId)
         this.cards = response.cards
         
-        // Apply saved search and sort
-        this.applySavedFilters()
+        // Apply saved search and sort - but only if we're returning from card detail
+        const navigationType = this.$route.meta?.navigationType
+        if (navigationType === 'to-category') {
+          this.applySavedFilters()
+        } else {
+          // Reset to default when coming from elsewhere
+          this.searchQuery = ''
+          this.currentSort = { field: 'id', direction: 'asc' }
+          this.filteredCards = [...this.cards]
+          this.clearSavedState()
+        }
         
         this.categoryName = this.getCategoryName(this.categoryId)
         
         console.log('Loaded category cards:', this.cards)
+        console.log('Navigation type:', navigationType)
+        
       } catch (err) {
         this.error = err
         console.error('Error loading category cards:', err)
       } finally {
         this.loading = false
+        
+        // Restore scroll position after cards are loaded, but only if returning from card detail
+        this.$nextTick(() => {
+          const navigationType = this.$route.meta?.navigationType
+          if (navigationType === 'to-category' && this.scrollPosition > 0) {
+            this.restoreScrollPosition()
+          }
+        })
       }
     },
     

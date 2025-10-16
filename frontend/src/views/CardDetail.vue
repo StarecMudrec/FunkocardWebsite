@@ -655,6 +655,7 @@
         
         if (prevCard) {
           console.log('Navigating to previous card:', prevCard.id);
+          // Set navigation type before navigating
           router.push(`/card/${prevCard.id}`);
         } else {
           console.log('No previous card available');
@@ -673,6 +674,7 @@
         
         if (nextCard) {
           console.log('Navigating to next card:', nextCard.id);
+          // Set navigation type before navigating
           router.push(`/card/${nextCard.id}`);
         } else {
           console.log('No next card available');
@@ -693,9 +695,7 @@
         window.removeEventListener('resize', adjustFontSize)
         
         // Set navigation type when leaving card detail to return to category
-        if (router.meta) {
-          router.meta.navigationType = 'to-category';
-        }
+        // This is handled by the router navigation guard now
       })
 
       // Watch for card changes to preload new adjacent cards
