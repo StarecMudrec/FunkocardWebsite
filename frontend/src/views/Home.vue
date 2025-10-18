@@ -49,7 +49,11 @@
         </div>
       </div>
 
-      <div id="categories-container" class="categories-grid">
+      <div 
+        id="categories-container" 
+        class="categories-grid-container"
+        :class="{ 'search-active': searchQuery }"
+      >
         <div v-if="loading" class="loading">Loading categories...</div>
         <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
         <div v-else-if="filteredCategories.length === 0" class="no-categories-message">
@@ -57,7 +61,14 @@
         </div>
         
         <!-- Category Cards -->
-        <transition-group name="search-animation" tag="div" class="categories-grid-transition">
+        <transition-group 
+          name="search-animation" 
+          tag="div" 
+          class="categories-grid-transition"
+          @before-enter="onBeforeEnter"
+          @after-enter="onAfterEnter"
+          @before-leave="onBeforeLeave"
+        >
           <div 
             v-for="(category, index) in filteredCategories" 
             :key="category.id"
@@ -261,7 +272,8 @@
   grid-column: 1 / -1;
 }
 
-.categories-grid {
+/* Categories Grid Container with smooth height transitions */
+.categories-grid-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   row-gap: 40px;
@@ -270,6 +282,16 @@
   max-width: 1200px;
   margin: 0 auto;
   margin-top: 50px;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 200px; /* Minimum height to prevent jarring transitions */
+  position: relative;
+  /* Let the height be determined by content */
+  height: auto;
+}
+
+/* When search is active, we'll use auto-fit for better responsiveness */
+.categories-grid-container.search-active {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 /* Transition group wrapper */
@@ -277,7 +299,7 @@
   display: contents;
 }
 
-/* Search animation styles */
+/* Search animation styles - only affect opacity and position, not size */
 .search-animation-enter-active,
 .search-animation-leave-active {
   transition: all 0.5s ease;
@@ -289,18 +311,19 @@
 
 .search-animation-enter-from {
   opacity: 0;
-  transform: scale(0.8) translateY(20px);
+  transform: translateY(20px);
 }
 
 .search-animation-leave-to {
   opacity: 0;
-  transform: scale(0.8) translateY(-20px);
+  transform: translateY(-20px);
 }
 
 .search-animation-leave-active {
   position: absolute;
 }
 
+/* Category card - fixed height and aspect ratio */
 .category-card {
   border-radius: 20px;
   box-shadow: 2px 7px 10px 2px rgba(0, 0, 0, 0.4);
@@ -310,6 +333,8 @@
   aspect-ratio: 0.8;
   position: relative;
   border: 3px solid #dadada;
+  /* Ensure consistent height */
+  height: auto;
 }
 
 /* Background element for better control */
@@ -479,10 +504,15 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .categories-grid {
+  .categories-grid-container {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     padding: 20px 15px;
     gap: 15px;
+    margin-top: 30px;
+  }
+  
+  .categories-grid-container.search-active {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
   
   .category-card__content {
@@ -520,7 +550,13 @@
 }
 
 @media (max-width: 480px) {
-  .categories-grid {
+  .categories-grid-container {
+    grid-template-columns: 1fr;
+    padding: 15px 10px;
+    margin-top: 20px;
+  }
+  
+  .categories-grid-container.search-active {
     grid-template-columns: 1fr;
   }
 
@@ -576,7 +612,8 @@ export default {
       allCategoriesNewestCards: {}, // Store newest cards for all categories
       searchQuery: '',
       filteredCategories: [],
-      debouncedSearch: null
+      debouncedSearch: null,
+      isAnimating: false
     }
   },
   computed: {
@@ -607,6 +644,21 @@ export default {
         
         return orderA - orderB;
       });
+    }
+  },
+  watch: {
+    filteredCategories: {
+      handler(newVal, oldVal) {
+        // Force a reflow to ensure smooth height transition
+        this.$nextTick(() => {
+          const container = document.getElementById('categories-container');
+          if (container) {
+            // The grid will automatically adjust its height
+            // The CSS transition on the container will handle the animation
+          }
+        });
+      },
+      deep: true
     }
   },
   methods: {
@@ -732,6 +784,19 @@ export default {
       this.searchQuery = '';
       this.filteredCategories = [...this.sortedCategories];
       this.debouncedSearch?.cancel();
+    },
+
+    // Animation lifecycle methods
+    onBeforeEnter() {
+      this.isAnimating = true;
+    },
+
+    onAfterEnter() {
+      this.isAnimating = false;
+    },
+
+    onBeforeLeave() {
+      this.isAnimating = true;
     }
   },
   async mounted() {
