@@ -56,44 +56,35 @@
           {{ searchQuery ? 'No categories match your search' : 'No categories found' }}
         </div>
         
-        <!-- Category Cards with transition animations -->
-        <transition-group 
-          name="cards" 
-          tag="div" 
-          class="cards-transition-container"
-          @enter="onCardEnter"
-          @leave="onCardLeave"
+        <!-- Category Cards -->
+        <div 
+          v-for="(category, index) in filteredCategories" 
+          :key="category.id"
+          class="category-card"
+          :class="getCategoryBackgroundClass(category, index)"
+          @click="navigateToCategory(category)"
         >
+          <!-- Video background for Limited category -->
+          <video 
+            v-if="category.name === 'Limited ⚠️' && getLimitedVideoSource(category)"
+            class="category-card__video"
+            :src="getLimitedVideoSource(category)"
+            autoplay
+            muted
+            loop
+            playsinline
+          ></video>
           <div 
-            v-for="(category, index) in filteredCategories" 
-            :key="category.id"
-            class="category-card"
-            :class="getCategoryBackgroundClass(category, index)"
-            @click="navigateToCategory(category)"
-            :data-index="index"
-          >
-            <!-- Video background for Limited category -->
-            <video 
-              v-if="category.name === 'Limited ⚠️' && getLimitedVideoSource(category)"
-              class="category-card__video"
-              :src="getLimitedVideoSource(category)"
-              autoplay
-              muted
-              loop
-              playsinline
-            ></video>
-            <div 
-              v-else
-              class="category-card__background" 
-              :style="getCategoryBackgroundStyle(category)"
-            ></div>
-            <div class="category-card__content">
-              <div class="category-card__header">
-                <h3 class="category-card__title">{{ category.name }}</h3>
-              </div>
+            v-else
+            class="category-card__background" 
+            :style="getCategoryBackgroundStyle(category)"
+          ></div>
+          <div class="category-card__content">
+            <div class="category-card__header">
+              <h3 class="category-card__title">{{ category.name }}</h3>
             </div>
           </div>
-        </transition-group>
+        </div>
       </div>
     </div>
   </div>
@@ -279,11 +270,6 @@
   margin-top: 50px;
 }
 
-/* Cards transition container */
-.cards-transition-container {
-  display: contents; /* This allows the grid layout to work with transition-group */
-}
-
 .category-card {
   border-radius: 20px;
   box-shadow: 2px 7px 10px 2px rgba(0, 0, 0, 0.4);
@@ -293,7 +279,6 @@
   aspect-ratio: 0.8;
   position: relative;
   border: 3px solid #dadada;
-  /* Will be animated by Vue transitions */
 }
 
 /* Background element for better control */
@@ -461,52 +446,6 @@
   }
 }
 
-/* Card transition animations */
-.cards-enter-active,
-.cards-leave-active {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.cards-move {
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.cards-enter-from {
-  opacity: 0;
-  transform: scale(0.8) translateY(20px);
-}
-
-.cards-enter-to {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-.cards-leave-from {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-.cards-leave-to {
-  opacity: 0;
-  transform: scale(0.8) translateY(20px);
-}
-
-.cards-leave-active {
-  position: absolute;
-  width: calc(100% - 40px);
-}
-
-/* Staggered animation for multiple cards */
-.category-card:nth-child(odd) .cards-enter-active,
-.category-card:nth-child(odd) .cards-leave-active {
-  transition-delay: 0.05s;
-}
-
-.category-card:nth-child(even) .cards-enter-active,
-.category-card:nth-child(even) .cards-leave-active {
-  transition-delay: 0.1s;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .categories-grid {
@@ -547,16 +486,6 @@
   .search-icon {
     left: 15px;
   }
-
-  /* Faster animations on mobile */
-  .cards-enter-active,
-  .cards-leave-active {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .cards-move {
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  }
 }
 
 @media (max-width: 480px) {
@@ -571,16 +500,6 @@
 
   .search-icon {
     left: 12px;
-  }
-
-  /* Even faster animations on small mobile */
-  .cards-enter-active,
-  .cards-leave-active {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .cards-move {
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 </style>
@@ -626,8 +545,7 @@ export default {
       allCategoriesNewestCards: {}, // Store newest cards for all categories
       searchQuery: '',
       filteredCategories: [],
-      debouncedSearch: null,
-      isSearching: false
+      debouncedSearch: null
     }
   },
   computed: {
@@ -761,14 +679,12 @@ export default {
 
     // Search methods
     handleSearch() {
-      this.isSearching = true;
       this.debouncedSearch();
     },
     
     performSearch() {
       if (!this.searchQuery.trim()) {
         this.filteredCategories = [...this.sortedCategories];
-        this.isSearching = false;
         return;
       }
       
@@ -778,7 +694,6 @@ export default {
         this.filteredCategories = this.sortedCategories.filter(category => 
           category.name?.toLowerCase().includes(query)
         );
-        this.isSearching = false;
       });
     },
     
@@ -786,28 +701,6 @@ export default {
       this.searchQuery = '';
       this.filteredCategories = [...this.sortedCategories];
       this.debouncedSearch?.cancel();
-      this.isSearching = false;
-    },
-
-    // Animation hooks
-    onCardEnter(el, done) {
-      // Add a small delay based on the card's position for staggered effect
-      const index = parseInt(el.dataset.index) || 0;
-      const delay = (index % 6) * 50; // Stagger based on grid position
-      
-      setTimeout(() => {
-        done();
-      }, delay);
-    },
-
-    onCardLeave(el, done) {
-      // Smooth exit animation
-      const index = parseInt(el.dataset.index) || 0;
-      const delay = (index % 6) * 30;
-      
-      setTimeout(() => {
-        done();
-      }, delay);
     }
   },
   async mounted() {
