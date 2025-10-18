@@ -282,11 +282,14 @@
   max-width: 1200px;
   margin: 0 auto;
   margin-top: 50px;
-  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   min-height: 200px; /* Minimum height to prevent jarring transitions */
   position: relative;
   /* Let the height be determined by content */
   height: auto;
+  /* Prevent container from growing beyond content */
+  max-height: none;
+  overflow: visible;
 }
 
 /* When search is active, we'll use auto-fit for better responsiveness */
@@ -323,7 +326,7 @@
   position: absolute;
 }
 
-/* Category card - fixed height and aspect ratio */
+/* Category card - fixed maximum size with aspect ratio */
 .category-card {
   border-radius: 20px;
   box-shadow: 2px 7px 10px 2px rgba(0, 0, 0, 0.4);
@@ -333,8 +336,12 @@
   aspect-ratio: 0.8;
   position: relative;
   border: 3px solid #dadada;
-  /* Ensure consistent height */
+  /* Ensure consistent sizing */
+  width: 100%;
+  max-width: 400px; /* Maximum card width */
   height: auto;
+  /* Center cards in their grid cells */
+  justify-self: center;
 }
 
 /* Background element for better control */
@@ -418,6 +425,10 @@
   margin: 0;
   flex: 1;
   text-shadow: 0px 7px 16px rgba(0, 0, 0, 1);
+  /* Ensure text fits within card */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .category-card__count {
@@ -515,6 +526,10 @@
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
   
+  .category-card {
+    max-width: 300px; /* Smaller max width on mobile */
+  }
+  
   .category-card__content {
     padding: 15px;
   }
@@ -558,6 +573,10 @@
   
   .categories-grid-container.search-active {
     grid-template-columns: 1fr;
+  }
+
+  .category-card {
+    max-width: 280px; /* Even smaller max width on very small screens */
   }
 
   .search-input {
