@@ -119,7 +119,7 @@
             <div class="category-card__content">
               <div class="category-card__header">
                 <h3 class="category-card__title">{{ category.name }}</h3>
-                <span class="category-card__count">{{ category.count || 0 }}</span>
+                <!-- <span class="category-card__count">{{ category.count || 0 }}</span> -->
               </div>
             </div>
           </div>
