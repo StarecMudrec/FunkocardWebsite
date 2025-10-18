@@ -49,55 +49,59 @@
         </div>
       </div>
 
-      <div 
-        id="categories-container" 
-        class="categories-grid-container"
-        :class="{ 'search-active': searchQuery }"
-      >
-        <div v-if="loading" class="loading">Loading categories...</div>
-        <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
-        <div v-else-if="filteredCategories.length === 0" class="no-categories-message">
-          {{ searchQuery ? 'No categories match your search' : 'No categories found' }}
-        </div>
-        
-        <!-- Category Cards -->
-        <transition-group 
-          name="search-animation" 
-          tag="div" 
-          class="categories-grid-transition"
-          @before-enter="onBeforeEnter"
-          @after-enter="onAfterEnter"
-          @before-leave="onBeforeLeave"
+      <!-- Wrap the grid in a container that can animate height -->
+      <div class="categories-wrapper">
+        <div 
+          id="categories-container" 
+          class="categories-grid-container"
+          :class="{ 'search-active': searchQuery }"
+          :style="containerStyle"
         >
-          <div 
-            v-for="(category, index) in filteredCategories" 
-            :key="category.id"
-            class="category-card"
-            :class="getCategoryBackgroundClass(category, index)"
-            @click="navigateToCategory(category)"
+          <div v-if="loading" class="loading">Loading categories...</div>
+          <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
+          <div v-else-if="filteredCategories.length === 0" class="no-categories-message">
+            {{ searchQuery ? 'No categories match your search' : 'No categories found' }}
+          </div>
+          
+          <!-- Category Cards -->
+          <transition-group 
+            name="search-animation" 
+            tag="div" 
+            class="categories-grid-transition"
+            @before-enter="onBeforeEnter"
+            @after-enter="onAfterEnter"
+            @before-leave="onBeforeLeave"
           >
-            <!-- Video background for Limited category -->
-            <video 
-              v-if="category.name === 'Limited ⚠️' && getLimitedVideoSource(category)"
-              class="category-card__video"
-              :src="getLimitedVideoSource(category)"
-              autoplay
-              muted
-              loop
-              playsinline
-            ></video>
             <div 
-              v-else
-              class="category-card__background" 
-              :style="getCategoryBackgroundStyle(category)"
-            ></div>
-            <div class="category-card__content">
-              <div class="category-card__header">
-                <h3 class="category-card__title">{{ category.name }}</h3>
+              v-for="(category, index) in filteredCategories" 
+              :key="category.id"
+              class="category-card"
+              :class="getCategoryBackgroundClass(category, index)"
+              @click="navigateToCategory(category)"
+            >
+              <!-- Video background for Limited category -->
+              <video 
+                v-if="category.name === 'Limited ⚠️' && getLimitedVideoSource(category)"
+                class="category-card__video"
+                :src="getLimitedVideoSource(category)"
+                autoplay
+                muted
+                loop
+                playsinline
+              ></video>
+              <div 
+                v-else
+                class="category-card__background" 
+                :style="getCategoryBackgroundStyle(category)"
+              ></div>
+              <div class="category-card__content">
+                <div class="category-card__header">
+                  <h3 class="category-card__title">{{ category.name }}</h3>
+                </div>
               </div>
             </div>
-          </div>
-        </transition-group>
+          </transition-group>
+        </div>
       </div>
     </div>
   </div>
@@ -272,7 +276,14 @@
   grid-column: 1 / -1;
 }
 
-/* Categories Grid Container with smooth height transitions */
+/* Categories Wrapper for smooth height transitions */
+.categories-wrapper {
+  width: 100%;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* Categories Grid Container */
 .categories-grid-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -282,14 +293,8 @@
   max-width: 1200px;
   margin: 0 auto;
   margin-top: 50px;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 200px; /* Minimum height to prevent jarring transitions */
   position: relative;
-  /* Let the height be determined by content */
-  height: auto;
-  /* Prevent container from growing beyond content */
-  max-height: none;
-  overflow: visible;
+  min-height: 200px;
 }
 
 /* When search is active, we'll use auto-fit for better responsiveness */
@@ -632,7 +637,8 @@ export default {
       searchQuery: '',
       filteredCategories: [],
       debouncedSearch: null,
-      isAnimating: false
+      isAnimating: false,
+      containerHeight: 'auto'
     }
   },
   computed: {
@@ -663,25 +669,39 @@ export default {
         
         return orderA - orderB;
       });
+    },
+    
+    containerStyle() {
+      return {
+        height: this.containerHeight
+      }
     }
   },
   watch: {
     filteredCategories: {
       handler(newVal, oldVal) {
-        // Force a reflow to ensure smooth height transition
-        this.$nextTick(() => {
-          const container = document.getElementById('categories-container');
-          if (container) {
-            // The grid will automatically adjust its height
-            // The CSS transition on the container will handle the animation
-          }
-        });
+        this.updateContainerHeight();
       },
       deep: true
+    },
+    loading: {
+      handler() {
+        this.updateContainerHeight();
+      }
     }
   },
   methods: {
     ...mapActions(['fetchCategories']),
+    
+    updateContainerHeight() {
+      this.$nextTick(() => {
+        const container = document.getElementById('categories-container');
+        if (container) {
+          const height = container.scrollHeight;
+          this.containerHeight = `${height}px`;
+        }
+      });
+    },
     
     async fetchRarityNewestCards() {
       try {
@@ -812,6 +832,7 @@ export default {
 
     onAfterEnter() {
       this.isAnimating = false;
+      this.updateContainerHeight();
     },
 
     onBeforeLeave() {
@@ -829,6 +850,11 @@ export default {
       
       // Initialize filtered categories with all sorted categories
       this.filteredCategories = [...this.sortedCategories];
+      
+      // Set initial container height after everything is loaded
+      this.$nextTick(() => {
+        this.updateContainerHeight();
+      });
       
       console.log('Categories after fetch:', this.categories);
       console.log('Sorted categories:', this.sortedCategories);
