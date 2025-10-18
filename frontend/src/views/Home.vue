@@ -61,8 +61,6 @@
           name="cards" 
           tag="div" 
           class="cards-transition-container"
-          @enter="onCardEnter"
-          @leave="onCardLeave"
         >
           <div 
             v-for="(category, index) in filteredCategories" 
@@ -281,7 +279,11 @@
 
 /* Cards transition container */
 .cards-transition-container {
-  display: contents; /* This allows the grid layout to work with transition-group */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  row-gap: 40px;
+  column-gap: 67px;
+  width: 100%;
 }
 
 .category-card {
@@ -461,10 +463,15 @@
   }
 }
 
-/* Card transition animations */
-.cards-enter-active,
-.cards-leave-active {
+/* Card transition animations - Fixed version */
+.cards-enter-active {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-delay: calc(var(--index, 0) * 0.05s);
+}
+
+.cards-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-delay: calc(var(--index, 0) * 0.03s);
 }
 
 .cards-move {
@@ -493,18 +500,6 @@
 
 .cards-leave-active {
   position: absolute;
-  width: calc(100% - 40px);
-}
-
-/* Staggered animation for multiple cards */
-.category-card:nth-child(odd) .cards-enter-active,
-.category-card:nth-child(odd) .cards-leave-active {
-  transition-delay: 0.05s;
-}
-
-.category-card:nth-child(even) .cards-enter-active,
-.category-card:nth-child(even) .cards-leave-active {
-  transition-delay: 0.1s;
 }
 
 /* Responsive adjustments */
@@ -513,6 +508,12 @@
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     padding: 20px 15px;
     gap: 15px;
+  }
+
+  .cards-transition-container {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    row-gap: 15px;
+    column-gap: 15px;
   }
   
   .category-card__content {
@@ -549,9 +550,12 @@
   }
 
   /* Faster animations on mobile */
-  .cards-enter-active,
-  .cards-leave-active {
+  .cards-enter-active {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .cards-leave-active {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .cards-move {
@@ -561,6 +565,10 @@
 
 @media (max-width: 480px) {
   .categories-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cards-transition-container {
     grid-template-columns: 1fr;
   }
 
@@ -574,9 +582,12 @@
   }
 
   /* Even faster animations on small mobile */
-  .cards-enter-active,
-  .cards-leave-active {
+  .cards-enter-active {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .cards-leave-active {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .cards-move {
@@ -787,27 +798,6 @@ export default {
       this.filteredCategories = [...this.sortedCategories];
       this.debouncedSearch?.cancel();
       this.isSearching = false;
-    },
-
-    // Animation hooks
-    onCardEnter(el, done) {
-      // Add a small delay based on the card's position for staggered effect
-      const index = parseInt(el.dataset.index) || 0;
-      const delay = (index % 6) * 50; // Stagger based on grid position
-      
-      setTimeout(() => {
-        done();
-      }, delay);
-    },
-
-    onCardLeave(el, done) {
-      // Smooth exit animation
-      const index = parseInt(el.dataset.index) || 0;
-      const delay = (index % 6) * 30;
-      
-      setTimeout(() => {
-        done();
-      }, delay);
     }
   },
   async mounted() {
