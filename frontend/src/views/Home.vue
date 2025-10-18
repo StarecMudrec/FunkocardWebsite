@@ -731,7 +731,8 @@ export default {
       filteredCategories: [],
       debouncedSearch: null,
       showSortDropdown: false,
-      currentSort: { field: 'default', direction: 'asc' }
+      currentSort: { field: 'default', direction: 'asc' },
+      categoryCardCounts: {} // Store card counts for each category
     }
   },
   computed: {
@@ -751,7 +752,13 @@ export default {
     sortedCategories() {
       if (!this.categories || this.categories.length === 0) return [];
       
-      return [...this.categories].sort((a, b) => {
+      // Add cardCount to each category
+      const categoriesWithCounts = this.categories.map(category => ({
+        ...category,
+        cardCount: this.categoryCardCounts[category.id] || 0
+      }));
+      
+      return [...categoriesWithCounts].sort((a, b) => {
         const orderA = this.rarityOrder[a.name] || 999;
         const orderB = this.rarityOrder[b.name] || 999;
         
@@ -792,6 +799,35 @@ export default {
         }
       } catch (error) {
         console.error('Error fetching newest cards for all categories:', error);
+      }
+    },
+    
+    async fetchCategoryCardCounts() {
+      try {
+        // Fetch card counts for all categories
+        const counts = {};
+        
+        // Fetch counts for each category
+        for (const category of this.categories) {
+          try {
+            const response = await fetch(`/api/cards_count/${category.id}`);
+            if (response.ok) {
+              const data = await response.json();
+              counts[category.id] = data.count || 0;
+            } else {
+              console.warn(`Failed to fetch card count for category ${category.id}`);
+              counts[category.id] = 0;
+            }
+          } catch (error) {
+            console.error(`Error fetching card count for category ${category.id}:`, error);
+            counts[category.id] = 0;
+          }
+        }
+        
+        this.categoryCardCounts = counts;
+        console.log('Category card counts:', this.categoryCardCounts);
+      } catch (error) {
+        console.error('Error fetching category card counts:', error);
       }
     },
     
@@ -960,6 +996,7 @@ export default {
     
     try {
       await this.fetchCategories();
+      await this.fetchCategoryCardCounts(); // Fetch card counts for each category
       await this.fetchRarityNewestCards(); // Fetch newest cards for rarity categories
       await this.fetchAllCategoriesNewestCards(); // Fetch newest cards for all categories
       
