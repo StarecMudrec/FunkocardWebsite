@@ -104,6 +104,26 @@
   font-family: 'Afacad', sans-serif;
 }
 
+/* Hide scrollbar for all browsers */
+.page-container {
+  overflow-x: hidden;
+}
+
+/* Hide scrollbar for Webkit browsers (Chrome, Safari, Edge) */
+.page-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.page-container {
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for IE and Edge */
+.page-container {
+  -ms-overflow-style: none;
+}
+
 .hero-section {
   position: relative;
   height: 100vh;
