@@ -49,13 +49,16 @@
         </div>
       </div>
 
-      <!-- Wrap the grid in a container that can animate height -->
-      <div class="categories-wrapper">
+      <!-- Smooth height transition wrapper -->
+      <div 
+        class="categories-wrapper"
+        :style="{ height: wrapperHeight }"
+      >
         <div 
           id="categories-container" 
           class="categories-grid-container"
           :class="{ 'search-active': searchQuery }"
-          :style="containerStyle"
+          ref="categoriesContainer"
         >
           <div v-if="loading" class="loading">Loading categories...</div>
           <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
@@ -69,8 +72,11 @@
             tag="div" 
             class="categories-grid-transition"
             @before-enter="onBeforeEnter"
+            @enter="onEnter"
             @after-enter="onAfterEnter"
             @before-leave="onBeforeLeave"
+            @leave="onLeave"
+            @after-leave="onAfterLeave"
           >
             <div 
               v-for="(category, index) in filteredCategories" 
@@ -276,14 +282,12 @@
   grid-column: 1 / -1;
 }
 
-/* Categories Wrapper for smooth height transitions */
 .categories-wrapper {
   width: 100%;
   transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
-/* Categories Grid Container */
 .categories-grid-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -632,13 +636,13 @@ export default {
         'Force🤷‍♂️': 9,
         'Scarface - Tony Montana': 10
       },
-      rarityNewestCards: {}, // Store newest card images for each category
-      allCategoriesNewestCards: {}, // Store newest cards for all categories
+      rarityNewestCards: {},
+      allCategoriesNewestCards: {},
       searchQuery: '',
       filteredCategories: [],
       debouncedSearch: null,
       isAnimating: false,
-      containerHeight: 'auto'
+      wrapperHeight: 'auto'
     }
   },
   computed: {
@@ -669,36 +673,31 @@ export default {
         
         return orderA - orderB;
       });
-    },
-    
-    containerStyle() {
-      return {
-        height: this.containerHeight
-      }
     }
   },
   watch: {
     filteredCategories: {
-      handler(newVal, oldVal) {
-        this.updateContainerHeight();
+      handler() {
+        this.updateWrapperHeight();
       },
       deep: true
     },
-    loading: {
-      handler() {
-        this.updateContainerHeight();
-      }
+    loading() {
+      this.updateWrapperHeight();
+    },
+    error() {
+      this.updateWrapperHeight();
     }
   },
   methods: {
     ...mapActions(['fetchCategories']),
     
-    updateContainerHeight() {
+    updateWrapperHeight() {
       this.$nextTick(() => {
-        const container = document.getElementById('categories-container');
+        const container = this.$refs.categoriesContainer;
         if (container) {
           const height = container.scrollHeight;
-          this.containerHeight = `${height}px`;
+          this.wrapperHeight = `${height}px`;
         }
       });
     },
@@ -708,7 +707,6 @@ export default {
         const response = await fetch('/api/rarity_newest_cards');
         if (response.ok) {
           this.rarityNewestCards = await response.json();
-          console.log('Newest rarity cards:', this.rarityNewestCards);
         } else {
           console.error('Failed to fetch newest rarity cards');
         }
@@ -722,7 +720,6 @@ export default {
         const response = await fetch('/api/all_categories_newest_cards');
         if (response.ok) {
           this.allCategoriesNewestCards = await response.json();
-          console.log('Newest cards for all categories:', this.allCategoriesNewestCards);
         } else {
           console.error('Failed to fetch newest cards for all categories');
         }
@@ -732,8 +729,6 @@ export default {
     },
     
     navigateToCategory(category) {
-      console.log('Navigating to category:', category);
-      
       // Clear any existing category state when navigating to a new category
       Object.keys(sessionStorage).forEach(key => {
         if (key.startsWith('category_state_')) {
@@ -812,11 +807,9 @@ export default {
       
       const query = this.searchQuery.toLowerCase().trim();
       
-      requestAnimationFrame(() => {
-        this.filteredCategories = this.sortedCategories.filter(category => 
-          category.name?.toLowerCase().includes(query)
-        );
-      });
+      this.filteredCategories = this.sortedCategories.filter(category => 
+        category.name?.toLowerCase().includes(query)
+      );
     },
     
     clearSearch() {
@@ -826,17 +819,30 @@ export default {
     },
 
     // Animation lifecycle methods
-    onBeforeEnter() {
+    onBeforeEnter(el) {
       this.isAnimating = true;
     },
 
-    onAfterEnter() {
+    onEnter(el, done) {
+      done();
+    },
+
+    onAfterEnter(el) {
       this.isAnimating = false;
-      this.updateContainerHeight();
+      this.updateWrapperHeight();
     },
 
-    onBeforeLeave() {
+    onBeforeLeave(el) {
       this.isAnimating = true;
+    },
+
+    onLeave(el, done) {
+      done();
+    },
+
+    onAfterLeave(el) {
+      this.isAnimating = false;
+      this.updateWrapperHeight();
     }
   },
   async mounted() {
@@ -845,23 +851,18 @@ export default {
     
     try {
       await this.fetchCategories();
-      await this.fetchRarityNewestCards(); // Fetch newest cards for rarity categories
-      await this.fetchAllCategoriesNewestCards(); // Fetch newest cards for all categories
+      await this.fetchRarityNewestCards();
+      await this.fetchAllCategoriesNewestCards();
       
       // Initialize filtered categories with all sorted categories
       this.filteredCategories = [...this.sortedCategories];
       
-      // Set initial container height after everything is loaded
+      // Set initial wrapper height
       this.$nextTick(() => {
-        this.updateContainerHeight();
+        this.updateWrapperHeight();
       });
-      
-      console.log('Categories after fetch:', this.categories);
-      console.log('Sorted categories:', this.sortedCategories);
-      console.log('Rarity categories:', this.rarityCategories);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
-      // Continue even if one of the API calls fails
     }
   }
 }
