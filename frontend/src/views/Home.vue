@@ -119,7 +119,7 @@
             <div class="category-card__content">
               <div class="category-card__header">
                 <h3 class="category-card__title">{{ category.name }}</h3>
-                <span class="category-card__count">{{ category.cardCount || 0 }}</span>
+                <span class="category-card__count">{{ category.count || 0 }}</span>
               </div>
             </div>
           </div>
@@ -329,6 +329,7 @@
   position: absolute;
   top: 100%;
   right: 0;
+  left: -100%;
   margin-top: 10px;
   background-color: #1e1e1eeb;
   color: var(--text-color);
@@ -336,8 +337,9 @@
   border-radius: 8px;
   padding: 10px 0;
   z-index: 100;
-  min-width: 250px;
+  min-width: 190px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
 }
 
 .sort-option {
@@ -731,8 +733,7 @@ export default {
       filteredCategories: [],
       debouncedSearch: null,
       showSortDropdown: false,
-      currentSort: { field: 'default', direction: 'asc' },
-      categoryCardCounts: {} // Store card counts for each category
+      currentSort: { field: 'default', direction: 'asc' }
     }
   },
   computed: {
@@ -752,13 +753,7 @@ export default {
     sortedCategories() {
       if (!this.categories || this.categories.length === 0) return [];
       
-      // Add cardCount to each category
-      const categoriesWithCounts = this.categories.map(category => ({
-        ...category,
-        cardCount: this.categoryCardCounts[category.id] || 0
-      }));
-      
-      return [...categoriesWithCounts].sort((a, b) => {
+      return [...this.categories].sort((a, b) => {
         const orderA = this.rarityOrder[a.name] || 999;
         const orderB = this.rarityOrder[b.name] || 999;
         
@@ -799,35 +794,6 @@ export default {
         }
       } catch (error) {
         console.error('Error fetching newest cards for all categories:', error);
-      }
-    },
-    
-    async fetchCategoryCardCounts() {
-      try {
-        // Fetch card counts for all categories
-        const counts = {};
-        
-        // Fetch counts for each category
-        for (const category of this.categories) {
-          try {
-            const response = await fetch(`/api/cards_count/${category.id}`);
-            if (response.ok) {
-              const data = await response.json();
-              counts[category.id] = data.count || 0;
-            } else {
-              console.warn(`Failed to fetch card count for category ${category.id}`);
-              counts[category.id] = 0;
-            }
-          } catch (error) {
-            console.error(`Error fetching card count for category ${category.id}:`, error);
-            counts[category.id] = 0;
-          }
-        }
-        
-        this.categoryCardCounts = counts;
-        console.log('Category card counts:', this.categoryCardCounts);
-      } catch (error) {
-        console.error('Error fetching category card counts:', error);
       }
     },
     
@@ -943,8 +909,8 @@ export default {
       switch (field) {
         case 'cards':
           sortedCategories.sort((a, b) => {
-            const countA = a.cardCount || 0;
-            const countB = b.cardCount || 0;
+            const countA = a.count || 0;
+            const countB = b.count || 0;
             return direction === 'asc' ? countA - countB : countB - countA;
           });
           break;
@@ -996,7 +962,6 @@ export default {
     
     try {
       await this.fetchCategories();
-      await this.fetchCategoryCardCounts(); // Fetch card counts for each category
       await this.fetchRarityNewestCards(); // Fetch newest cards for rarity categories
       await this.fetchAllCategoriesNewestCards(); // Fetch newest cards for all categories
       
