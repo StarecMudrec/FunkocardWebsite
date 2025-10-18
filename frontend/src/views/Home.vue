@@ -104,11 +104,6 @@
   font-family: 'Afacad', sans-serif;
 }
 
-html {
-  overflow: -moz-scrollbars-none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
 .hero-section {
   position: relative;
   height: 100vh;
