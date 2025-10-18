@@ -49,11 +49,7 @@
         </div>
       </div>
 
-      <div 
-        id="categories-container" 
-        class="categories-grid-container"
-        :class="{ 'search-active': searchQuery }"
-      >
+      <div id="categories-container" class="categories-grid">
         <div v-if="loading" class="loading">Loading categories...</div>
         <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
         <div v-else-if="filteredCategories.length === 0" class="no-categories-message">
@@ -61,14 +57,7 @@
         </div>
         
         <!-- Category Cards -->
-        <transition-group 
-          name="search-animation" 
-          tag="div" 
-          class="categories-grid-transition"
-          @before-enter="onBeforeEnter"
-          @after-enter="onAfterEnter"
-          @before-leave="onBeforeLeave"
-        >
+        <transition-group name="search-animation" tag="div" class="categories-grid-transition">
           <div 
             v-for="(category, index) in filteredCategories" 
             :key="category.id"
@@ -272,8 +261,7 @@
   grid-column: 1 / -1;
 }
 
-/* Categories Grid Container with smooth height transitions */
-.categories-grid-container {
+.categories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   row-gap: 40px;
@@ -282,15 +270,6 @@
   max-width: 1200px;
   margin: 0 auto;
   margin-top: 50px;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 200px; /* Minimum height to prevent jarring transitions */
-  overflow: hidden;
-  position: relative;
-}
-
-/* When search is active, we'll use auto-fit for better responsiveness */
-.categories-grid-container.search-active {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 /* Transition group wrapper */
@@ -500,15 +479,10 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .categories-grid-container {
+  .categories-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     padding: 20px 15px;
     gap: 15px;
-    margin-top: 30px;
-  }
-  
-  .categories-grid-container.search-active {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
   
   .category-card__content {
@@ -546,13 +520,7 @@
 }
 
 @media (max-width: 480px) {
-  .categories-grid-container {
-    grid-template-columns: 1fr;
-    padding: 15px 10px;
-    margin-top: 20px;
-  }
-  
-  .categories-grid-container.search-active {
+  .categories-grid {
     grid-template-columns: 1fr;
   }
 
@@ -608,8 +576,7 @@ export default {
       allCategoriesNewestCards: {}, // Store newest cards for all categories
       searchQuery: '',
       filteredCategories: [],
-      debouncedSearch: null,
-      isAnimating: false
+      debouncedSearch: null
     }
   },
   computed: {
@@ -765,19 +732,6 @@ export default {
       this.searchQuery = '';
       this.filteredCategories = [...this.sortedCategories];
       this.debouncedSearch?.cancel();
-    },
-
-    // Animation lifecycle methods
-    onBeforeEnter() {
-      this.isAnimating = true;
-    },
-
-    onAfterEnter() {
-      this.isAnimating = false;
-    },
-
-    onBeforeLeave() {
-      this.isAnimating = true;
     }
   },
   async mounted() {
