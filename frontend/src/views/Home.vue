@@ -49,7 +49,11 @@
         </div>
       </div>
 
-      <div id="categories-container" class="categories-grid">
+      <div 
+        id="categories-container" 
+        class="categories-grid-container"
+        :class="{ 'height-transition': enableHeightTransition }"
+      >
         <div v-if="loading" class="loading">Loading categories...</div>
         <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
         <div v-else-if="filteredCategories.length === 0" class="no-categories-message">
@@ -57,7 +61,7 @@
         </div>
         
         <!-- Category Cards -->
-        <transition-group name="search-animation" tag="div" class="categories-grid-transition">
+        <transition-group name="search-animation" tag="div" class="categories-grid">
           <div 
             v-for="(category, index) in filteredCategories" 
             :key="category.id"
@@ -261,6 +265,18 @@
   grid-column: 1 / -1;
 }
 
+/* Categories Grid Container with Height Transition */
+.categories-grid-container {
+  display: block;
+  overflow: hidden;
+  transition: height 0.5s ease;
+  min-height: 200px; /* Minimum height to prevent collapsing */
+}
+
+.categories-grid-container.height-transition {
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .categories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -270,11 +286,6 @@
   max-width: 1200px;
   margin: 0 auto;
   margin-top: 50px;
-}
-
-/* Transition group wrapper */
-.categories-grid-transition {
-  display: contents;
 }
 
 /* Search animation styles */
@@ -483,6 +494,7 @@
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     padding: 20px 15px;
     gap: 15px;
+    margin-top: 30px;
   }
   
   .category-card__content {
@@ -522,6 +534,8 @@
 @media (max-width: 480px) {
   .categories-grid {
     grid-template-columns: 1fr;
+    padding: 15px 10px;
+    margin-top: 20px;
   }
 
   .search-input {
@@ -576,7 +590,8 @@ export default {
       allCategoriesNewestCards: {}, // Store newest cards for all categories
       searchQuery: '',
       filteredCategories: [],
-      debouncedSearch: null
+      debouncedSearch: null,
+      enableHeightTransition: false
     }
   },
   computed: {
@@ -732,6 +747,25 @@ export default {
       this.searchQuery = '';
       this.filteredCategories = [...this.sortedCategories];
       this.debouncedSearch?.cancel();
+    },
+
+    // Height transition methods
+    updateContainerHeight() {
+      this.$nextTick(() => {
+        const container = this.$el.querySelector('#categories-container');
+        if (container) {
+          // Enable transition after initial render
+          setTimeout(() => {
+            this.enableHeightTransition = true;
+          }, 100);
+        }
+      });
+    }
+  },
+  watch: {
+    filteredCategories() {
+      // Update container height when categories change
+      this.updateContainerHeight();
     }
   },
   async mounted() {
@@ -749,6 +783,9 @@ export default {
       console.log('Categories after fetch:', this.categories);
       console.log('Sorted categories:', this.sortedCategories);
       console.log('Rarity categories:', this.rarityCategories);
+
+      // Initialize height transition after content is loaded
+      this.updateContainerHeight();
     } catch (error) {
       console.error('Failed to fetch categories:', error);
       // Continue even if one of the API calls fails
