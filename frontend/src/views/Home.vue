@@ -49,13 +49,7 @@
         </div>
       </div>
 
-      <div 
-        id="categories-container" 
-        class="categories-grid-container"
-        :class="{ 'search-active': searchQuery }"
-        :style="{ height: containerHeight }"
-        ref="categoriesContainer"
-      >
+      <div id="categories-container" class="categories-grid">
         <div v-if="loading" class="loading">Loading categories...</div>
         <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
         <div v-else-if="filteredCategories.length === 0" class="no-categories-message">
@@ -63,14 +57,7 @@
         </div>
         
         <!-- Category Cards -->
-        <transition-group 
-          name="search-animation" 
-          tag="div" 
-          class="categories-grid-transition"
-          @before-enter="onBeforeEnter"
-          @after-enter="onAfterEnter"
-          @before-leave="onBeforeLeave"
-        >
+        <transition-group name="search-animation" tag="div" class="categories-grid-transition">
           <div 
             v-for="(category, index) in filteredCategories" 
             :key="category.id"
@@ -274,8 +261,7 @@
   grid-column: 1 / -1;
 }
 
-/* Categories Grid Container with smooth height transitions */
-.categories-grid-container {
+.categories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   row-gap: 40px;
@@ -284,19 +270,6 @@
   max-width: 1200px;
   margin: 0 auto;
   margin-top: 50px;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 200px; /* Minimum height to prevent jarring transitions */
-  overflow: hidden;
-  position: relative;
-  height: auto; /* Default height */
-  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
-              grid-template-columns 0.3s ease,
-              padding 0.3s ease;
-}
-
-/* When search is active, we'll use auto-fit for better responsiveness */
-.categories-grid-container.search-active {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 /* Transition group wrapper */
@@ -506,15 +479,10 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .categories-grid-container {
+  .categories-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     padding: 20px 15px;
     gap: 15px;
-    margin-top: 30px;
-  }
-  
-  .categories-grid-container.search-active {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
   
   .category-card__content {
@@ -552,13 +520,7 @@
 }
 
 @media (max-width: 480px) {
-  .categories-grid-container {
-    grid-template-columns: 1fr;
-    padding: 15px 10px;
-    margin-top: 20px;
-  }
-  
-  .categories-grid-container.search-active {
+  .categories-grid {
     grid-template-columns: 1fr;
   }
 
@@ -614,10 +576,7 @@ export default {
       allCategoriesNewestCards: {}, // Store newest cards for all categories
       searchQuery: '',
       filteredCategories: [],
-      debouncedSearch: null,
-      isAnimating: false,
-      containerHeight: 'auto',
-      resizeObserver: null
+      debouncedSearch: null
     }
   },
   computed: {
@@ -647,24 +606,6 @@ export default {
         if (b.name.toLowerCase().includes('shop')) return 1;
         
         return orderA - orderB;
-      });
-    }
-  },
-  watch: {
-    filteredCategories: {
-      handler() {
-        // Update container height when categories change
-        this.$nextTick(() => {
-          setTimeout(() => this.updateContainerHeight(), 50);
-        });
-      },
-      deep: true
-    },
-    
-    searchQuery() {
-      // Update container height when search query changes
-      this.$nextTick(() => {
-        setTimeout(() => this.updateContainerHeight(), 100);
       });
     }
   },
@@ -791,50 +732,6 @@ export default {
       this.searchQuery = '';
       this.filteredCategories = [...this.sortedCategories];
       this.debouncedSearch?.cancel();
-    },
-
-    // Animation lifecycle methods
-    onBeforeEnter() {
-      this.isAnimating = true;
-    },
-
-    onAfterEnter() {
-      this.isAnimating = false;
-    },
-
-    onBeforeLeave() {
-      this.isAnimating = true;
-    },
-    
-    updateContainerHeight() {
-      this.$nextTick(() => {
-        const container = this.$refs.categoriesContainer;
-        if (!container) return;
-        
-        // Calculate the height of the content
-        const contentHeight = container.scrollHeight;
-        
-        // Only update if height has changed significantly (more than 5px)
-        // This prevents unnecessary transitions during small layout shifts
-        const currentHeight = parseInt(this.containerHeight) || 0;
-        if (Math.abs(contentHeight - currentHeight) > 5) {
-          this.containerHeight = `${contentHeight}px`;
-        }
-      });
-    },
-    
-    setupResizeObserver() {
-      // Use ResizeObserver to detect when content height changes
-      if (typeof ResizeObserver !== 'undefined') {
-        this.resizeObserver = new ResizeObserver(() => {
-          this.updateContainerHeight();
-        });
-        
-        const container = this.$refs.categoriesContainer;
-        if (container) {
-          this.resizeObserver.observe(container);
-        }
-      }
     }
   },
   async mounted() {
@@ -855,19 +752,6 @@ export default {
     } catch (error) {
       console.error('Failed to fetch categories:', error);
       // Continue even if one of the API calls fails
-    }
-    
-    // Initialize container height
-    this.$nextTick(() => {
-      this.updateContainerHeight();
-      this.setupResizeObserver();
-    });
-  },
-  
-  beforeDestroy() {
-    // Clean up ResizeObserver
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
     }
   }
 }
