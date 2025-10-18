@@ -578,9 +578,7 @@ export default {
       filteredCategories: [],
       debouncedSearch: null,
       isSearchAnimationInProgress: false,
-      animationCount: 0,
-      previousCategoryCount: 0,
-      scrollPositionBeforeSearch: 0
+      animationCount: 0
     }
   },
   computed: {
@@ -714,8 +712,6 @@ export default {
 
     // Search methods
     handleSearch() {
-      // Store scroll position before search
-      this.scrollPositionBeforeSearch = window.scrollY;
       this.debouncedSearch();
     },
     
@@ -734,62 +730,38 @@ export default {
         
         // Smooth scroll to maintain visible position after search
         this.$nextTick(() => {
-          this.smartScrollAfterSearch();
+          this.smoothScrollToCategories();
         });
       });
     },
     
     clearSearch() {
-      this.scrollPositionBeforeSearch = window.scrollY;
       this.searchQuery = '';
       this.filteredCategories = [...this.sortedCategories];
       this.debouncedSearch?.cancel();
       
-      // Smart scroll when clearing search
+      // Smooth scroll when clearing search
       this.$nextTick(() => {
-        this.smartScrollAfterSearch();
+        this.smoothScrollToCategories();
       });
     },
     
-    // Smart scroll that only adjusts position when necessary
-    smartScrollAfterSearch() {
+    // Smooth scroll to categories container
+    smoothScrollToCategories() {
       const categoriesContainer = document.getElementById('categories-container');
-      if (!categoriesContainer) return;
-      
-      const containerRect = categoriesContainer.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      
-      // Calculate how much of the container is visible
-      const containerTop = containerRect.top;
-      const containerBottom = containerRect.bottom;
-      const containerHeight = containerRect.height;
-      
-      // If container is above viewport (scrolled past) or mostly below viewport
-      const isContainerAboveViewport = containerTop < 0;
-      const isContainerMostlyBelow = containerTop > viewportHeight * 0.3;
-      
-      // Only scroll if the container is significantly out of view
-      if (isContainerAboveViewport || isContainerMostlyBelow) {
-        // For search results with fewer items, scroll less aggressively
-        const currentCategoryCount = this.filteredCategories.length;
-        const scrollBehavior = currentCategoryCount < this.previousCategoryCount ? 'smooth' : 'smooth';
+      if (categoriesContainer) {
+        const containerRect = categoriesContainer.getBoundingClientRect();
+        const isContainerAboveViewport = containerRect.top < 0;
+        const isContainerBelowViewport = containerRect.bottom > window.innerHeight;
         
-        categoriesContainer.scrollIntoView({ 
-          behavior: scrollBehavior, 
-          block: currentCategoryCount < this.previousCategoryCount ? 'start' : 'start',
-          inline: 'nearest'
-        });
-      } else {
-        // If container is already reasonably visible, maintain current scroll position
-        // This prevents unwanted scrolling when fewer cards are displayed
-        window.scrollTo({
-          top: this.scrollPositionBeforeSearch,
-          behavior: 'auto'
-        });
+        // Only scroll if the container is not fully visible
+        if (isContainerAboveViewport || isContainerBelowViewport) {
+          categoriesContainer.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start'
+          });
+        }
       }
-      
-      // Update previous count for next comparison
-      this.previousCategoryCount = this.filteredCategories.length;
     },
     
     // Animation handlers
@@ -802,22 +774,22 @@ export default {
       this.animationCount--;
       if (this.animationCount === 0) {
         this.isSearchAnimationInProgress = false;
-        // Smart scroll after animation completes
+        // Smooth scroll after animation completes
         this.$nextTick(() => {
-          this.smartScrollAfterSearch();
+          this.smoothScrollToCategories();
         });
       }
     }
   },
   watch: {
-    // Watch for changes in filtered categories to trigger smart scroll
+    // Watch for changes in filtered categories to trigger smooth scroll
     filteredCategories: {
       handler(newVal, oldVal) {
         // If search animation is not in progress, scroll immediately
         if (!this.isSearchAnimationInProgress) {
           this.$nextTick(() => {
             setTimeout(() => {
-              this.smartScrollAfterSearch();
+              this.smoothScrollToCategories();
             }, 50);
           });
         }
@@ -836,7 +808,6 @@ export default {
       
       // Initialize filtered categories with all sorted categories
       this.filteredCategories = [...this.sortedCategories];
-      this.previousCategoryCount = this.filteredCategories.length;
       
       console.log('Categories after fetch:', this.categories);
       console.log('Sorted categories:', this.sortedCategories);
