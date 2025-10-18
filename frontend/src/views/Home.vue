@@ -57,7 +57,7 @@
         </div>
         
         <!-- Category Cards -->
-        <transition-group name="search-animation" tag="div" class="categories-grid-transition">
+        <transition-group name="search-animation" tag="div" class="categories-grid-transition" @enter="onSearchAnimationEnter" @leave="onSearchAnimationLeave">
           <div 
             v-for="(category, index) in filteredCategories" 
             :key="category.id"
@@ -576,7 +576,9 @@ export default {
       allCategoriesNewestCards: {}, // Store newest cards for all categories
       searchQuery: '',
       filteredCategories: [],
-      debouncedSearch: null
+      debouncedSearch: null,
+      isSearchAnimationInProgress: false,
+      animationCount: 0
     }
   },
   computed: {
@@ -725,6 +727,11 @@ export default {
         this.filteredCategories = this.sortedCategories.filter(category => 
           category.name?.toLowerCase().includes(query)
         );
+        
+        // Smooth scroll to maintain visible position after search
+        this.$nextTick(() => {
+          this.smoothScrollToCategories();
+        });
       });
     },
     
@@ -732,6 +739,62 @@ export default {
       this.searchQuery = '';
       this.filteredCategories = [...this.sortedCategories];
       this.debouncedSearch?.cancel();
+      
+      // Smooth scroll when clearing search
+      this.$nextTick(() => {
+        this.smoothScrollToCategories();
+      });
+    },
+    
+    // Smooth scroll to categories container
+    smoothScrollToCategories() {
+      const categoriesContainer = document.getElementById('categories-container');
+      if (categoriesContainer) {
+        const containerRect = categoriesContainer.getBoundingClientRect();
+        const isContainerAboveViewport = containerRect.top < 0;
+        const isContainerBelowViewport = containerRect.bottom > window.innerHeight;
+        
+        // Only scroll if the container is not fully visible
+        if (isContainerAboveViewport || isContainerBelowViewport) {
+          categoriesContainer.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start'
+          });
+        }
+      }
+    },
+    
+    // Animation handlers
+    onSearchAnimationEnter() {
+      this.animationCount++;
+      this.isSearchAnimationInProgress = true;
+    },
+    
+    onSearchAnimationLeave() {
+      this.animationCount--;
+      if (this.animationCount === 0) {
+        this.isSearchAnimationInProgress = false;
+        // Smooth scroll after animation completes
+        this.$nextTick(() => {
+          this.smoothScrollToCategories();
+        });
+      }
+    }
+  },
+  watch: {
+    // Watch for changes in filtered categories to trigger smooth scroll
+    filteredCategories: {
+      handler(newVal, oldVal) {
+        // If search animation is not in progress, scroll immediately
+        if (!this.isSearchAnimationInProgress) {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.smoothScrollToCategories();
+            }, 50);
+          });
+        }
+      },
+      deep: true
     }
   },
   async mounted() {
