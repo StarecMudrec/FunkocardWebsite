@@ -21,14 +21,44 @@
     <!-- Основной контент -->
     <div id="content-section" class="content">
       <h1 class="categories-title">Categories : </h1>
+      
+      <!-- Search Bar -->
+      <div class="search-container">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="30" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search categories..."
+            class="search-input"
+            @input="handleSearch"
+          />
+          <button
+            v-if="searchQuery"
+            @click="clearSearch"
+            class="clear-search-button"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"></path>
+              <path d="m6 6 12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
       <div id="categories-container" class="categories-grid">
         <div v-if="loading" class="loading">Loading categories...</div>
         <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
-        <div v-else-if="sortedCategories.length === 0" class="loading">No categories found</div>
+        <div v-else-if="filteredCategories.length === 0" class="no-categories-message">
+          {{ searchQuery ? 'No categories match your search' : 'No categories found' }}
+        </div>
         
         <!-- Category Cards -->
         <div 
-          v-for="(category, index) in sortedCategories" 
+          v-for="(category, index) in filteredCategories" 
           :key="category.id"
           class="category-card"
           :class="getCategoryBackgroundClass(category, index)"
@@ -147,6 +177,86 @@
   letter-spacing: 3px;
   line-height: 1;
   margin-top: 220px; 
+}
+
+/* Search Container */
+.search-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 800px;
+  margin: 30px auto 0;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 20px;
+  color: var(--text-color);
+  opacity: 0.7;
+  z-index: 2;
+}
+
+.search-input {
+  width: 100%;
+  padding: 15px 45px 15px 55px;
+  background: var(--card-bg);
+  border: 2px solid #333;
+  border-radius: 32px;
+  color: var(--text-color);
+  font-size: 1.2rem;
+  font-family: 'Afacad', sans-serif;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #555555;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.search-input::placeholder {
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
+.clear-search-button {
+  position: absolute;
+  right: 17px;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-search-button:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  scale: 1.1;
+}
+
+.no-categories-message {
+  text-align: center;
+  color: var(--text-color);
+  opacity: 0.7;
+  font-size: 1.2rem;
+  padding: 40px 0;
+  grid-column: 1 / -1;
 }
 
 .categories-grid {
@@ -362,17 +472,59 @@
     width: 108px;
     height: 108px;
   }
+
+  .search-container {
+    max-width: 90%;
+    margin: 20px auto 0;
+  }
+
+  .search-input {
+    padding: 12px 40px 12px 45px;
+    font-size: 1rem;
+  }
+
+  .search-icon {
+    left: 15px;
+  }
 }
 
 @media (max-width: 480px) {
   .categories-grid {
     grid-template-columns: 1fr;
   }
+
+  .search-input {
+    padding: 10px 35px 10px 40px;
+    font-size: 0.9rem;
+  }
+
+  .search-icon {
+    left: 12px;
+  }
 }
 </style>
 
 <script>
 import { mapActions, mapState } from 'vuex'
+
+// Debounce function for search
+const debounce = (func, wait) => {
+  let timeout
+  const debounced = function(...args) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+  
+  debounced.cancel = function() {
+    clearTimeout(timeout)
+  }
+  
+  return debounced
+}
 
 export default {
   data() {
@@ -390,7 +542,10 @@ export default {
         'Scarface - Tony Montana': 10
       },
       rarityNewestCards: {}, // Store newest card images for each category
-      allCategoriesNewestCards: {} // Store newest cards for all categories
+      allCategoriesNewestCards: {}, // Store newest cards for all categories
+      searchQuery: '',
+      filteredCategories: [],
+      debouncedSearch: null
     }
   },
   computed: {
@@ -520,13 +675,46 @@ export default {
           block: 'start'
         });
       }
+    },
+
+    // Search methods
+    handleSearch() {
+      this.debouncedSearch();
+    },
+    
+    performSearch() {
+      if (!this.searchQuery.trim()) {
+        this.filteredCategories = [...this.sortedCategories];
+        return;
+      }
+      
+      const query = this.searchQuery.toLowerCase().trim();
+      
+      requestAnimationFrame(() => {
+        this.filteredCategories = this.sortedCategories.filter(category => 
+          category.name?.toLowerCase().includes(query)
+        );
+      });
+    },
+    
+    clearSearch() {
+      this.searchQuery = '';
+      this.filteredCategories = [...this.sortedCategories];
+      this.debouncedSearch?.cancel();
     }
   },
   async mounted() {
+    // Initialize debounced search
+    this.debouncedSearch = debounce(this.performSearch, 300);
+    
     try {
       await this.fetchCategories();
       await this.fetchRarityNewestCards(); // Fetch newest cards for rarity categories
       await this.fetchAllCategoriesNewestCards(); // Fetch newest cards for all categories
+      
+      // Initialize filtered categories with all sorted categories
+      this.filteredCategories = [...this.sortedCategories];
+      
       console.log('Categories after fetch:', this.categories);
       console.log('Sorted categories:', this.sortedCategories);
       console.log('Rarity categories:', this.rarityCategories);
