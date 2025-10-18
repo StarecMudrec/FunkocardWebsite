@@ -57,34 +57,36 @@
         </div>
         
         <!-- Category Cards -->
-        <div 
-          v-for="(category, index) in filteredCategories" 
-          :key="category.id"
-          class="category-card"
-          :class="getCategoryBackgroundClass(category, index)"
-          @click="navigateToCategory(category)"
-        >
-          <!-- Video background for Limited category -->
-          <video 
-            v-if="category.name === 'Limited ⚠️' && getLimitedVideoSource(category)"
-            class="category-card__video"
-            :src="getLimitedVideoSource(category)"
-            autoplay
-            muted
-            loop
-            playsinline
-          ></video>
+        <transition-group name="search-animation" tag="div" class="categories-grid-transition">
           <div 
-            v-else
-            class="category-card__background" 
-            :style="getCategoryBackgroundStyle(category)"
-          ></div>
-          <div class="category-card__content">
-            <div class="category-card__header">
-              <h3 class="category-card__title">{{ category.name }}</h3>
+            v-for="(category, index) in filteredCategories" 
+            :key="category.id"
+            class="category-card"
+            :class="getCategoryBackgroundClass(category, index)"
+            @click="navigateToCategory(category)"
+          >
+            <!-- Video background for Limited category -->
+            <video 
+              v-if="category.name === 'Limited ⚠️' && getLimitedVideoSource(category)"
+              class="category-card__video"
+              :src="getLimitedVideoSource(category)"
+              autoplay
+              muted
+              loop
+              playsinline
+            ></video>
+            <div 
+              v-else
+              class="category-card__background" 
+              :style="getCategoryBackgroundStyle(category)"
+            ></div>
+            <div class="category-card__content">
+              <div class="category-card__header">
+                <h3 class="category-card__title">{{ category.name }}</h3>
+              </div>
             </div>
           </div>
-        </div>
+        </transition-group>
       </div>
     </div>
   </div>
@@ -268,6 +270,35 @@
   max-width: 1200px;
   margin: 0 auto;
   margin-top: 50px;
+}
+
+/* Transition group wrapper */
+.categories-grid-transition {
+  display: contents;
+}
+
+/* Search animation styles */
+.search-animation-enter-active,
+.search-animation-leave-active {
+  transition: all 0.5s ease;
+}
+
+.search-animation-move {
+  transition: transform 0.5s ease;
+}
+
+.search-animation-enter-from {
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+}
+
+.search-animation-leave-to {
+  opacity: 0;
+  transform: scale(0.8) translateY(-20px);
+}
+
+.search-animation-leave-active {
+  position: absolute;
 }
 
 .category-card {
