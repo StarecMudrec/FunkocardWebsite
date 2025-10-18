@@ -49,13 +49,7 @@
         </div>
       </div>
 
-      <div 
-        id="categories-container" 
-        class="categories-grid-container"
-        :class="{ 'search-active': searchQuery }"
-        :style="{ height: containerHeight }"
-        ref="gridContainer"
-      >
+      <div id="categories-container" class="categories-grid">
         <div v-if="loading" class="loading">Loading categories...</div>
         <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
         <div v-else-if="filteredCategories.length === 0" class="no-categories-message">
@@ -63,16 +57,7 @@
         </div>
         
         <!-- Category Cards -->
-        <transition-group 
-          name="search-animation" 
-          tag="div" 
-          class="categories-grid-transition"
-          @before-enter="onBeforeEnter"
-          @after-enter="onAfterEnter"
-          @before-leave="onBeforeLeave"
-          @enter-cancelled="onEnterCancelled"
-          @leave-cancelled="onLeaveCancelled"
-        >
+        <transition-group name="search-animation" tag="div" class="categories-grid-transition">
           <div 
             v-for="(category, index) in filteredCategories" 
             :key="category.id"
@@ -276,8 +261,7 @@
   grid-column: 1 / -1;
 }
 
-/* Categories Grid Container with smooth height transitions */
-.categories-grid-container {
+.categories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   row-gap: 40px;
@@ -286,15 +270,6 @@
   max-width: 1200px;
   margin: 0 auto;
   margin-top: 50px;
-  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 200px; /* Minimum height to prevent jarring transitions */
-  overflow: hidden;
-  position: relative;
-}
-
-/* When search is active, we'll use auto-fit for better responsiveness */
-.categories-grid-container.search-active {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 /* Transition group wrapper */
@@ -504,15 +479,10 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .categories-grid-container {
+  .categories-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     padding: 20px 15px;
     gap: 15px;
-    margin-top: 30px;
-  }
-  
-  .categories-grid-container.search-active {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
   
   .category-card__content {
@@ -550,13 +520,7 @@
 }
 
 @media (max-width: 480px) {
-  .categories-grid-container {
-    grid-template-columns: 1fr;
-    padding: 15px 10px;
-    margin-top: 20px;
-  }
-  
-  .categories-grid-container.search-active {
+  .categories-grid {
     grid-template-columns: 1fr;
   }
 
@@ -612,9 +576,7 @@ export default {
       allCategoriesNewestCards: {}, // Store newest cards for all categories
       searchQuery: '',
       filteredCategories: [],
-      debouncedSearch: null,
-      isAnimating: false,
-      containerHeight: 'auto'
+      debouncedSearch: null
     }
   },
   computed: {
@@ -770,55 +732,6 @@ export default {
       this.searchQuery = '';
       this.filteredCategories = [...this.sortedCategories];
       this.debouncedSearch?.cancel();
-    },
-
-    // Animation lifecycle methods
-    onBeforeEnter() {
-      this.isAnimating = true;
-    },
-
-    onAfterEnter() {
-      this.isAnimating = false;
-      this.updateContainerHeight();
-    },
-
-    onBeforeLeave() {
-      this.isAnimating = true;
-    },
-
-    onEnterCancelled() {
-      this.isAnimating = false;
-    },
-
-    onLeaveCancelled() {
-      this.isAnimating = false;
-    },
-
-    updateContainerHeight() {
-      // Use nextTick to ensure DOM is updated
-      this.$nextTick(() => {
-        const container = this.$refs.gridContainer;
-        if (container) {
-          // Calculate the actual height needed
-          const contentHeight = container.scrollHeight;
-          
-          // Apply the new height with transition
-          this.containerHeight = `${contentHeight}px`;
-          
-          // Reset to auto after transition for responsive behavior
-          setTimeout(() => {
-            if (!this.isAnimating) {
-              this.containerHeight = 'auto';
-            }
-          }, 500); // Match the transition duration
-        }
-      });
-    }
-  },
-  watch: {
-    filteredCategories() {
-      // Update container height when filtered categories change
-      this.updateContainerHeight();
     }
   },
   async mounted() {
@@ -832,11 +745,6 @@ export default {
       
       // Initialize filtered categories with all sorted categories
       this.filteredCategories = [...this.sortedCategories];
-      
-      // Set initial height after categories are loaded
-      this.$nextTick(() => {
-        this.updateContainerHeight();
-      });
       
       console.log('Categories after fetch:', this.categories);
       console.log('Sorted categories:', this.sortedCategories);
