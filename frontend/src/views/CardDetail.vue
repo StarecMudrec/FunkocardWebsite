@@ -32,82 +32,48 @@
         </div>
       </div>
 
-      <transition :name="showTransition ? transitionName : ''">
-        <div :key="card.id" class="card-detail-container">
-          <div class="card-detail">
-            <div class="card-content-wrapper">
-              <!-- Название карточки и главная разделительная линия -->
-              <div class="card-header-section">
-                <div class="title-container">
-                  <h1 ref="cardNameRef">
-                    <span>{{ card.name }}</span>
-                  </h1>
-                </div>
-                <div v-if="nameError" class="error-message">{{ nameError }}</div>
-                <div class="main-divider"></div>
-              </div>
-              
-              <!-- Rarity and Points section under main divider -->
-              <h3 style="margin: 60px 0px 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
-                <strong>Rarity: </strong>{{ card.category }}
-              </h3>
-              <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
-              
-              <p style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);" v-html="formatDescription(card.description)"></p>
-              <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
-
-              
-              <div class="secondary-divider"></div>
-              
-              <!-- Available at shop section under secondary divider -->
-              <div class="shop-section">
-                <div class="shop-info">
-                  <h3>Available at shop:</h3>
-                  <p :class="{ 'available-glow': isShopAvailable(card.shop) }">
-                    {{ formatShopInfo(card.shop) }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Back to category button -->
-              <div class="back-to-category-section">
-                <button @click="goBackToCategory" class="back-to-category-button">
-                  ← Back to {{ getCategoryDisplayName() }}
-                </button>
-              </div>
-            </div>
-            
-            <div class="card-image-container">
-              <!-- Video for Limited cards -->
-              <video 
-                v-if="isLimitedCard && card.img && !mediaError" 
-                :src="`/api/card_image/${card.img}`" 
-                class="card-detail-media"
-                autoplay
-                loop
-                muted
-                playsinline
-                @error="mediaError = true"
-                @dblclick="handleMediaDoubleClick"
-                disablePictureInPicture
-              ></video>
-              
-              <!-- Image for non-Limited cards -->
-              <img 
-                v-else-if="card.img && !mediaError" 
-                :src="`/api/card_image/${card.img}`" 
-                :alt="card.name" 
-                class="card-detail-media"
-                @error="mediaError = true"
-                @dblclick="handleMediaDoubleClick"
-              />
-              
-              <div v-else class="image-placeholder">No media available</div>
-            </div>
-          </div>
+      <!-- Multi-card container -->
+      <div class="multi-card-container" ref="multiCardContainer">
+        <!-- Previous Card -->
+        <div 
+          class="card-page previous-card" 
+          :class="{ 'hidden': !hasPreviousCard }"
+          @click="scrollToCard(currentCardIndex - 1)"
+        >
+          <CardDetailContainer 
+            v-if="cardsData[currentCardIndex - 1]"
+            :card="cardsData[currentCardIndex - 1]"
+            :is-active="false"
+          />
         </div>
-      </transition>
+
+        <!-- Current Card -->
+        <div class="card-page current-card" ref="currentCard">
+          <CardDetailContainer 
+            v-if="cardsData[currentCardIndex]"
+            :card="cardsData[currentCardIndex]"
+            :is-active="true"
+            @media-double-click="handleMediaDoubleClick"
+            @go-back="goBackToCategory"
+          />
+        </div>
+
+        <!-- Next Card -->
+        <div 
+          class="card-page next-card" 
+          :class="{ 'hidden': !hasNextCard }"
+          @click="scrollToCard(currentCardIndex + 1)"
+        >
+          <CardDetailContainer 
+            v-if="cardsData[currentCardIndex + 1]"
+            :card="cardsData[currentCardIndex + 1]"
+            :is-active="false"
+          />
+        </div>
+      </div>
+
       <div v-if="saveError" class="error-message">{{ saveError }}</div>
+      
       <!-- Right Arrow -->
       <div 
         class="nav-arrow right-arrow" 
@@ -121,1568 +87,541 @@
         </div>
       </div>
     </div>
-  <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" style="display: none;">
+    <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" style="display: none;">
   </div>
 </template>
 
 <script>
-  import { fetchCardInfo, checkUserPermission, fetchUserInfo, fetchCardsByCategory } from '@/api'
-  import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
-  import { useRouter } from 'vue-router'
+import { fetchCardInfo, checkUserPermission, fetchUserInfo, fetchCardsByCategory } from '@/api'
+import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import CardDetailContainer from './CardDetailContainer.vue'
 
-  export default {
-    props: {
-      id: {
-        type: String,
-        required: true
-      }
-    },
-    setup(props) {
-      const router = useRouter()
-      const fileInput = ref(null)
-      const nameInput = ref(null)
-      const descriptionInput = ref(null)
-      const categoryInput = ref(null)
+export default {
+  props: {
+    id: {
+      type: String,
+      required: true
+    }
+  },
+  components: {
+    CardDetailContainer
+  },
+  setup(props) {
+    const router = useRouter()
+    const fileInput = ref(null)
+    const multiCardContainer = ref(null)
+    const currentCard = ref(null)
 
-      const card = ref({})
-      const editableCard = ref({})
-      const loading = ref(true)
-      const error = ref(null)
-      const mediaError = ref(false) // Changed from imageError to mediaError
-      const saveError = ref(null)
-      const nameError = ref(null)
-      const descriptionError = ref(null)
-      const categoryError = ref(null)
-      const cardNameRef = ref(null)
-      const isUserAllowed = ref(false)
-      const editing = ref({
-        name: false,
-        description: false,
-        category: false
-      })
-      const transitionName = ref('slide-left');
+    const cardsData = ref([]) // Array to hold current and adjacent cards
+    const loading = ref(true)
+    const error = ref(null)
+    const saveError = ref(null)
+    const isUserAllowed = ref(false)
 
-      // Card navigation
-      const sortedCards = ref([])
-      const currentCardIndex = ref(-1)
+    // Card navigation
+    const sortedCards = ref([])
+    const currentCardIndex = ref(-1)
+    const isScrolling = ref(false)
 
-      const isFirstCard = computed(() => currentCardIndex.value <= 0)
-      const isLastCard = computed(() => currentCardIndex.value >= sortedCards.value.length - 1)
+    const isFirstCard = computed(() => currentCardIndex.value <= 0)
+    const isLastCard = computed(() => currentCardIndex.value >= sortedCards.value.length - 1)
+    const hasPreviousCard = computed(() => currentCardIndex.value > 0)
+    const hasNextCard = computed(() => currentCardIndex.value < sortedCards.value.length - 1)
 
-      const preloadedCards = ref({})
-      const isPreloading = ref(false)
-      const preloadError = ref(null)
+    const findCurrentCardIndex = () => {
+      if (!props.id || !sortedCards.value.length) return -1
+      return sortedCards.value.findIndex(c => c.id.toString() === props.id.toString())
+    }
 
-      const showTransition = ref(false);
-
-      // Computed property to check if current card is Limited
-      const isLimitedCard = computed(() => {
-        return card.value.category === 'Limited ⚠️';
-      });
-
-      const findCurrentCardIndex = () => {
-        if (!card.value?.id || !sortedCards.value.length) return -1;
-        
-        // Convert both IDs to strings for comparison
-        const currentCardId = card.value.id.toString();
-        return sortedCards.value.findIndex(c => c.id.toString() === currentCardId);
-      }
-
-      const getCategoryDisplayName = () => {
-        const previousCategory = sessionStorage.getItem('previousCategory');
-        
-        if (previousCategory) {
-          // Convert the stored category ID to a display name
-          if (previousCategory === 'all') return 'All Cards';
-          if (previousCategory === 'shop') return 'Available at Shop';
-          if (previousCategory.startsWith('rarity_')) {
-            return previousCategory.replace('rarity_', '');
-          }
-          return previousCategory;
-        } else {
-          // Fallback to card's category
-          return card.value?.category || 'Category';
+    const getCategoryDisplayName = () => {
+      const previousCategory = sessionStorage.getItem('previousCategory')
+      if (previousCategory) {
+        if (previousCategory === 'all') return 'All Cards'
+        if (previousCategory === 'shop') return 'Available at Shop'
+        if (previousCategory.startsWith('rarity_')) {
+          return previousCategory.replace('rarity_', '')
         }
+        return previousCategory
+      } else {
+        return cardsData.value[currentCardIndex.value]?.category || 'Category'
       }
-      
-      const formatDescription = (description) => {
-        if (!description) return '';
-        // Make "Points:" bold
-        return description.replace(/Points:/g, '<strong>Points:</strong>');
-      }
+    }
 
-      const loadSortedCards = async () => {
-        try {
-          if (!card.value?.category) {
-            console.log('No category on card:', card.value);
-            return;
-          }
-          
-          // Get the previous category and sort parameters from sessionStorage
-          const previousCategory = sessionStorage.getItem('previousCategory');
-          const savedSortState = sessionStorage.getItem(`category_state_${previousCategory}`);
-          
-          let sortField = 'id';
-          let sortDirection = 'asc';
-          
-          // Use saved sort parameters if available
-          if (savedSortState) {
-            try {
-              const state = JSON.parse(savedSortState);
-              if (state.currentSort) {
-                sortField = state.currentSort.field;
-                sortDirection = state.currentSort.direction;
-              }
-            } catch (e) {
-              console.warn('Failed to parse saved sort state:', e);
+    const loadSortedCards = async () => {
+      try {
+        const previousCategory = sessionStorage.getItem('previousCategory')
+        const savedSortState = sessionStorage.getItem(`category_state_${previousCategory}`)
+        
+        let sortField = 'id'
+        let sortDirection = 'asc'
+        
+        if (savedSortState) {
+          try {
+            const state = JSON.parse(savedSortState)
+            if (state.currentSort) {
+              sortField = state.currentSort.field
+              sortDirection = state.currentSort.direction
             }
+          } catch (e) {
+            console.warn('Failed to parse saved sort state:', e)
           }
-          
-          // For navigation, we need to use the category ID format that matches the API
-          // The API expects categories in the format "rarity_{categoryName}"
-          const categoryId = previousCategory || `rarity_${card.value.category}`;
-          console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection);
-          
-          const response = await fetchCardsByCategory(categoryId, sortField, sortDirection);
-          
-          // Extract the cards array from the response
-          sortedCards.value = response.cards || [];
-          currentCardIndex.value = findCurrentCardIndex();
-          
-          console.log('Loaded cards by category with sort:', sortedCards.value);
-          console.log('Current card ID:', card.value.id);
-          console.log('Current card index:', currentCardIndex.value);
-          console.log('Card IDs in sortedCards:', sortedCards.value.map(c => c.id));
-          
-          // Preload adjacent cards after we have the sorted list
-          preloadAdjacentCards();
-        } catch (error) {
-          console.error('Error loading sorted cards by category:', error);
-          // Initialize as empty array to prevent future errors
-          sortedCards.value = [];
-          // Don't throw the error here, just log it
-          // This allows the card detail to still load even if navigation fails
         }
+        
+        const categoryId = previousCategory || `rarity_${cardsData.value[currentCardIndex.value]?.category}`
+        console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection)
+        
+        const response = await fetchCardsByCategory(categoryId, sortField, sortDirection)
+        sortedCards.value = response.cards || []
+        currentCardIndex.value = findCurrentCardIndex()
+        
+        console.log('Loaded cards by category:', sortedCards.value.length)
+        console.log('Current card index:', currentCardIndex.value)
+        
+        // Load current and adjacent cards
+        await loadCurrentAndAdjacentCards()
+      } catch (error) {
+        console.error('Error loading sorted cards by category:', error)
+        sortedCards.value = []
       }
+    }
 
-      // Add this new function to preload adjacent cards
-      const preloadAdjacentCards = async () => {
-        if (isPreloading.value || !sortedCards.value.length) return;
-        
-        isPreloading.value = true;
-        preloadError.value = null;
-        
-        try {
-          const preloadPromises = [];
-          
-          // Preload previous card if it exists
-          if (currentCardIndex.value > 0) {
-            const prevCardId = sortedCards.value[currentCardIndex.value - 1].id;
-            if (!preloadedCards.value[prevCardId]) {
-              preloadPromises.push(
-                fetchCardInfo(prevCardId)
-                  .then(cardData => {
-                    preloadedCards.value[prevCardId] = cardData;
-                  })
-                  .catch(err => {
-                    console.error(`Failed to preload card ${prevCardId}:`, err);
-                  })
-              );
-            }
-          }
-          
-          // Preload next card if it exists
-          if (currentCardIndex.value < sortedCards.value.length - 1) {
-            const nextCardId = sortedCards.value[currentCardIndex.value + 1].id;
-            if (!preloadedCards.value[nextCardId]) {
-              preloadPromises.push(
-                fetchCardInfo(nextCardId)
-                  .then(cardData => {
-                    preloadedCards.value[nextCardId] = cardData;
-                  })
-                  .catch(err => {
-                    console.error(`Failed to preload card ${nextCardId}:`, err);
-                  })
-              );
-            }
-          }
-          
-          await Promise.all(preloadPromises);
-        } catch (err) {
-          preloadError.value = err.message || 'Failed to preload cards';
-          console.error('Error preloading cards:', err);
-        } finally {
-          isPreloading.value = false;
-        }
-      }
+    const loadCurrentAndAdjacentCards = async () => {
+      if (!sortedCards.value.length || currentCardIndex.value === -1) return
 
-      const formatShopInfo = (shopData) => {
-        if (!shopData || shopData === '-' || shopData === 'null' || shopData === 'None') {
-          return 'Not available';
-        }
-        
-        // If shop data is a simple string, return it as is
-        if (typeof shopData === 'string') {
-          return "Available";
-        }
-        
-        // If shop data is an object or needs formatting, handle it here
-        return shopData.toString();
-      }
-      
-      const isShopAvailable = (shopData) => {
-        if (!shopData || shopData === '-' || shopData === 'null' || shopData === 'None') {
-          return false;
-        }
-        
-        // Check if the shop data indicates availability
-        if (typeof shopData === 'string') {
-          // You can add more conditions here if needed
-          return shopData !== '-' && shopData !== 'null' && shopData !== 'None';
-        }
-        
-        return false;
-      }
+      const cardsToLoad = []
 
-      // Add the goBackToCategory method
-      const goBackToCategory = () => {
-        // Use the navigation type to indicate we're returning to category
-        if (router.meta) {
-          router.meta.navigationType = 'to-category'
-        }
-        
-        // Get the previous category from sessionStorage
-        const previousCategory = sessionStorage.getItem('previousCategory');
-        
-        // Navigate back to the previous category page if available
-        if (previousCategory) {
-          router.push(`/category/${previousCategory}`)
-        } else {
-          // Fallback: use card's category
-          if (card.value?.category) {
-            const categoryId = `rarity_${card.value.category}`
-            router.push(`/category/${categoryId}`)
-          } else {
-            // Final fallback: go back in history
-            router.go(-1)
-          }
-        }
-      }
-
-      const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
-        scrollWidth > clientWidth || scrollHeight > clientHeight
-
-      const resizeText = ({ 
-        element, 
-        minSize = 32, 
-        maxSize = 60, 
-        step = 1,
-        maxWidth = 350,
-        maxHeight = 150
-      }) => {
-        // Create a temporary parent container for measurement
-        const tempParent = document.createElement('div');
-        tempParent.style.width = `${maxWidth}px`;
-        tempParent.style.height = `${maxHeight}px`;
-        tempParent.style.visibility = 'hidden';
-        tempParent.style.position = 'absolute';
-        tempParent.style.top = '0';
-        tempParent.style.left = '0';
-        tempParent.style.overflow = 'hidden';
-        
-        const tempElement = element.cloneNode(true);
-        tempElement.style.whiteSpace = 'nowrap';
-        tempElement.style.width = 'auto';
-        tempElement.style.height = 'auto';
-        tempElement.style.lineHeight = '1';
-        
-        tempParent.appendChild(tempElement);
-        document.body.appendChild(tempParent);
-        
-        // Try without wrapping first
-        let i = minSize;
-        let overflow = false;
-        let needsWrap = false;
-        
-        while (!overflow && i < maxSize) {
-          tempElement.style.fontSize = `${i}px`;
-          
-          // Force reflow
-          void tempElement.offsetWidth;
-          
-          // Check for overflow
-          overflow = isOverflown({
-            clientWidth: maxWidth,
-            clientHeight: maxHeight,
-            scrollWidth: tempElement.scrollWidth,
-            scrollHeight: tempElement.scrollHeight
-          });
-          
-          if (!overflow) i += step;
-        }
-        
-        let optimalSize = overflow ? i - step : i;
-        
-        // If text doesn't fit even at minimum size, try with text wrapping
-        if (optimalSize <= minSize && overflow) {
-          // Reset for wrapped text
-          tempElement.style.whiteSpace = 'normal';
-          tempElement.style.lineHeight = '1.1';
-          tempElement.style.width = '100%';
-          
-          i = minSize;
-          overflow = false;
-          
-          while (!overflow && i < maxSize) {
-            tempElement.style.fontSize = `${i}px`;
-            
-            // Force reflow
-            void tempElement.offsetWidth;
-            
-            // Check only vertical overflow for wrapped text
-            overflow = tempElement.scrollHeight > maxHeight;
-            
-            if (!overflow) i += step;
-          }
-          
-          optimalSize = overflow ? i - step : i;
-          needsWrap = true;
-        }
-        
-        // Clean up
-        document.body.removeChild(tempParent);
-        
-        return { optimalSize, needsWrap };
-      }
-
-      const adjustFontSize = () => {
-        nextTick(() => {
-          if (!cardNameRef.value) return;
-          
-          const element = cardNameRef.value;
-          
-          // Reset styles
-          element.style.fontSize = '';
-          element.style.whiteSpace = 'nowrap';
-          element.style.lineHeight = '1';
-          element.style.width = 'auto';
-          element.style.height = 'auto';
-          element.classList.remove('wrapped');
-          
-          const { optimalSize, needsWrap } = resizeText({
-            element: element,
-            minSize: 32,
-            maxSize: 60,
-            step: 1,
-            maxWidth: 350,
-            maxHeight: 150
-          });
-          
-          // Apply the calculated size to the actual element
-          element.style.fontSize = `${optimalSize}px`;
-          
-          if (needsWrap) {
-            element.classList.add('wrapped');
-            element.style.whiteSpace = 'normal';
-            element.style.lineHeight = '1.1';
-            element.style.width = '100%';
-          } else {
-            element.style.whiteSpace = 'nowrap';
-            element.style.lineHeight = '1';
-            element.style.width = 'auto';
-          }
-          
-          console.log('Configurable approach - Font size:', optimalSize, 'Wrapped:', needsWrap);
-        });
-      };
-
-      const fallbackAdjustFontSize  = () => {
-        nextTick(() => {
-          if (!cardNameRef.value) return;
-          
-          const element = cardNameRef.value;
-          const container = element.parentElement;
-          
-          if (!container) return;
-          
-          // Reset styles
-          element.style.fontSize = '';
-          element.classList.remove('wrapped');
-          element.style.whiteSpace = 'nowrap';
-          element.style.lineHeight = '1';
-          element.style.width = 'auto';
-          element.style.height = 'auto';
-          
-          const containerWidth = container.clientWidth;
-          const containerHeight = 150;
-          const maxWidth = 350;
-          
-          // Get the actual text content
-          const text = element.textContent || element.innerText;
-          
-          let fontSize = 60;
-          let needsWrap = false;
-          
-          // Create a temporary clone to measure text more accurately
-          const tempElement = element.cloneNode(true);
-          tempElement.style.visibility = 'hidden';
-          tempElement.style.position = 'absolute';
-          tempElement.style.whiteSpace = 'nowrap';
-          document.body.appendChild(tempElement);
-          
-          // First, try without wrapping
-          let foundFit = false;
-          for (let testSize = 60; testSize >= 32; testSize -= 2) {
-            tempElement.style.fontSize = `${testSize}px`;
-            
-            // Force reflow
-            void tempElement.offsetWidth;
-            
-            if (tempElement.scrollWidth <= maxWidth) {
-              fontSize = testSize;
-              foundFit = true;
-              break;
-            }
-          }
-          
-          // If no fit found without wrapping, try with wrapping
-          if (!foundFit) {
-            needsWrap = true;
-            tempElement.style.whiteSpace = 'normal';
-            tempElement.style.lineHeight = '1.1';
-            tempElement.style.width = `${maxWidth}px`;
-            
-            // Reset to find best size with wrapping
-            for (let testSize = 60; testSize >= 32; testSize -= 2) {
-              tempElement.style.fontSize = `${testSize}px`;
-              
-              // Force reflow
-              void tempElement.offsetWidth;
-              
-              if (tempElement.scrollHeight <= containerHeight) {
-                fontSize = testSize;
-                foundFit = true;
-                break;
-              }
-            }
-            
-            // If still no fit, use minimum size
-            if (!foundFit) {
-              fontSize = 32;
-            }
-          }
-          
-          // Clean up temporary element
-          document.body.removeChild(tempElement);
-          
-          // Apply the calculated size to the actual element
-          element.style.fontSize = `${fontSize}px`;
-          
-          if (needsWrap) {
-            element.classList.add('wrapped');
-            element.style.whiteSpace = 'normal';
-            element.style.lineHeight = '1.1';
-            element.style.width = '100%';
-          } else {
-            element.style.whiteSpace = 'nowrap';
-            element.style.lineHeight = '1';
-            element.style.width = 'auto';
-          }
-          
-          console.log('Final font size:', fontSize, 'Wrapped:', needsWrap, 'Text:', text);
-        });
-      };
-
-      const toggleEdit = (field) => {
-        if (editing.value[field]) {
-          cancelEdit(field)
-        } else {
-          startEditing(field)
-        }
-      }
-
-      const cancelEdit = (field) => {
-        editing.value = { ...editing.value, [field]: false }
-      }
-
-      const startEditing = (field) => {
-        editing.value = { ...editing.value, [field]: true }
-        editableCard.value = { ...card.value }
-        
-        nextTick(() => {
-          switch(field) {
-            case 'name':
-              nameInput.value?.focus()
-              nameInput.value?.select()
-              break
-            case 'category':
-              categoryInput.value?.focus()
-              categoryInput.value?.select()
-              break;
-            case 'description':
-              descriptionInput.value?.focus()
-              break
-          }
+      // Previous card
+      if (currentCardIndex.value > 0) {
+        cardsToLoad.push({
+          index: currentCardIndex.value - 1,
+          cardId: sortedCards.value[currentCardIndex.value - 1].id
         })
       }
 
-      const saveField = async (field) => {
-        saveError.value = null;
-        try {
-          let dataToSend = {};
-          
-          if (field === 'category') {
-              if (editableCard.value.category && editableCard.value.category.length > 20) {
-                  categoryError.value = 'Category cannot exceed 20 characters.';
-                  throw new Error('Validation failed on frontend.');
-              }
-              dataToSend = { [field]: editableCard.value[field] };
-          } else {
-            dataToSend = {
-              [field]: editableCard.value[field]
-            };
-          }
-
-          const response = await fetch(`/api/cards/${card.value.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            },
-            body: JSON.stringify(dataToSend)
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to update card');
-          }
-
-          card.value[field] = editableCard.value[field];
-          editing.value = { ...editing.value, [field]: false };
-          
-          // Reload sorted cards if category was changed
-          if (field === 'category') {
-            await loadSortedCards();
-          }
-        } catch (err) {
-          console.error('Error updating card:', err);
-          saveError.value = err.message || 'Failed to update card';
-        }
-      }
-
-      const handleMediaDoubleClick = () => {
-        if (isUserAllowed.value && fileInput.value) {
-          fileInput.value.click();
-        }
-      };
-
-      const handleFileChange = async (event) => {
-        const file = event.target.files[0];
-        if (!file || !isUserAllowed.value) return;
-
-        const formData = new FormData();
-        formData.append('image', file);
-
-        try {
-          const response = await fetch(`/api/cards/${card.value.id}/image`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            },
-            body: formData
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to upload image');
-          }
-
-          loadData();
-        } catch (err) {
-          console.error('Error uploading image:', err);
-        }
-      };
-
-      const loadData = async () => {
-        try {
-          loading.value = true;
-          mediaError.value = false; // Reset media error when loading new card
-          
-          card.value = await fetchCardInfo(props.id);
-          editableCard.value = { ...card.value };
-          
-          // Load sorted cards for navigation, but don't block the UI if it fails
-          loadSortedCards().catch(err => {
-            console.error('Failed to load sorted cards for navigation:', err);
-            // Continue loading the card detail even if navigation fails
-          });
-          
-          // Check user permissions
-          try {
-            const userInfo = await fetchUserInfo()
-            if (userInfo?.username) {
-              const permissionResponse = await checkUserPermission(userInfo.username)
-              isUserAllowed.value = permissionResponse.is_allowed
-            }
-          } catch (authError) {
-            console.log('User not authenticated, editing disabled')
-            isUserAllowed.value = false
-          }
-          
-          setTimeout(adjustFontSize, 0)
-        } catch (err) {
-          error.value = err.message || 'Failed to load card details'
-          console.error('Error loading card:', err)
-        } finally {
-          loading.value = false
-        }
-      }
-
-      const goToPreviousCard = () => {
-        if (isFirstCard.value || currentCardIndex.value === -1 || sortedCards.value.length === 0) {
-          console.log('Cannot go to previous card - no cards loaded or at beginning');
-          return;
-        }
-        
-        showTransition.value = true;
-        transitionName.value = 'slide-right';
-        const prevCard = sortedCards.value[currentCardIndex.value - 1];
-        
-        if (prevCard) {
-          console.log('Navigating to previous card:', prevCard.id);
-          // Set navigation type before navigating
-          if (router.meta) {
-            router.meta.navigationType = 'to-card-detail'
-          }
-          router.push(`/card/${prevCard.id}`);
-        } else {
-          console.log('No previous card available');
-        }
-      }
-
-      const goToNextCard = () => {
-        if (isLastCard.value || currentCardIndex.value === -1 || sortedCards.value.length === 0) {
-          console.log('Cannot go to next card - no cards loaded or at end');
-          return;
-        }
-        
-        showTransition.value = true;
-        transitionName.value = 'slide-left';
-        const nextCard = sortedCards.value[currentCardIndex.value + 1];
-        
-        if (nextCard) {
-          console.log('Navigating to next card:', nextCard.id);
-          // Set navigation type before navigating
-          if (router.meta) {
-            router.meta.navigationType = 'to-card-detail'
-          }
-          router.push(`/card/${nextCard.id}`);
-        } else {
-          console.log('No next card available');
-        }
-      }
-
-      onMounted(() => {
-        window.addEventListener('resize', adjustFontSize)
-        loadData()
-        
-        // Set navigation type when entering card detail
-        if (router.meta) {
-          router.meta.navigationType = 'from-card-detail';
-        }
+      // Current card
+      cardsToLoad.push({
+        index: currentCardIndex.value,
+        cardId: sortedCards.value[currentCardIndex.value].id
       })
 
-      onUnmounted(() => {
-        window.removeEventListener('resize', adjustFontSize)
-        
-        // Set navigation type when leaving card detail to return to category
-        // This is handled by the router navigation guard now
-      })
+      // Next card
+      if (currentCardIndex.value < sortedCards.value.length - 1) {
+        cardsToLoad.push({
+          index: currentCardIndex.value + 1,
+          cardId: sortedCards.value[currentCardIndex.value + 1].id
+        })
+      }
 
-      // Watch for card changes to preload new adjacent cards
-      watch(() => card.value.id, (newId) => {
-        if (newId) {
-          preloadAdjacentCards();
-        }
-      })
+      try {
+        const loadPromises = cardsToLoad.map(async ({ index, cardId }) => {
+          // Only load if not already loaded or if it's a different card
+          if (!cardsData.value[index] || cardsData.value[index].id !== cardId) {
+            const cardData = await fetchCardInfo(cardId)
+            cardsData.value[index] = cardData
+          }
+        })
 
-      watch(() => props.id, async (newId) => {
-        if (newId && card.value?.id !== newId) {
-          await loadData()
-          showTransition.value = false; // Reset after navigation
-        }
-      })
-
-      watch(() => editableCard.value.name, (newName) => {
-        if (newName && newName.length > 100) {
-          nameError.value = 'Name cannot exceed 100 characters.';
-        } else {
-          nameError.value = null;
-        }
-      });
-
-      watch(() => editableCard.value.description, (newDescription) => {
-        if (newDescription && newDescription.length > 1000) {
-          descriptionError.value = 'Description cannot exceed 1000 characters.';
-        } else {
-          descriptionError.value = null;
-        }
-      });
-
-      watch(() => editableCard.value.category, (newCategory) => {
-        if (newCategory && newCategory.length > 20) {
-          categoryError.value = 'Category cannot exceed 20 characters.';
-        } else {
-          categoryError.value = null;
-        }
-      });
-
-      // Add this to your existing watchers
-      watch(() => card.value.name, (newName, oldName) => {
-        if (newName !== oldName) {
-          setTimeout(adjustFontSize, 100);
-        }
-      });
-
-      watch(showTransition, (newVal) => {
-        if (!newVal) {
-          // Transition ended, adjust font size
-          setTimeout(adjustFontSize, 50);
-        }
-      });
-
-      // Add this to your existing watchers
-      watch(() => loading.value, (newLoading) => {
-        if (!newLoading) {
-          // Component finished loading, adjust font size with delays
-          setTimeout(adjustFontSize, 100);
-          setTimeout(adjustFontSize, 500);
-        }
-      });
-
-      return {
-        card,
-        editableCard,
-        categoryError,
-        loading,
-        error,
-        nameError,
-        descriptionError,
-        saveError,
-        mediaError, // Changed from imageError to mediaError
-        cardNameRef,
-        editing,
-        isUserAllowed,
-        nameInput,
-        descriptionInput,
-        categoryInput,
-        fileInput,
-        handleMediaDoubleClick, // Changed from handleImageDoubleClick
-        handleFileChange,
-        startEditing,
-        saveField,
-        toggleEdit,
-        cancelEdit,
-        fileInput,  
-        handleMediaDoubleClick, // Changed from handleImageDoubleClick
-        handleFileChange,
-        isFirstCard,
-        isLastCard,
-        goToPreviousCard,
-        goToNextCard,
-        goBackToCategory, // Add this to the return object
-        transitionName,
-        preloadedCards,
-        isPreloading,
-        preloadError,
-        showTransition,
-        formatShopInfo,
-        isShopAvailable,
-        formatDescription,
-        getCategoryDisplayName, // Add this to the return object
-        isLimitedCard, // Add the computed property to return object
+        await Promise.all(loadPromises)
+      } catch (err) {
+        console.error('Error loading adjacent cards:', err)
       }
     }
+
+    const scrollToCard = async (targetIndex) => {
+      if (isScrolling.value || targetIndex < 0 || targetIndex >= sortedCards.value.length) return
+
+      isScrolling.value = true
+
+      // Update URL without triggering navigation
+      const newCardId = sortedCards.value[targetIndex].id
+      window.history.replaceState({}, '', `/card/${newCardId}`)
+
+      // Update current index
+      currentCardIndex.value = targetIndex
+
+      // Load new adjacent cards
+      await loadCurrentAndAdjacentCards()
+
+      // Reset scroll position
+      if (multiCardContainer.value) {
+        multiCardContainer.value.scrollLeft = multiCardContainer.value.clientWidth
+      }
+
+      // Allow time for DOM update and scrolling
+      setTimeout(() => {
+        isScrolling.value = false
+      }, 300)
+    }
+
+    const goToPreviousCard = () => {
+      if (isFirstCard.value || isScrolling.value) return
+      scrollToCard(currentCardIndex.value - 1)
+    }
+
+    const goToNextCard = () => {
+      if (isLastCard.value || isScrolling.value) return
+      scrollToCard(currentCardIndex.value + 1)
+    }
+
+    const goBackToCategory = () => {
+      if (router.meta) {
+        router.meta.navigationType = 'to-category'
+      }
+      
+      const previousCategory = sessionStorage.getItem('previousCategory')
+      if (previousCategory) {
+        router.push(`/category/${previousCategory}`)
+      } else {
+        if (cardsData.value[currentCardIndex.value]?.category) {
+          const categoryId = `rarity_${cardsData.value[currentCardIndex.value].category}`
+          router.push(`/category/${categoryId}`)
+        } else {
+          router.go(-1)
+        }
+      }
+    }
+
+    const handleMediaDoubleClick = () => {
+      if (isUserAllowed.value && fileInput.value) {
+        fileInput.value.click()
+      }
+    }
+
+    const handleFileChange = async (event) => {
+      const file = event.target.files[0]
+      if (!file || !isUserAllowed.value) return
+
+      const formData = new FormData()
+      formData.append('image', file)
+
+      try {
+        const currentCardData = cardsData.value[currentCardIndex.value]
+        const response = await fetch(`/api/cards/${currentCardData.id}/image`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          },
+          body: formData
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to upload image')
+        }
+
+        // Reload current card data
+        const updatedCard = await fetchCardInfo(currentCardData.id)
+        cardsData.value[currentCardIndex.value] = updatedCard
+      } catch (err) {
+        console.error('Error uploading image:', err)
+      }
+    }
+
+    const loadData = async () => {
+      try {
+        loading.value = true
+        
+        // Load initial card
+        const initialCard = await fetchCardInfo(props.id)
+        
+        // Initialize cardsData with the initial card
+        cardsData.value = []
+        currentCardIndex.value = 0
+        
+        // Load sorted cards for navigation
+        await loadSortedCards()
+        
+        // Check user permissions
+        try {
+          const userInfo = await fetchUserInfo()
+          if (userInfo?.username) {
+            const permissionResponse = await checkUserPermission(userInfo.username)
+            isUserAllowed.value = permissionResponse.is_allowed
+          }
+        } catch (authError) {
+          console.log('User not authenticated, editing disabled')
+          isUserAllowed.value = false
+        }
+      } catch (err) {
+        error.value = err.message || 'Failed to load card details'
+        console.error('Error loading card:', err)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    onMounted(() => {
+      loadData()
+      
+      if (router.meta) {
+        router.meta.navigationType = 'from-card-detail'
+      }
+
+      // Initialize scroll position after mount
+      nextTick(() => {
+        if (multiCardContainer.value) {
+          multiCardContainer.value.scrollLeft = multiCardContainer.value.clientWidth
+        }
+      })
+    })
+
+    onUnmounted(() => {
+      // Cleanup if needed
+    })
+
+    watch(() => props.id, async (newId) => {
+      if (newId) {
+        await loadData()
+      }
+    })
+
+    return {
+      cardsData,
+      loading,
+      error,
+      saveError,
+      isUserAllowed,
+      fileInput,
+      multiCardContainer,
+      currentCard,
+      isFirstCard,
+      isLastCard,
+      hasPreviousCard,
+      hasNextCard,
+      goToPreviousCard,
+      goToNextCard,
+      scrollToCard,
+      goBackToCategory,
+      handleMediaDoubleClick,
+      handleFileChange,
+      getCategoryDisplayName
+    }
   }
+}
 </script>
 
 <style scoped>
-  html {
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-  }
-  body {
-    position: fixed;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-  }
+.fixed-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  font-family: 'Afacad', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .back-to-category-section {
-    text-align: center;
-    margin-top: 20px;
-  }
+.multi-card-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-  .back-to-category-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: transparent;
-    border: none;
-    color: var(--accent-color);
-    padding: 10px 0;
-    cursor: pointer;
-    font-size: 17px;
-    font-family: 'Afacad', sans-serif;
-    text-decoration: none;
-    position: relative;
-    padding-bottom: 2px;
-    transition: all 0.3s ease;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-  }
+.multi-card-container::-webkit-scrollbar {
+  display: none;
+}
 
-  .back-to-category-button::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 0;
-    height: 1px;
-    background-color: var(--accent-color);
-    transition: all 0.3s ease;
-    transform: translateX(-50%);
-  }
+.card-page {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  scroll-snap-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  position: relative;
+}
 
-  .back-to-category-button:hover {
-    transform: scale(1.05);
-    background: transparent;
-    box-shadow: none;
-    color: var(--accent-color);
-  }
+.card-page.previous-card,
+.card-page.next-card {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
 
-  .back-to-category-button:hover::after {
-    width: 100%;
-  }
+.card-page.previous-card:hover,
+.card-page.next-card:hover {
+  opacity: 0.9;
+}
 
-  /* Mobile responsive adjustments */
-  @media (max-width: 768px) {
-    .back-to-category-button {
-      padding: 8px 0;
-      font-size: 16px;
-    }
-  }
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  ::-webkit-scrollbar {
-    display: none;
-    width: 0 !important;
-    height: 0 !important;
-    -webkit-appearance: none;
-    background: transparent;
-  }
+.card-page.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
 
-  .fixed-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
-    height: 100vh;
-    width: 100vw;
-    font-family: 'Afacad', sans-serif;
-    display: flex; /* Add this */
-    align-items: center; /* Add this for vertical centering */
-    justify-content: center; /* Add this for horizontal centering */
-  }
+.card-page.current-card {
+  opacity: 1;
+}
 
-  /* Transition styles */
-  .slide-left-enter-active,
-  .slide-left-leave-active,
-  .slide-right-enter-active,
-  .slide-right-leave-active {
-    transition: 
-      transform 0.5s ease,
-      opacity 0.4s ease 0.1s;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-  }
+/* Keep all your existing styles below */
+.background-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/background.jpg');
+  background-size: cover;
+  background-position: center 57%;
+  z-index: -1;
+  filter: blur(10px);
+}
 
-  .slide-left-enter-from {
-    transform: translateX(100%); /* Added translateY */
-    opacity: 0;
-  }
+.nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
 
-  .slide-left-enter-to {
-    transform: translateX(0); /* Added translateY */
-    opacity: 1;
-  }
+.nav-arrow:hover {
+  opacity: 1;
+}
 
-  .slide-left-leave-from {
-    transform: translateX(0);
-    opacity: 1;
-  }
+.nav-arrow.disabled {
+  opacity: 0.2;
+  pointer-events: none;
+  cursor: not-allowed;
+}
 
-  .slide-left-leave-to {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
+.left-arrow {
+  left: 10px;
+}
 
-  .slide-right-enter-from {
-    transform: translateX(-100%); /* Added translateY */
-    opacity: 0;
-  }
+.right-arrow {
+  right: 10px;
+}
 
-  .slide-right-enter-to {
-    transform: translateX(0); /* Added translateY */
-    opacity: 1;
-  }
+.arrow-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
 
-  .slide-right-leave-from {
-    transform: translateX(0);
-    opacity: 1;
-  }
+.arrow-icon {
+  width: 100%;
+  height: 100%;
+  fill: var(--accent-color);
+  pointer-events: auto;
+}
 
-  .slide-right-leave-to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
 
-  .card-detail-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow-y: auto;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    width: 100%;
-    overflow: hidden;
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-  }
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
 
-  /* Force hide scrollbars on all browsers */
-  .card-detail-container::-webkit-scrollbar {
-    width: 0 !important;
-    height: 0 !important;
-    display: none;
-    background: transparent;
-  }
+.loading-text {
+  color: white;
+  font-size: 20px;
+  font-weight: 500;
+}
 
-  /* Disable overscroll behavior */
-  .card-detail-container {
-    overscroll-behavior: contain;
+.spinner {
+  width: 50px;
+  height: 50px;
+  animation: rotate 2s linear infinite;
+}
+
+.spinner .path {
+  stroke: var(--accent-color);
+  stroke-linecap: round;
+  animation: dash 1.5s ease-in-out infinite;
+}
+
+.error-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.error-icon {
+  width: 50px;
+  height: 50px;
+  color: #ff4444;
+}
+
+.error-text {
+  color: #ff6b6b;
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+/* Add responsive design */
+@media (max-width: 768px) {
+  .card-page {
+    padding: 10px;
   }
   
-  .nav-arrow.disabled {
-    opacity: 0.2;
-    pointer-events: none;
-    cursor: not-allowed;
-  }
-  .transition-container {
-    position: relative;
-    width: 100%;
-    max-height: 100vh;
-    overflow: hidden;
-  }
-  /* Add these new styles */
-  .card-detail-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-    position: relative;
-  }
-
   .nav-arrow {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 100;
-    opacity: 0.5;
-    transition: opacity 0.2s ease;
+    height: 60px;
   }
-
-  .nav-arrow:hover {
-    opacity: 1;
-  }
-
+  
   .left-arrow {
-    left: 10px;
+    left: 5px;
   }
-
+  
   .right-arrow {
-    right: 10px;
+    right: 5px;
   }
-
+  
   .arrow-icon-wrapper {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none; /* Makes only the icon clickable */
+    width: 30px;
+    height: 30px;
   }
-
-  .arrow-icon {
-    width: 100%;
-    height: 100%;
-    fill: var(--accent-color);
-    pointer-events: auto; /* Re-enable pointer events for the icon */
-  }
-
-  /* Make sure your card container has proper z-index */
-  .card-detail-container {
-    position: relative;
-    z-index: 1;
-  }
-
-  /* Add these new styles at the end of your style section */
-  .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-  }
-
-  .loading-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .loading-text {
-    color: white;
-    font-size: 20px;
-    font-weight: 500;
-  }
-
-  .spinner {
-    width: 50px;
-    height: 50px;
-    animation: rotate 2s linear infinite;
-  }
-
-  .spinner .path {
-    stroke: var(--accent-color);
-    stroke-linecap: round;
-    animation: dash 1.5s ease-in-out infinite;
-  }
-
-  /* New error-specific styles */
-  .error-overlay {
-    background-color: rgba(0, 0, 0, 0.7); /* Slightly darker for errors */
-  }
-
-  .error-icon {
-    width: 50px;
-    height: 50px;
-    color: #ff4444; /* Red color for error icon */
-  }
-
-  .error-text {
-    color: #ff6b6b; /* Lighter red for error text */
-  }
-
-  @keyframes rotate {
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes dash {
-    0% {
-      stroke-dasharray: 1, 150;
-      stroke-dashoffset: 0;
-    }
-    50% {
-      stroke-dasharray: 90, 150;
-      stroke-dashoffset: -35;
-    }
-    100% {
-      stroke-dasharray: 90, 150;
-      stroke-dashoffset: -124;
-    }
-  }
-
-  /* Существующие стили остаются без изменений */
-  .edit-icon {
-    margin-left: 10px;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-  }
-
-  .edit-icon:hover {
-    opacity: 1;
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .edit-icon svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .category-container {
-    background: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    margin-top: 8px;
-    min-height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 20px;
-    text-align: center;
-  }
-
-  .shop-section {
-    /* padding: 20px 0; */
-    text-align: center;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-  }
-
-  .shop-info h3 {
-    font-size: 25px;
-    color: var(--accent-color);
-    margin: 0;
-    margin-top: 27px;
-    margin-bottom: 7px;
-  }
-
-  .shop-info p {
-    font-size: 20px;
-    line-height: 1.6;
-    color: #888888;
-    margin: 0;
-    margin-bottom: 30px;
-  }
-
-  .available-glow {
-    color: #4ade80 !important; /* Green color */
-    text-shadow: 
-      0 0 5px #4ade80,
-      0 0 10px #4ade80,
-      0 0 15px #4ade80,
-      0 0 20px #4ade80 !important;
-    animation: glow-pulse 2s ease-in-out infinite alternate;
-  }
-
-  @keyframes glow-pulse {
-    from {
-      text-shadow: 
-        0 0 5px #4ade80,
-        0 0 10px #4ade80,
-        0 0 15px #4ade80,
-        0 0 20px #4ade80;
-    }
-    to {
-      text-shadow: 
-        0 0 10px #4ade80,
-        0 0 15px #4ade80,
-        0 0 20px #4ade80,
-        0 0 25px #4ade80,
-        0 0 30px #4ade80;
-    }
-  }
-
-
-  /* Стили для полей ввода при редактировании */
-  .edit-input {
-    font-size: inherit;
-    font-family: inherit;
-    color: inherit;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid var(--accent-color);
-    border-radius: 4px;
-    padding: 5px;
-    width: 80%;
-    text-align: inherit;
-    transition: inherit;
-    text-shadow: inherit;
-    letter-spacing: inherit;
-  }
-  .edit-input:focus {
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
-  }
-
-  .edit-input-select {
-    width: 50%;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: white;
-    font-size: 20px;
-    text-align: center; 
-    cursor: pointer;
-    appearance: none; /* Remove default dropdown arrow */
-    margin-top: 6px;
-    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E'); /* Custom dropdown arrow */
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: 1em;
-    font-family: inherit;
-  }
-
-  .edit-input-select option { 
-    color: inherit;
-    background: var(--bg-color);
-  }
-
-  .edit-textarea {
-    font-size: inherit;
-    font-family: inherit;
-    color: inherit;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid var(--accent-color);
-    border-radius: 4px;
-    padding: 10px;
-    width: 100%;
-    min-height: 100px;
-    resize: vertical;
-  }
-
-  .edit-input-select:focus {
-    outline: none;
-    box-shadow: none;
-    background-color: transparent;
-  }
-
-  .replace-image-button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    background-color: var(--bg-color);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    /* cursor: pointer; */
-    font-size: 26px;
-    font-family: var(--font-family-main);
-    font-weight: 500;
-    transition: background-color 0.3s ease;
-  }
-
-  /* Остальные существующие стили без изменений */
-  .background-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('/background.jpg');
-    background-size: cover;
-    background-position: center 57%;
-    z-index: -1;
-    filter: blur(10px);
-  }
-
-  .card-detail-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 67px;
-    height: 100%;
-    display: flex;
-    align-items: stretch;
-  }
-
-  .card-detail {
-    display: grid;
-    grid-template-columns: 350px 1fr; /* Change from 1fr 2fr to equal columns */
-    gap: 40px;
-    background-color: var(--card-bg);
-    backdrop-filter: blur(5px);
-    padding-left: 40px;
-    border-radius: 17px;
-    border: 2px solid #333;
-    box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
-    /* Set a fixed height for the card */
-    height: 600px; /* Fixed height for consistency */
-    max-width: 1200px; /* Limit maximum width */
-    width: 100%;
-    align-items: stretch;
-    overflow: hidden;
-  }
-
-  .card-image-container {
-    position: relative;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-
-  .card-detail-image {
-    max-height: 100%; /* Limit height to container */
-    max-width: 100%; /* Limit width to container */
-    width: auto; /* Let width adjust based on aspect ratio */
-    height: auto; /* Let height adjust based on aspect ratio */
-    object-fit: contain; /* Ensure entire image is visible */
-    /* border-radius: 17px; */
-    background-color: #1e1e1e;
-  }
-
-  .card-detail-media {
-    max-height: 100%; /* Limit height to container */
-    max-width: 100%; /* Limit width to container */
-    width: auto; /* Let width adjust based on aspect ratio */
-    height: auto; /* Let height adjust based on aspect ratio */
-    object-fit: contain; /* Ensure entire media is visible */
-    /* border-radius: 17px; */
-    background-color: #1e1e1e;
-  }
-
-  .image-placeholder {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: 0.8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #1e1e1e;
-    color: #666;
-    /* border-radius: 17px; */
-  }
-
-  .card-content-wrapper {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    max-width: 350px;
-    justify-content: center;
-  }
-
-  .card-header-section {
-    /* margin-top: 64px; */
-    position: relative;
-    min-height: 150px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-  }
-
-  .title-container {
-    position: absolute;
-    bottom: 17px;
-    width: 100%;
-    text-align: center;
-  }
-
-  .card-header-section h1 {
-    margin: 0;
-    padding: 0;
-    font-size: 48px;
-    white-space: nowrap;
-    font-size: 100px;
-    line-height: 1;
-    color: var(--text-color);
-    display: inline-block;
-    vertical-align: bottom;
-    transform-origin: left bottom;
-    transition: font-size 0.3s ease, line-height 0.3s ease, white-space 0.3s ease;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
-    word-break: break-word; /* Add this for better text wrapping */
-  }
-
-  .card-header-section h1.wrapped {
-    white-space: normal;
-    line-height: 1.1;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    hyphens: auto;
-  }
-
-  .main-divider {
-    height: 2px;
-    width: 100%;
-    background-color: #333;
-    top: 20%;
-    position: relative;
-    bottom: -20px;
-  }
-
-  .card-description-section {
-    padding: 30px 0;
-  }
-
-  .card-description {
-    font-size: 18px;
-    line-height: 1.6;
-    color: var(--text-color);
-    text-align: center; 
-    position: relative;
-  }
-
-  .secondary-divider {
-    height: 2px;
-    width: 90%;
-    transform: translateX(-50%);
-    margin-left: 50%;
-    background-color: #333;
-    margin-top: 20px;
-  }
-
-  .card-info-section {
-    padding: 30px 0;
-  }
-
-  .card-info-columns {
-    display: flex;
-    justify-content: space-around;
-  }
-
-  .card-info-column {
-    flex: 1;
-    text-align: center;
-    position: relative;
-  }
-
-  .card-info-column h3 {
-    font-size: 25px;
-    margin-bottom: 10px;
-    color: var(--accent-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: normal;
-    gap: 10px;
-  }
-
-  .card-info-column p {
-    font-size: 20px;
-    line-height: 1.6;
-    color: var(--text-color);
-  }
-
-  .comments-section {
-    margin-top: auto;
-    padding-top: 40px;
-    text-align: center;
-  }
-
-  .no-comments {
-    color: #666;
-    font-style: italic;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-  }
-
-  .comments-list {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-
-  .comment {
-    background-color: #1e1e1e;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    text-align: left;
-  }
-
-  .comment-text {
-    margin-bottom: 8px;
-    color: var(--text-color);
-  }
-
-  .comment-meta {
-    font-size: 14px;
-    color: #aaa;
-  }
-
-  @media (max-width: 768px) {
-    .card-detail {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      /* Reset height for mobile */
-      height: auto;
-    }
-    .card-image-container {
-      /* Reset height for mobile */
-      height: auto;
-    }
-    .card-header-section {
-      text-align: center;
-      margin-top: -10px;
-      min-height: 57px;
-    }
-
-    .card-content-wrapper {
-      max-width: 100%;
-      width: 100%; /* Full width on mobile */
-      padding: 0 15px;
-    }
-    .title-container {
-      max-width: 100%;
-      overflow: hidden;
-      position: relative;
-      bottom: auto;
-    }
-
-    .card-header-section h1 {
-      font-size: 36px;
-      line-height: 1.1;
-      margin: 0;
-      padding: 0;
-      white-space: nowrap;
-      transition: all 0.3s ease;
-      word-break: break-word;
-    }
-    .card-header-section h1.wrapped {
-      line-height: 1.2;
-      word-break: break-word;
-    }
-
-    .main-divider {
-      margin-top: 15px;
-    }
-    .card-description {
-      position: relative;
-      left: -5%;
-      width: 110%;
-    }
-
-    .card-detail-image {
-      border-radius: 15px;
-      /* Keep border on mobile if needed, but adjust height */
-      height: 400px; /* Or whatever height works for mobile */
-    }
-
-    .edit-input {
-      width: 100%;
-    }
-  }
+}
 </style>
