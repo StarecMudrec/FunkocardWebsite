@@ -108,27 +108,24 @@ export default {
   setup(props) {
     const router = useRouter()
     const fileInput = ref(null)
-    const multiCardViewport = ref(null)
-    const multiCardContainer = ref(null)
 
-    const cardsData = ref({})
     const loading = ref(true)
     const error = ref(null)
     const saveError = ref(null)
     const isUserAllowed = ref(false)
 
     // Card navigation
-    const sortedCards = ref([])
+    const allCards = ref([]) // All cards in the current category
     const currentCardIndex = ref(0)
     const isScrolling = ref(false)
 
     // Computed properties for current and adjacent cards
-    const currentCard = computed(() => sortedCards.value[currentCardIndex.value])
-    const previousCard = computed(() => sortedCards.value[currentCardIndex.value - 1])
-    const nextCard = computed(() => sortedCards.value[currentCardIndex.value + 1])
+    const currentCard = computed(() => allCards.value[currentCardIndex.value])
+    const previousCard = computed(() => allCards.value[currentCardIndex.value - 1])
+    const nextCard = computed(() => allCards.value[currentCardIndex.value + 1])
 
     const isFirstCard = computed(() => currentCardIndex.value <= 0)
-    const isLastCard = computed(() => currentCardIndex.value >= sortedCards.value.length - 1)
+    const isLastCard = computed(() => currentCardIndex.value >= allCards.value.length - 1)
 
     const containerStyle = computed(() => ({
       transform: `translateX(-${currentCardIndex.value * 100}vw)`,
@@ -136,26 +133,12 @@ export default {
     }))
 
     const findCurrentCardIndex = () => {
-      if (!props.id || !sortedCards.value.length) return 0
-      const index = sortedCards.value.findIndex(c => c.id.toString() === props.id.toString())
+      if (!props.id || !allCards.value.length) return 0
+      const index = allCards.value.findIndex(c => c.id.toString() === props.id.toString())
       return index >= 0 ? index : 0
     }
 
-    const getCategoryDisplayName = () => {
-      const previousCategory = sessionStorage.getItem('previousCategory')
-      if (previousCategory) {
-        if (previousCategory === 'all') return 'All Cards'
-        if (previousCategory === 'shop') return 'Available at Shop'
-        if (previousCategory.startsWith('rarity_')) {
-          return previousCategory.replace('rarity_', '')
-        }
-        return previousCategory
-      } else {
-        return currentCard.value?.category || 'Category'
-      }
-    }
-
-    const loadSortedCards = async () => {
+    const loadAllCards = async () => {
       try {
         const previousCategory = sessionStorage.getItem('previousCategory')
         const savedSortState = sessionStorage.getItem(`category_state_${previousCategory}`)
@@ -175,92 +158,87 @@ export default {
           }
         }
         
-        const categoryId = previousCategory || `rarity_${currentCard.value?.category}`
+        const categoryId = previousCategory
         console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection)
         
         const response = await fetchCardsByCategory(categoryId, sortField, sortDirection)
-        sortedCards.value = response.cards || []
+        allCards.value = response.cards || []
         
-        console.log('Loaded cards by category:', sortedCards.value.length)
-        console.log('Cards:', sortedCards.value)
+        console.log('Loaded all cards:', allCards.value.length)
+        console.log('All cards:', allCards.value)
         
-        // Find current card index after loading sorted cards
+        // Find current card index
         currentCardIndex.value = findCurrentCardIndex()
         console.log('Current card index:', currentCardIndex.value)
+        console.log('Current card:', currentCard.value)
         
-        // Load current and adjacent cards data
-        await loadCurrentAndAdjacentCards()
+        // Load detailed info for current and adjacent cards
+        await loadDetailedCardInfo()
       } catch (error) {
-        console.error('Error loading sorted cards by category:', error)
-        sortedCards.value = []
+        console.error('Error loading all cards:', error)
+        allCards.value = []
       }
     }
 
-    const loadCurrentAndAdjacentCards = async () => {
-      if (!sortedCards.value.length) return
+    const loadDetailedCardInfo = async () => {
+      if (!allCards.value.length) return
 
       const cardsToLoad = []
 
       // Always load current card
-      if (currentCard.value && !cardsData.value[currentCard.value.id]) {
+      if (currentCard.value) {
         cardsToLoad.push(currentCard.value.id)
       }
 
       // Load previous card if exists
-      if (previousCard.value && !cardsData.value[previousCard.value.id]) {
+      if (previousCard.value) {
         cardsToLoad.push(previousCard.value.id)
       }
 
       // Load next card if exists
-      if (nextCard.value && !cardsData.value[nextCard.value.id]) {
+      if (nextCard.value) {
         cardsToLoad.push(nextCard.value.id)
       }
 
-      console.log('Cards to load:', cardsToLoad)
+      console.log('Loading detailed info for cards:', cardsToLoad)
 
       try {
         const loadPromises = cardsToLoad.map(async (cardId) => {
           try {
-            const cardData = await fetchCardInfo(cardId)
-            cardsData.value[cardId] = cardData
-            console.log(`Loaded card ${cardId}:`, cardData.name)
-          } catch (err) {
-            console.error(`Failed to load card ${cardId}:`, err)
-            // Create a placeholder card with basic info
-            const placeholderCard = sortedCards.value.find(c => c.id === cardId)
-            if (placeholderCard) {
-              cardsData.value[cardId] = { ...placeholderCard }
+            const detailedCard = await fetchCardInfo(cardId)
+            // Update the card in allCards with detailed info
+            const index = allCards.value.findIndex(c => c.id === cardId)
+            if (index >= 0) {
+              allCards.value[index] = { ...allCards.value[index], ...detailedCard }
             }
+            console.log(`Loaded detailed info for card ${cardId}:`, detailedCard.name)
+          } catch (err) {
+            console.error(`Failed to load detailed info for card ${cardId}:`, err)
+            // Keep the basic card info if detailed loading fails
           }
         })
 
         await Promise.all(loadPromises)
-        
-        // Update sortedCards with detailed card data, preserving order
-        sortedCards.value = sortedCards.value.map(card => {
-          return cardsData.value[card.id] || card
-        })
-
-        console.log('Updated sortedCards:', sortedCards.value)
+        console.log('Updated allCards with detailed info:', allCards.value)
       } catch (err) {
-        console.error('Error loading adjacent cards:', err)
+        console.error('Error loading detailed card info:', err)
       }
     }
 
     const scrollToCard = async (targetIndex) => {
-      if (isScrolling.value || targetIndex < 0 || targetIndex >= sortedCards.value.length) return
+      if (isScrolling.value || targetIndex < 0 || targetIndex >= allCards.value.length) return
 
       isScrolling.value = true
 
       // Update URL without triggering navigation
-      const newCardId = sortedCards.value[targetIndex].id
+      const newCardId = allCards.value[targetIndex].id
       window.history.replaceState({}, '', `/card/${newCardId}`)
 
       // Update current index
       currentCardIndex.value = targetIndex
 
-      // Load new adjacent cards
-      await loadCurrentAndAdjacentCards()
+      // Load detailed info for new adjacent cards
+      await loadDetailedCardInfo()
 
       // Wait for transition to complete
       setTimeout(() => {
@@ -329,15 +307,26 @@ export default {
 
         // Reload current card data
         const updatedCard = await fetchCardInfo(currentCard.value.id)
-        cardsData.value[currentCard.value.id] = updatedCard
-        // Update the card in sortedCards
-        const cardIndex = sortedCards.value.findIndex(c => c.id === currentCard.value.id)
+        const cardIndex = allCards.value.findIndex(c => c.id === currentCard.value.id)
         if (cardIndex >= 0) {
-          sortedCards.value[cardIndex] = updatedCard
+          allCards.value[cardIndex] = updatedCard
         }
       } catch (err) {
         console.error('Error uploading image:', err)
         saveError.value = err.message
+      }
+    }
+
+    const checkUserPermissions = async () => {
+      try {
+        const userInfo = await fetchUserInfo()
+        if (userInfo?.username) {
+          const permissionResponse = await checkUserPermission(userInfo.username)
+          isUserAllowed.value = permissionResponse.is_allowed
+        }
+      } catch (authError) {
+        console.log('User not authenticated, editing disabled')
+        isUserAllowed.value = false
       }
     }
 
@@ -346,35 +335,23 @@ export default {
         loading.value = true
         error.value = null
         
-        // Reset cards data
-        cardsData.value = {}
-        sortedCards.value = []
-        
-        // Load initial card first
-        console.log('Loading initial card:', props.id)
-        const initialCard = await fetchCardInfo(props.id)
-        cardsData.value[initialCard.id] = initialCard
-        
-        // Initialize sortedCards with the initial card
-        sortedCards.value = [initialCard]
+        // Reset data
+        allCards.value = []
         currentCardIndex.value = 0
         
-        console.log('Initial card loaded:', initialCard)
+        console.log('Starting to load data for card ID:', props.id)
         
-        // Now load sorted cards for navigation
-        await loadSortedCards()
+        // Load all cards first
+        await loadAllCards()
         
         // Check user permissions
-        try {
-          const userInfo = await fetchUserInfo()
-          if (userInfo?.username) {
-            const permissionResponse = await checkUserPermission(userInfo.username)
-            isUserAllowed.value = permissionResponse.is_allowed
-          }
-        } catch (authError) {
-          console.log('User not authenticated, editing disabled')
-          isUserAllowed.value = false
-        }
+        await checkUserPermissions()
+        
+        console.log('Data loading completed')
+        console.log('Total cards:', allCards.value.length)
+        console.log('Current card index:', currentCardIndex.value)
+        console.log('Current card:', currentCard.value)
+        
       } catch (err) {
         error.value = err.message || 'Failed to load card details'
         console.error('Error loading card:', err)
@@ -389,10 +366,6 @@ export default {
       if (router.meta) {
         router.meta.navigationType = 'from-card-detail'
       }
-    })
-
-    onUnmounted(() => {
-      // Cleanup if needed
     })
 
     watch(() => props.id, async (newId) => {
@@ -410,25 +383,22 @@ export default {
       saveError,
       isUserAllowed,
       fileInput,
-      multiCardViewport,
-      multiCardContainer,
       isFirstCard,
       isLastCard,
       containerStyle,
       goToPreviousCard,
       goToNextCard,
-      scrollToCard,
       goBackToCategory,
       handleMediaDoubleClick,
       handleSaveError,
-      handleFileChange,
-      getCategoryDisplayName
+      handleFileChange
     }
   }
 }
 </script>
 
 <style scoped>
+/* Your existing styles remain exactly the same */
 .fixed-container {
   position: fixed;
   top: 0;
@@ -495,7 +465,6 @@ export default {
   font-size: 18px;
 }
 
-/* Keep all your existing styles below */
 .background-container {
   position: absolute;
   top: 0;
