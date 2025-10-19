@@ -36,7 +36,7 @@
       <div class="cards-scroll-container" ref="scrollContainer">
         <div class="cards-scroll-wrapper">
           <div 
-            v-for="(cardItem, index) in sortedCards" 
+            v-for="cardItem in sortedCards" 
             :key="cardItem.id" 
             class="card-slide"
             :class="{ 'active': cardItem.id.toString() === card.id.toString() }"
@@ -47,7 +47,7 @@
                   <!-- Название карточки и главная разделительная линия -->
                   <div class="card-header-section">
                     <div class="title-container">
-                      <h1 :ref="el => setCardNameRef(el, index)">
+                      <h1 ref="cardNameRef">
                         <span>{{ cardItem.name }}</span>
                       </h1>
                     </div>
@@ -165,7 +165,7 @@
       const nameError = ref(null)
       const descriptionError = ref(null)
       const categoryError = ref(null)
-      const cardNameRefs = ref([]) // Changed to array for multiple cards
+      const cardNameRef = ref(null)
       const isUserAllowed = ref(false)
       const editing = ref({
         name: false,
@@ -188,13 +188,6 @@
       const isLimitedCard = computed(() => {
         return card.value.category === 'Limited ⚠️';
       });
-
-      // Function to set card name refs in the array
-      const setCardNameRef = (el, index) => {
-        if (el) {
-          cardNameRefs.value[index] = el
-        }
-      }
 
       const findCurrentCardIndex = () => {
         if (!card.value?.id || !sortedCards.value.length) return -1;
@@ -447,45 +440,139 @@
 
       const adjustFontSize = () => {
         nextTick(() => {
-          if (!cardNameRefs.value.length) return;
+          if (!cardNameRef.value) return;
           
-          // Adjust font size for all card name elements
-          cardNameRefs.value.forEach((element, index) => {
-            if (!element) return;
-            
-            // Reset styles
-            element.style.fontSize = '';
+          const element = cardNameRef.value;
+          
+          // Reset styles
+          element.style.fontSize = '';
+          element.style.whiteSpace = 'nowrap';
+          element.style.lineHeight = '1';
+          element.style.width = 'auto';
+          element.style.height = 'auto';
+          element.classList.remove('wrapped');
+          
+          const { optimalSize, needsWrap } = resizeText({
+            element: element,
+            minSize: 32,
+            maxSize: 60,
+            step: 1,
+            maxWidth: 350,
+            maxHeight: 150
+          });
+          
+          // Apply the calculated size to the actual element
+          element.style.fontSize = `${optimalSize}px`;
+          
+          if (needsWrap) {
+            element.classList.add('wrapped');
+            element.style.whiteSpace = 'normal';
+            element.style.lineHeight = '1.1';
+            element.style.width = '100%';
+          } else {
             element.style.whiteSpace = 'nowrap';
             element.style.lineHeight = '1';
             element.style.width = 'auto';
-            element.style.height = 'auto';
-            element.classList.remove('wrapped');
+          }
+          
+          console.log('Configurable approach - Font size:', optimalSize, 'Wrapped:', needsWrap);
+        });
+      };
+
+      const fallbackAdjustFontSize  = () => {
+        nextTick(() => {
+          if (!cardNameRef.value) return;
+          
+          const element = cardNameRef.value;
+          const container = element.parentElement;
+          
+          if (!container) return;
+          
+          // Reset styles
+          element.style.fontSize = '';
+          element.classList.remove('wrapped');
+          element.style.whiteSpace = 'nowrap';
+          element.style.lineHeight = '1';
+          element.style.width = 'auto';
+          element.style.height = 'auto';
+          
+          const containerWidth = container.clientWidth;
+          const containerHeight = 150;
+          const maxWidth = 350;
+          
+          // Get the actual text content
+          const text = element.textContent || element.innerText;
+          
+          let fontSize = 60;
+          let needsWrap = false;
+          
+          // Create a temporary clone to measure text more accurately
+          const tempElement = element.cloneNode(true);
+          tempElement.style.visibility = 'hidden';
+          tempElement.style.position = 'absolute';
+          tempElement.style.whiteSpace = 'nowrap';
+          document.body.appendChild(tempElement);
+          
+          // First, try without wrapping
+          let foundFit = false;
+          for (let testSize = 60; testSize >= 32; testSize -= 2) {
+            tempElement.style.fontSize = `${testSize}px`;
             
-            const { optimalSize, needsWrap } = resizeText({
-              element: element,
-              minSize: 32,
-              maxSize: 60,
-              step: 1,
-              maxWidth: 350,
-              maxHeight: 150
-            });
+            // Force reflow
+            void tempElement.offsetWidth;
             
-            // Apply the calculated size to the actual element
-            element.style.fontSize = `${optimalSize}px`;
+            if (tempElement.scrollWidth <= maxWidth) {
+              fontSize = testSize;
+              foundFit = true;
+              break;
+            }
+          }
+          
+          // If no fit found without wrapping, try with wrapping
+          if (!foundFit) {
+            needsWrap = true;
+            tempElement.style.whiteSpace = 'normal';
+            tempElement.style.lineHeight = '1.1';
+            tempElement.style.width = `${maxWidth}px`;
             
-            if (needsWrap) {
-              element.classList.add('wrapped');
-              element.style.whiteSpace = 'normal';
-              element.style.lineHeight = '1.1';
-              element.style.width = '100%';
-            } else {
-              element.style.whiteSpace = 'nowrap';
-              element.style.lineHeight = '1';
-              element.style.width = 'auto';
+            // Reset to find best size with wrapping
+            for (let testSize = 60; testSize >= 32; testSize -= 2) {
+              tempElement.style.fontSize = `${testSize}px`;
+              
+              // Force reflow
+              void tempElement.offsetWidth;
+              
+              if (tempElement.scrollHeight <= containerHeight) {
+                fontSize = testSize;
+                foundFit = true;
+                break;
+              }
             }
             
-            console.log(`Card ${index} - Font size:`, optimalSize, 'Wrapped:', needsWrap);
-          });
+            // If still no fit, use minimum size
+            if (!foundFit) {
+              fontSize = 32;
+            }
+          }
+          
+          // Clean up temporary element
+          document.body.removeChild(tempElement);
+          
+          // Apply the calculated size to the actual element
+          element.style.fontSize = `${fontSize}px`;
+          
+          if (needsWrap) {
+            element.classList.add('wrapped');
+            element.style.whiteSpace = 'normal';
+            element.style.lineHeight = '1.1';
+            element.style.width = '100%';
+          } else {
+            element.style.whiteSpace = 'nowrap';
+            element.style.lineHeight = '1';
+            element.style.width = 'auto';
+          }
+          
+          console.log('Final font size:', fontSize, 'Wrapped:', needsWrap, 'Text:', text);
         });
       };
 
@@ -625,7 +712,7 @@
           // Scroll to current card after data is loaded
           nextTick(() => {
             scrollToCard(currentCardIndex.value);
-            setTimeout(adjustFontSize, 100);
+            setTimeout(adjustFontSize, 0);
           });
         } catch (err) {
           error.value = err.message || 'Failed to load card details'
@@ -716,11 +803,6 @@
         }
       });
 
-      // Watch for sortedCards changes to adjust font sizes when cards load
-      watch(() => sortedCards.value, () => {
-        setTimeout(adjustFontSize, 200);
-      }, { deep: true });
-
       return {
         card,
         editableCard,
@@ -731,8 +813,7 @@
         descriptionError,
         saveError,
         mediaError,
-        cardNameRefs,
-        setCardNameRef,
+        cardNameRef,
         editing,
         isUserAllowed,
         nameInput,
