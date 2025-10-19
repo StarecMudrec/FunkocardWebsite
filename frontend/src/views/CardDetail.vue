@@ -184,6 +184,43 @@
         }
       }
 
+      // ADD THE MISSING FUNCTION HERE
+      const handleMediaDoubleClick = () => {
+        if (isUserAllowed.value && fileInput.value) {
+          fileInput.value.click();
+        }
+      };
+
+      // ADD THE MISSING FUNCTION HERE
+      const handleFileChange = async (event) => {
+        const file = event.target.files[0];
+        if (!file || !isUserAllowed.value) return;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+          const response = await fetch(`/api/cards/${card.value.id}/image`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: formData
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to upload image');
+          }
+
+          loadData();
+        } catch (err) {
+          console.error('Error uploading image:', err);
+        }
+      };
+
+      // ... rest of your existing functions (loadCardIds, loadCardData, updateVisibleCards, etc.)
+
       const loadCardIds = async () => {
         try {
           if (!card.value?.category) {
@@ -238,7 +275,7 @@
         }
 
         try {
-          const cardData = await fetchCardInfo(cardId); // Use fetchCardInfo here
+          const cardData = await fetchCardInfo(cardId);
           loadedCards.value[cardId] = cardData;
           return cardData;
         } catch (error) {
@@ -394,7 +431,136 @@
         }
       }
 
-      // ... keep all your existing helper functions (isOverflown, resizeText, adjustFontSize, etc.)
+      // ADD THE MISSING HELPER FUNCTIONS
+      const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
+        scrollWidth > clientWidth || scrollHeight > clientHeight
+
+      const resizeText = ({ 
+        element, 
+        minSize = 32, 
+        maxSize = 60, 
+        step = 1,
+        maxWidth = 350,
+        maxHeight = 150
+      }) => {
+        // Create a temporary parent container for measurement
+        const tempParent = document.createElement('div');
+        tempParent.style.width = `${maxWidth}px`;
+        tempParent.style.height = `${maxHeight}px`;
+        tempParent.style.visibility = 'hidden';
+        tempParent.style.position = 'absolute';
+        tempParent.style.top = '0';
+        tempParent.style.left = '0';
+        tempParent.style.overflow = 'hidden';
+        
+        const tempElement = element.cloneNode(true);
+        tempElement.style.whiteSpace = 'nowrap';
+        tempElement.style.width = 'auto';
+        tempElement.style.height = 'auto';
+        tempElement.style.lineHeight = '1';
+        
+        tempParent.appendChild(tempElement);
+        document.body.appendChild(tempParent);
+        
+        // Try without wrapping first
+        let i = minSize;
+        let overflow = false;
+        let needsWrap = false;
+        
+        while (!overflow && i < maxSize) {
+          tempElement.style.fontSize = `${i}px`;
+          
+          // Force reflow
+          void tempElement.offsetWidth;
+          
+          // Check for overflow
+          overflow = isOverflown({
+            clientWidth: maxWidth,
+            clientHeight: maxHeight,
+            scrollWidth: tempElement.scrollWidth,
+            scrollHeight: tempElement.scrollHeight
+          });
+          
+          if (!overflow) i += step;
+        }
+        
+        let optimalSize = overflow ? i - step : i;
+        
+        // If text doesn't fit even at minimum size, try with text wrapping
+        if (optimalSize <= minSize && overflow) {
+          // Reset for wrapped text
+          tempElement.style.whiteSpace = 'normal';
+          tempElement.style.lineHeight = '1.1';
+          tempElement.style.width = '100%';
+          
+          i = minSize;
+          overflow = false;
+          
+          while (!overflow && i < maxSize) {
+            tempElement.style.fontSize = `${i}px`;
+            
+            // Force reflow
+            void tempElement.offsetWidth;
+            
+            // Check only vertical overflow for wrapped text
+            overflow = tempElement.scrollHeight > maxHeight;
+            
+            if (!overflow) i += step;
+          }
+          
+          optimalSize = overflow ? i - step : i;
+          needsWrap = true;
+        }
+        
+        // Clean up
+        document.body.removeChild(tempParent);
+        
+        return { optimalSize, needsWrap };
+      }
+
+      const adjustFontSize = () => {
+        nextTick(() => {
+          if (!cardNameRefs.value.length) return;
+          
+          // Adjust font size for all card name elements
+          cardNameRefs.value.forEach((element, index) => {
+            if (!element) return;
+            
+            // Reset styles
+            element.style.fontSize = '';
+            element.style.whiteSpace = 'nowrap';
+            element.style.lineHeight = '1';
+            element.style.width = 'auto';
+            element.style.height = 'auto';
+            element.classList.remove('wrapped');
+            
+            const { optimalSize, needsWrap } = resizeText({
+              element: element,
+              minSize: 32,
+              maxSize: 60,
+              step: 1,
+              maxWidth: 350,
+              maxHeight: 150
+            });
+            
+            // Apply the calculated size to the actual element
+            element.style.fontSize = `${optimalSize}px`;
+            
+            if (needsWrap) {
+              element.classList.add('wrapped');
+              element.style.whiteSpace = 'normal';
+              element.style.lineHeight = '1.1';
+              element.style.width = '100%';
+            } else {
+              element.style.whiteSpace = 'nowrap';
+              element.style.lineHeight = '1';
+              element.style.width = 'auto';
+            }
+            
+            console.log(`Card ${index} - Font size:`, optimalSize, 'Wrapped:', needsWrap);
+          });
+        });
+      };
 
       const goToPreviousCard = async () => {
         if (isFirstCard.value || currentCardIndex.value === -1 || cardIds.value.length === 0) {
@@ -507,15 +673,8 @@
         categoryInput,
         fileInput,
         scrollContainer,
-        handleMediaDoubleClick,
-        handleFileChange,
-        startEditing,
-        saveField,
-        toggleEdit,
-        cancelEdit,
-        fileInput,  
-        handleMediaDoubleClick,
-        handleFileChange,
+        handleMediaDoubleClick, // Now this function exists
+        handleFileChange, // Now this function exists
         isFirstCard,
         isLastCard,
         goToPreviousCard,
