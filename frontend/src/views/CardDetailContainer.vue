@@ -524,6 +524,12 @@ export default {
   height: auto;
   object-fit: contain;
   background-color: #1e1e1e;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .image-placeholder {
@@ -535,6 +541,12 @@ export default {
   justify-content: center;
   background-color: #1e1e1e;
   color: #666;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .card-content-wrapper {
