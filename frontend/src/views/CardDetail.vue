@@ -298,7 +298,7 @@ export default {
       await nextTick()
       
       // Re-enable transitions for future animations
-      isScrolling.value = true
+      // isScrolling.value = true
 
       // STEP 4: Replace adjacent cards for new ones
       await loadDetailedCardInfo()
