@@ -9,7 +9,7 @@
         @click="goToPreviousCard"
       >
         <div class="arrow-icon-wrapper">
-          <svg width="40" height="40" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="80" height="80" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g filter="url(#filter0_d_26_86)">
               <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF"/>
             </g>
@@ -93,7 +93,7 @@
         @click="goToNextCard"
       >
         <div class="arrow-icon-wrapper">
-          <svg width="40" height="40" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="80" height="80" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g filter="url(#filter0_d_26_86)">
               <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF" transform="rotate(180 104 104)"/>
             </g>
@@ -574,7 +574,7 @@ export default {
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  height: 100px;
+  height: 160px; /* Increased from 100px */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -603,8 +603,8 @@ export default {
 }
 
 .arrow-icon-wrapper {
-  width: 40px;
-  height: 40px;
+  width: 80px; /* Increased from 40px */
+  height: 80px; /* Increased from 40px */
   display: flex;
   align-items: center;
   justify-content: center;
