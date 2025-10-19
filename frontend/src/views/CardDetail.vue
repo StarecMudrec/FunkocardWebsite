@@ -243,11 +243,13 @@
           const categoryId = previousCategory || `rarity_${card.value.category}`;
           console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection);
           
-          const cards = await fetchCardsByCategory(categoryId, sortField, sortDirection);
-          sortedCards.value = cards;
+          const response = await fetchCardsByCategory(categoryId, sortField, sortDirection);
+          
+          // Extract the cards array from the response
+          sortedCards.value = response.cards || [];
           currentCardIndex.value = findCurrentCardIndex();
           
-          console.log('Loaded cards by category with sort:', cards);
+          console.log('Loaded cards by category with sort:', sortedCards.value);
           console.log('Current card ID:', card.value.id);
           console.log('Current card index:', currentCardIndex.value);
           console.log('Card IDs in sortedCards:', sortedCards.value.map(c => c.id));
@@ -256,6 +258,8 @@
           preloadAdjacentCards();
         } catch (error) {
           console.error('Error loading sorted cards by category:', error);
+          // Initialize as empty array to prevent future errors
+          sortedCards.value = [];
           // Don't throw the error here, just log it
           // This allows the card detail to still load even if navigation fails
         }
