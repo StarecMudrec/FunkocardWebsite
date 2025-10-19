@@ -289,14 +289,13 @@ export default {
       
       // Update displayed cards
       updateDisplayedCards()
-      
-      currentTransform.value = -100
 
       // Load detailed info for new adjacent cards
       await loadDetailedCardInfo()
 
       // INSTANTLY reset to center position without animation
       isScrolling.value = false
+      currentTransform.value = -100
       scrollDirection.value = null
     }
 
