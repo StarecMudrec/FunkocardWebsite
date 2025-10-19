@@ -38,8 +38,8 @@
           <!-- Previous Card -->
           <div class="card-page previous-card">
             <CardDetailContainer 
-              v-if="previousCard"
-              :card="previousCard"
+              v-if="displayedCards.previous"
+              :card="displayedCards.previous"
               :is-active="false"
             />
             <div v-else class="empty-card-placeholder"></div>
@@ -48,8 +48,8 @@
           <!-- Current Card -->
           <div class="card-page current-card">
             <CardDetailContainer 
-              v-if="currentCard"
-              :card="currentCard"
+              v-if="displayedCards.current"
+              :card="displayedCards.current"
               :is-active="true"
               @media-double-click="handleMediaDoubleClick"
               @go-back="goBackToCategory"
@@ -61,8 +61,8 @@
           <!-- Next Card -->
           <div class="card-page next-card">
             <CardDetailContainer 
-              v-if="nextCard"
-              :card="nextCard"
+              v-if="displayedCards.next"
+              :card="displayedCards.next"
               :is-active="false"
             />
             <div v-else class="empty-card-placeholder"></div>
@@ -118,11 +118,13 @@ export default {
     const allCards = ref([]) // All cards in the current category
     const currentCardIndex = ref(0)
     const isScrolling = ref(false)
-
-    // Computed properties for current and adjacent cards
-    const currentCard = computed(() => allCards.value[currentCardIndex.value])
-    const previousCard = computed(() => allCards.value[currentCardIndex.value - 1])
-    const nextCard = computed(() => allCards.value[currentCardIndex.value + 1])
+    
+    // Store displayed cards separately to ensure reactivity
+    const displayedCards = ref({
+      previous: null,
+      current: null,
+      next: null
+    })
 
     const isFirstCard = computed(() => currentCardIndex.value <= 0)
     const isLastCard = computed(() => currentCardIndex.value >= allCards.value.length - 1)
@@ -136,6 +138,22 @@ export default {
       if (!props.id || !allCards.value.length) return 0
       const index = allCards.value.findIndex(c => c.id.toString() === props.id.toString())
       return index >= 0 ? index : 0
+    }
+
+    const updateDisplayedCards = () => {
+      console.log('Updating displayed cards, current index:', currentCardIndex.value)
+      
+      displayedCards.value = {
+        previous: currentCardIndex.value > 0 ? allCards.value[currentCardIndex.value - 1] : null,
+        current: allCards.value[currentCardIndex.value] || null,
+        next: currentCardIndex.value < allCards.value.length - 1 ? allCards.value[currentCardIndex.value + 1] : null
+      }
+      
+      console.log('Displayed cards updated:', {
+        previous: displayedCards.value.previous?.name,
+        current: displayedCards.value.current?.name,
+        next: displayedCards.value.next?.name
+      })
     }
 
     const loadAllCards = async () => {
@@ -165,15 +183,18 @@ export default {
         allCards.value = response.cards || []
         
         console.log('Loaded all cards:', allCards.value.length)
-        console.log('All cards:', allCards.value)
+        console.log('All cards:', allCards.value.map(c => ({ id: c.id, name: c.name })))
         
         // Find current card index
         currentCardIndex.value = findCurrentCardIndex()
         console.log('Current card index:', currentCardIndex.value)
-        console.log('Current card:', currentCard.value)
+        
+        // Update displayed cards immediately with basic data
+        updateDisplayedCards()
         
         // Load detailed info for current and adjacent cards
         await loadDetailedCardInfo()
+        
       } catch (error) {
         console.error('Error loading all cards:', error)
         allCards.value = []
@@ -186,18 +207,18 @@ export default {
       const cardsToLoad = []
 
       // Always load current card
-      if (currentCard.value) {
-        cardsToLoad.push(currentCard.value.id)
+      if (displayedCards.value.current) {
+        cardsToLoad.push(displayedCards.value.current.id)
       }
 
       // Load previous card if exists
-      if (previousCard.value) {
-        cardsToLoad.push(previousCard.value.id)
+      if (displayedCards.value.previous) {
+        cardsToLoad.push(displayedCards.value.previous.id)
       }
 
       // Load next card if exists
-      if (nextCard.value) {
-        cardsToLoad.push(nextCard.value.id)
+      if (displayedCards.value.next) {
+        cardsToLoad.push(displayedCards.value.next.id)
       }
 
       console.log('Loading detailed info for cards:', cardsToLoad)
@@ -209,9 +230,13 @@ export default {
             // Update the card in allCards with detailed info
             const index = allCards.value.findIndex(c => c.id === cardId)
             if (index >= 0) {
-              allCards.value[index] = { ...allCards.value[index], ...detailedCard }
+              // Preserve the original card data and merge with detailed info
+              allCards.value[index] = { 
+                ...allCards.value[index], 
+                ...detailedCard 
+              }
+              console.log(`Loaded detailed info for card ${cardId}:`, detailedCard.name)
             }
-            console.log(`Loaded detailed info for card ${cardId}:`, detailedCard.name)
           } catch (err) {
             console.error(`Failed to load detailed info for card ${cardId}:`, err)
             // Keep the basic card info if detailed loading fails
@@ -219,7 +244,11 @@ export default {
         })
 
         await Promise.all(loadPromises)
-        console.log('Updated allCards with detailed info:', allCards.value)
+        
+        // Update displayed cards with the new detailed data
+        updateDisplayedCards()
+        
+        console.log('Updated allCards with detailed info')
       } catch (err) {
         console.error('Error loading detailed card info:', err)
       }
@@ -236,6 +265,9 @@ export default {
 
       // Update current index
       currentCardIndex.value = targetIndex
+
+      // Update displayed cards immediately
+      updateDisplayedCards()
 
       // Load detailed info for new adjacent cards
       await loadDetailedCardInfo()
@@ -265,8 +297,8 @@ export default {
       if (previousCategory) {
         router.push(`/category/${previousCategory}`)
       } else {
-        if (currentCard.value?.category) {
-          const categoryId = `rarity_${currentCard.value.category}`
+        if (displayedCards.value.current?.category) {
+          const categoryId = `rarity_${displayedCards.value.current.category}`
           router.push(`/category/${categoryId}`)
         } else {
           router.go(-1)
@@ -292,7 +324,7 @@ export default {
       formData.append('image', file)
 
       try {
-        const response = await fetch(`/api/cards/${currentCard.value.id}/image`, {
+        const response = await fetch(`/api/cards/${displayedCards.value.current.id}/image`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -306,10 +338,11 @@ export default {
         }
 
         // Reload current card data
-        const updatedCard = await fetchCardInfo(currentCard.value.id)
-        const cardIndex = allCards.value.findIndex(c => c.id === currentCard.value.id)
+        const updatedCard = await fetchCardInfo(displayedCards.value.current.id)
+        const cardIndex = allCards.value.findIndex(c => c.id === displayedCards.value.current.id)
         if (cardIndex >= 0) {
           allCards.value[cardIndex] = updatedCard
+          updateDisplayedCards()
         }
       } catch (err) {
         console.error('Error uploading image:', err)
@@ -338,6 +371,11 @@ export default {
         // Reset data
         allCards.value = []
         currentCardIndex.value = 0
+        displayedCards.value = {
+          previous: null,
+          current: null,
+          next: null
+        }
         
         console.log('Starting to load data for card ID:', props.id)
         
@@ -350,7 +388,7 @@ export default {
         console.log('Data loading completed')
         console.log('Total cards:', allCards.value.length)
         console.log('Current card index:', currentCardIndex.value)
-        console.log('Current card:', currentCard.value)
+        console.log('Displayed cards:', displayedCards.value)
         
       } catch (err) {
         error.value = err.message || 'Failed to load card details'
@@ -375,9 +413,7 @@ export default {
     })
 
     return {
-      currentCard,
-      previousCard,
-      nextCard,
+      displayedCards,
       loading,
       error,
       saveError,
