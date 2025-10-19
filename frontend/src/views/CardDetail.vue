@@ -218,16 +218,36 @@
             return;
           }
           
+          // Get the previous category and sort parameters from sessionStorage
+          const previousCategory = sessionStorage.getItem('previousCategory');
+          const savedSortState = sessionStorage.getItem(`category_state_${previousCategory}`);
+          
+          let sortField = 'id';
+          let sortDirection = 'asc';
+          
+          // Use saved sort parameters if available
+          if (savedSortState) {
+            try {
+              const state = JSON.parse(savedSortState);
+              if (state.currentSort) {
+                sortField = state.currentSort.field;
+                sortDirection = state.currentSort.direction;
+              }
+            } catch (e) {
+              console.warn('Failed to parse saved sort state:', e);
+            }
+          }
+          
           // For navigation, we need to use the category ID format that matches the API
           // The API expects categories in the format "rarity_{categoryName}"
-          const categoryId = `rarity_${card.value.category}`;
-          console.log('Loading cards for category ID:', categoryId);
+          const categoryId = previousCategory || `rarity_${card.value.category}`;
+          console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection);
           
-          const cards = await fetchCardsByCategory(categoryId, 'id', 'asc');
+          const cards = await fetchCardsByCategory(categoryId, sortField, sortDirection);
           sortedCards.value = cards;
           currentCardIndex.value = findCurrentCardIndex();
           
-          console.log('Loaded cards by category:', cards);
+          console.log('Loaded cards by category with sort:', cards);
           console.log('Current card ID:', card.value.id);
           console.log('Current card index:', currentCardIndex.value);
           console.log('Card IDs in sortedCards:', sortedCards.value.map(c => c.id));
@@ -727,6 +747,9 @@
         if (prevCard) {
           console.log('Navigating to previous card:', prevCard.id);
           // Set navigation type before navigating
+          if (router.meta) {
+            router.meta.navigationType = 'to-card-detail'
+          }
           router.push(`/card/${prevCard.id}`);
         } else {
           console.log('No previous card available');
@@ -746,6 +769,9 @@
         if (nextCard) {
           console.log('Navigating to next card:', nextCard.id);
           // Set navigation type before navigating
+          if (router.meta) {
+            router.meta.navigationType = 'to-card-detail'
+          }
           router.push(`/card/${nextCard.id}`);
         } else {
           console.log('No next card available');
