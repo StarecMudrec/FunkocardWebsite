@@ -32,81 +32,92 @@
         </div>
       </div>
 
-      <transition :name="showTransition ? transitionName : ''">
-        <div :key="card.id" class="card-detail-container">
-          <div class="card-detail">
-            <div class="card-content-wrapper">
-              <!-- Название карточки и главная разделительная линия -->
-              <div class="card-header-section">
-                <div class="title-container">
-                  <h1 ref="cardNameRef">
-                    <span>{{ card.name }}</span>
-                  </h1>
-                </div>
-                <div v-if="nameError" class="error-message">{{ nameError }}</div>
-                <div class="main-divider"></div>
-              </div>
-              
-              <!-- Rarity and Points section under main divider -->
-              <h3 style="margin: 60px 0px 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
-                <strong>Rarity: </strong>{{ card.category }}
-              </h3>
-              <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
-              
-              <p style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);" v-html="formatDescription(card.description)"></p>
-              <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
+      <!-- Scroll container for horizontal snap -->
+      <div class="cards-scroll-container" ref="scrollContainer">
+        <div class="cards-scroll-wrapper">
+          <div 
+            v-for="(cardItem, index) in sortedCards" 
+            :key="cardItem.id" 
+            class="card-slide"
+            :class="{ 'active': cardItem.id.toString() === card.id.toString() }"
+          >
+            <div class="card-detail-container">
+              <div class="card-detail">
+                <div class="card-content-wrapper">
+                  <!-- Название карточки и главная разделительная линия -->
+                  <div class="card-header-section">
+                    <div class="title-container">
+                      <h1 :ref="el => setCardNameRef(el, index)">
+                        <span>{{ cardItem.name }}</span>
+                      </h1>
+                    </div>
+                    <div v-if="nameError" class="error-message">{{ nameError }}</div>
+                    <div class="main-divider"></div>
+                  </div>
+                  
+                  <!-- Rarity and Points section under main divider -->
+                  <h3 style="margin: 60px 0px 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
+                    <strong>Rarity: </strong>{{ cardItem.category }}
+                  </h3>
+                  <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
+                  
+                  <p style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);" v-html="formatDescription(cardItem.description)"></p>
+                  <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
 
-              
-              <div class="secondary-divider"></div>
-              
-              <!-- Available at shop section under secondary divider -->
-              <div class="shop-section">
-                <div class="shop-info">
-                  <h3>Available at shop:</h3>
-                  <p :class="{ 'available-glow': isShopAvailable(card.shop) }">
-                    {{ formatShopInfo(card.shop) }}
-                  </p>
+                  
+                  <div class="secondary-divider"></div>
+                  
+                  <!-- Available at shop section under secondary divider -->
+                  <div class="shop-section">
+                    <div class="shop-info">
+                      <h3>Available at shop:</h3>
+                      <p :class="{ 'available-glow': isShopAvailable(cardItem.shop) }">
+                        {{ formatShopInfo(cardItem.shop) }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Back to category button -->
+                  <div class="back-to-category-section">
+                    <button @click="goBackToCategory" class="back-to-category-button">
+                      ← Back to {{ getCategoryDisplayName() }}
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="card-image-container">
+                  <!-- Video for Limited cards -->
+                  <video 
+                    v-if="cardItem.category === 'Limited ⚠️' && cardItem.img && !mediaError" 
+                    :src="`/api/card_image/${cardItem.img}`" 
+                    class="card-detail-media"
+                    autoplay
+                    loop
+                    muted
+                    playsinline
+                    @error="mediaError = true"
+                    @dblclick="handleMediaDoubleClick"
+                    disablePictureInPicture
+                  ></video>
+                  
+                  <!-- Image for non-Limited cards -->
+                  <img 
+                    v-else-if="cardItem.img && !mediaError" 
+                    :src="`/api/card_image/${cardItem.img}`" 
+                    :alt="cardItem.name" 
+                    class="card-detail-media"
+                    @error="mediaError = true"
+                    @dblclick="handleMediaDoubleClick"
+                  />
+                  
+                  <div v-else class="image-placeholder">No media available</div>
                 </div>
               </div>
-
-              <!-- Back to category button -->
-              <div class="back-to-category-section">
-                <button @click="goBackToCategory" class="back-to-category-button">
-                  ← Back to {{ getCategoryDisplayName() }}
-                </button>
-              </div>
-            </div>
-            
-            <div class="card-image-container">
-              <!-- Video for Limited cards -->
-              <video 
-                v-if="isLimitedCard && card.img && !mediaError" 
-                :src="`/api/card_image/${card.img}`" 
-                class="card-detail-media"
-                autoplay
-                loop
-                muted
-                playsinline
-                @error="mediaError = true"
-                @dblclick="handleMediaDoubleClick"
-                disablePictureInPicture
-              ></video>
-              
-              <!-- Image for non-Limited cards -->
-              <img 
-                v-else-if="card.img && !mediaError" 
-                :src="`/api/card_image/${card.img}`" 
-                :alt="card.name" 
-                class="card-detail-media"
-                @error="mediaError = true"
-                @dblclick="handleMediaDoubleClick"
-              />
-              
-              <div v-else class="image-placeholder">No media available</div>
             </div>
           </div>
         </div>
-      </transition>
+      </div>
+
       <div v-if="saveError" class="error-message">{{ saveError }}</div>
       <!-- Right Arrow -->
       <div 
@@ -121,7 +132,7 @@
         </div>
       </div>
     </div>
-  <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" style="display: none;">
+    <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" style="display: none;">
   </div>
 </template>
 
@@ -143,24 +154,24 @@
       const nameInput = ref(null)
       const descriptionInput = ref(null)
       const categoryInput = ref(null)
+      const scrollContainer = ref(null)
 
       const card = ref({})
       const editableCard = ref({})
       const loading = ref(true)
       const error = ref(null)
-      const mediaError = ref(false) // Changed from imageError to mediaError
+      const mediaError = ref(false)
       const saveError = ref(null)
       const nameError = ref(null)
       const descriptionError = ref(null)
       const categoryError = ref(null)
-      const cardNameRef = ref(null)
+      const cardNameRefs = ref([]) // Changed to array for multiple cards
       const isUserAllowed = ref(false)
       const editing = ref({
         name: false,
         description: false,
         category: false
       })
-      const transitionName = ref('slide-left');
 
       // Card navigation
       const sortedCards = ref([])
@@ -173,12 +184,17 @@
       const isPreloading = ref(false)
       const preloadError = ref(null)
 
-      const showTransition = ref(false);
-
       // Computed property to check if current card is Limited
       const isLimitedCard = computed(() => {
         return card.value.category === 'Limited ⚠️';
       });
+
+      // Function to set card name refs in the array
+      const setCardNameRef = (el, index) => {
+        if (el) {
+          cardNameRefs.value[index] = el
+        }
+      }
 
       const findCurrentCardIndex = () => {
         if (!card.value?.id || !sortedCards.value.length) return -1;
@@ -186,6 +202,36 @@
         // Convert both IDs to strings for comparison
         const currentCardId = card.value.id.toString();
         return sortedCards.value.findIndex(c => c.id.toString() === currentCardId);
+      }
+
+      const scrollToCard = (index) => {
+        if (!scrollContainer.value || index < 0 || index >= sortedCards.value.length) return;
+        
+        const scrollWrapper = scrollContainer.value;
+        const cardWidth = scrollWrapper.clientWidth;
+        scrollWrapper.scrollTo({
+          left: index * cardWidth,
+          behavior: 'smooth'
+        });
+      }
+
+      const handleScroll = () => {
+        if (!scrollContainer.value) return;
+        
+        const scrollWrapper = scrollContainer.value;
+        const scrollLeft = scrollWrapper.scrollLeft;
+        const cardWidth = scrollWrapper.clientWidth;
+        const newIndex = Math.round(scrollLeft / cardWidth);
+        
+        if (newIndex !== currentCardIndex.value && newIndex >= 0 && newIndex < sortedCards.value.length) {
+          currentCardIndex.value = newIndex;
+          const newCard = sortedCards.value[newIndex];
+          
+          // Update URL without triggering full navigation
+          if (newCard && newCard.id.toString() !== props.id) {
+            router.replace(`/card/${newCard.id}`);
+          }
+        }
       }
 
       const getCategoryDisplayName = () => {
@@ -253,66 +299,10 @@
           console.log('Current card ID:', card.value.id);
           console.log('Current card index:', currentCardIndex.value);
           console.log('Card IDs in sortedCards:', sortedCards.value.map(c => c.id));
-          
-          // Preload adjacent cards after we have the sorted list
-          preloadAdjacentCards();
         } catch (error) {
           console.error('Error loading sorted cards by category:', error);
           // Initialize as empty array to prevent future errors
           sortedCards.value = [];
-          // Don't throw the error here, just log it
-          // This allows the card detail to still load even if navigation fails
-        }
-      }
-
-      // Add this new function to preload adjacent cards
-      const preloadAdjacentCards = async () => {
-        if (isPreloading.value || !sortedCards.value.length) return;
-        
-        isPreloading.value = true;
-        preloadError.value = null;
-        
-        try {
-          const preloadPromises = [];
-          
-          // Preload previous card if it exists
-          if (currentCardIndex.value > 0) {
-            const prevCardId = sortedCards.value[currentCardIndex.value - 1].id;
-            if (!preloadedCards.value[prevCardId]) {
-              preloadPromises.push(
-                fetchCardInfo(prevCardId)
-                  .then(cardData => {
-                    preloadedCards.value[prevCardId] = cardData;
-                  })
-                  .catch(err => {
-                    console.error(`Failed to preload card ${prevCardId}:`, err);
-                  })
-              );
-            }
-          }
-          
-          // Preload next card if it exists
-          if (currentCardIndex.value < sortedCards.value.length - 1) {
-            const nextCardId = sortedCards.value[currentCardIndex.value + 1].id;
-            if (!preloadedCards.value[nextCardId]) {
-              preloadPromises.push(
-                fetchCardInfo(nextCardId)
-                  .then(cardData => {
-                    preloadedCards.value[nextCardId] = cardData;
-                  })
-                  .catch(err => {
-                    console.error(`Failed to preload card ${nextCardId}:`, err);
-                  })
-              );
-            }
-          }
-          
-          await Promise.all(preloadPromises);
-        } catch (err) {
-          preloadError.value = err.message || 'Failed to preload cards';
-          console.error('Error preloading cards:', err);
-        } finally {
-          isPreloading.value = false;
         }
       }
 
@@ -457,139 +447,45 @@
 
       const adjustFontSize = () => {
         nextTick(() => {
-          if (!cardNameRef.value) return;
+          if (!cardNameRefs.value.length) return;
           
-          const element = cardNameRef.value;
-          
-          // Reset styles
-          element.style.fontSize = '';
-          element.style.whiteSpace = 'nowrap';
-          element.style.lineHeight = '1';
-          element.style.width = 'auto';
-          element.style.height = 'auto';
-          element.classList.remove('wrapped');
-          
-          const { optimalSize, needsWrap } = resizeText({
-            element: element,
-            minSize: 32,
-            maxSize: 60,
-            step: 1,
-            maxWidth: 350,
-            maxHeight: 150
+          // Adjust font size for all card name elements
+          cardNameRefs.value.forEach((element, index) => {
+            if (!element) return;
+            
+            // Reset styles
+            element.style.fontSize = '';
+            element.style.whiteSpace = 'nowrap';
+            element.style.lineHeight = '1';
+            element.style.width = 'auto';
+            element.style.height = 'auto';
+            element.classList.remove('wrapped');
+            
+            const { optimalSize, needsWrap } = resizeText({
+              element: element,
+              minSize: 32,
+              maxSize: 60,
+              step: 1,
+              maxWidth: 350,
+              maxHeight: 150
+            });
+            
+            // Apply the calculated size to the actual element
+            element.style.fontSize = `${optimalSize}px`;
+            
+            if (needsWrap) {
+              element.classList.add('wrapped');
+              element.style.whiteSpace = 'normal';
+              element.style.lineHeight = '1.1';
+              element.style.width = '100%';
+            } else {
+              element.style.whiteSpace = 'nowrap';
+              element.style.lineHeight = '1';
+              element.style.width = 'auto';
+            }
+            
+            console.log(`Card ${index} - Font size:`, optimalSize, 'Wrapped:', needsWrap);
           });
-          
-          // Apply the calculated size to the actual element
-          element.style.fontSize = `${optimalSize}px`;
-          
-          if (needsWrap) {
-            element.classList.add('wrapped');
-            element.style.whiteSpace = 'normal';
-            element.style.lineHeight = '1.1';
-            element.style.width = '100%';
-          } else {
-            element.style.whiteSpace = 'nowrap';
-            element.style.lineHeight = '1';
-            element.style.width = 'auto';
-          }
-          
-          console.log('Configurable approach - Font size:', optimalSize, 'Wrapped:', needsWrap);
-        });
-      };
-
-      const fallbackAdjustFontSize  = () => {
-        nextTick(() => {
-          if (!cardNameRef.value) return;
-          
-          const element = cardNameRef.value;
-          const container = element.parentElement;
-          
-          if (!container) return;
-          
-          // Reset styles
-          element.style.fontSize = '';
-          element.classList.remove('wrapped');
-          element.style.whiteSpace = 'nowrap';
-          element.style.lineHeight = '1';
-          element.style.width = 'auto';
-          element.style.height = 'auto';
-          
-          const containerWidth = container.clientWidth;
-          const containerHeight = 150;
-          const maxWidth = 350;
-          
-          // Get the actual text content
-          const text = element.textContent || element.innerText;
-          
-          let fontSize = 60;
-          let needsWrap = false;
-          
-          // Create a temporary clone to measure text more accurately
-          const tempElement = element.cloneNode(true);
-          tempElement.style.visibility = 'hidden';
-          tempElement.style.position = 'absolute';
-          tempElement.style.whiteSpace = 'nowrap';
-          document.body.appendChild(tempElement);
-          
-          // First, try without wrapping
-          let foundFit = false;
-          for (let testSize = 60; testSize >= 32; testSize -= 2) {
-            tempElement.style.fontSize = `${testSize}px`;
-            
-            // Force reflow
-            void tempElement.offsetWidth;
-            
-            if (tempElement.scrollWidth <= maxWidth) {
-              fontSize = testSize;
-              foundFit = true;
-              break;
-            }
-          }
-          
-          // If no fit found without wrapping, try with wrapping
-          if (!foundFit) {
-            needsWrap = true;
-            tempElement.style.whiteSpace = 'normal';
-            tempElement.style.lineHeight = '1.1';
-            tempElement.style.width = `${maxWidth}px`;
-            
-            // Reset to find best size with wrapping
-            for (let testSize = 60; testSize >= 32; testSize -= 2) {
-              tempElement.style.fontSize = `${testSize}px`;
-              
-              // Force reflow
-              void tempElement.offsetWidth;
-              
-              if (tempElement.scrollHeight <= containerHeight) {
-                fontSize = testSize;
-                foundFit = true;
-                break;
-              }
-            }
-            
-            // If still no fit, use minimum size
-            if (!foundFit) {
-              fontSize = 32;
-            }
-          }
-          
-          // Clean up temporary element
-          document.body.removeChild(tempElement);
-          
-          // Apply the calculated size to the actual element
-          element.style.fontSize = `${fontSize}px`;
-          
-          if (needsWrap) {
-            element.classList.add('wrapped');
-            element.style.whiteSpace = 'normal';
-            element.style.lineHeight = '1.1';
-            element.style.width = '100%';
-          } else {
-            element.style.whiteSpace = 'nowrap';
-            element.style.lineHeight = '1';
-            element.style.width = 'auto';
-          }
-          
-          console.log('Final font size:', fontSize, 'Wrapped:', needsWrap, 'Text:', text);
         });
       };
 
@@ -712,10 +608,7 @@
           editableCard.value = { ...card.value };
           
           // Load sorted cards for navigation, but don't block the UI if it fails
-          loadSortedCards().catch(err => {
-            console.error('Failed to load sorted cards for navigation:', err);
-            // Continue loading the card detail even if navigation fails
-          });
+          await loadSortedCards();
           
           // Check user permissions
           try {
@@ -729,7 +622,11 @@
             isUserAllowed.value = false
           }
           
-          setTimeout(adjustFontSize, 0)
+          // Scroll to current card after data is loaded
+          nextTick(() => {
+            scrollToCard(currentCardIndex.value);
+            setTimeout(adjustFontSize, 100);
+          });
         } catch (err) {
           error.value = err.message || 'Failed to load card details'
           console.error('Error loading card:', err)
@@ -744,20 +641,8 @@
           return;
         }
         
-        showTransition.value = true;
-        transitionName.value = 'slide-right';
-        const prevCard = sortedCards.value[currentCardIndex.value - 1];
-        
-        if (prevCard) {
-          console.log('Navigating to previous card:', prevCard.id);
-          // Set navigation type before navigating
-          if (router.meta) {
-            router.meta.navigationType = 'to-card-detail'
-          }
-          router.push(`/card/${prevCard.id}`);
-        } else {
-          console.log('No previous card available');
-        }
+        const prevIndex = currentCardIndex.value - 1;
+        scrollToCard(prevIndex);
       }
 
       const goToNextCard = () => {
@@ -766,25 +651,18 @@
           return;
         }
         
-        showTransition.value = true;
-        transitionName.value = 'slide-left';
-        const nextCard = sortedCards.value[currentCardIndex.value + 1];
-        
-        if (nextCard) {
-          console.log('Navigating to next card:', nextCard.id);
-          // Set navigation type before navigating
-          if (router.meta) {
-            router.meta.navigationType = 'to-card-detail'
-          }
-          router.push(`/card/${nextCard.id}`);
-        } else {
-          console.log('No next card available');
-        }
+        const nextIndex = currentCardIndex.value + 1;
+        scrollToCard(nextIndex);
       }
 
       onMounted(() => {
         window.addEventListener('resize', adjustFontSize)
         loadData()
+        
+        // Add scroll event listener
+        if (scrollContainer.value) {
+          scrollContainer.value.addEventListener('scroll', handleScroll);
+        }
         
         // Set navigation type when entering card detail
         if (router.meta) {
@@ -795,21 +673,15 @@
       onUnmounted(() => {
         window.removeEventListener('resize', adjustFontSize)
         
-        // Set navigation type when leaving card detail to return to category
-        // This is handled by the router navigation guard now
-      })
-
-      // Watch for card changes to preload new adjacent cards
-      watch(() => card.value.id, (newId) => {
-        if (newId) {
-          preloadAdjacentCards();
+        // Remove scroll event listener
+        if (scrollContainer.value) {
+          scrollContainer.value.removeEventListener('scroll', handleScroll);
         }
       })
 
       watch(() => props.id, async (newId) => {
         if (newId && card.value?.id !== newId) {
           await loadData()
-          showTransition.value = false; // Reset after navigation
         }
       })
 
@@ -844,21 +716,10 @@
         }
       });
 
-      watch(showTransition, (newVal) => {
-        if (!newVal) {
-          // Transition ended, adjust font size
-          setTimeout(adjustFontSize, 50);
-        }
-      });
-
-      // Add this to your existing watchers
-      watch(() => loading.value, (newLoading) => {
-        if (!newLoading) {
-          // Component finished loading, adjust font size with delays
-          setTimeout(adjustFontSize, 100);
-          setTimeout(adjustFontSize, 500);
-        }
-      });
+      // Watch for sortedCards changes to adjust font sizes when cards load
+      watch(() => sortedCards.value, () => {
+        setTimeout(adjustFontSize, 200);
+      }, { deep: true });
 
       return {
         card,
@@ -869,38 +730,39 @@
         nameError,
         descriptionError,
         saveError,
-        mediaError, // Changed from imageError to mediaError
-        cardNameRef,
+        mediaError,
+        cardNameRefs,
+        setCardNameRef,
         editing,
         isUserAllowed,
         nameInput,
         descriptionInput,
         categoryInput,
         fileInput,
-        handleMediaDoubleClick, // Changed from handleImageDoubleClick
+        scrollContainer,
+        handleMediaDoubleClick,
         handleFileChange,
         startEditing,
         saveField,
         toggleEdit,
         cancelEdit,
         fileInput,  
-        handleMediaDoubleClick, // Changed from handleImageDoubleClick
+        handleMediaDoubleClick,
         handleFileChange,
         isFirstCard,
         isLastCard,
         goToPreviousCard,
         goToNextCard,
-        goBackToCategory, // Add this to the return object
-        transitionName,
+        goBackToCategory,
         preloadedCards,
         isPreloading,
         preloadError,
-        showTransition,
         formatShopInfo,
         isShopAvailable,
         formatDescription,
-        getCategoryDisplayName, // Add this to the return object
-        isLimitedCard, // Add the computed property to return object
+        getCategoryDisplayName,
+        isLimitedCard,
+        sortedCards
       }
     }
   }
