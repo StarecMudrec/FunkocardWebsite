@@ -118,6 +118,7 @@ export default {
     const allCards = ref([])
     const currentCardIndex = ref(0)
     const isScrolling = ref(false)
+    const scrollDirection = ref(null) // 'left' or 'right'
     
     // Store displayed cards separately to ensure reactivity
     const displayedCards = ref({
@@ -129,11 +130,32 @@ export default {
     const isFirstCard = computed(() => currentCardIndex.value <= 0)
     const isLastCard = computed(() => currentCardIndex.value >= allCards.value.length - 1)
 
-    // Always show the current card in the middle (100vw offset)
-    const containerStyle = computed(() => ({
-      transform: `translateX(-100vw)`,
-      transition: isScrolling.value ? 'transform 0.3s ease' : 'none'
-    }))
+    // Dynamic transform based on scroll direction
+    const containerStyle = computed(() => {
+      if (!isScrolling.value) {
+        return {
+          transform: `translateX(-100vw)`,
+          transition: 'none'
+        }
+      }
+      
+      if (scrollDirection.value === 'left') {
+        return {
+          transform: `translateX(0)`,
+          transition: 'transform 0.3s ease'
+        }
+      } else if (scrollDirection.value === 'right') {
+        return {
+          transform: `translateX(-200vw)`,
+          transition: 'transform 0.3s ease'
+        }
+      }
+      
+      return {
+        transform: `translateX(-100vw)`,
+        transition: 'transform 0.3s ease'
+      }
+    })
 
     const findCurrentCardIndex = () => {
       if (!props.id || !allCards.value.length) return 0
@@ -255,38 +277,43 @@ export default {
       }
     }
 
-    const navigateToCard = async (targetIndex) => {
+    const navigateToCard = async (targetIndex, direction) => {
       if (isScrolling.value || targetIndex < 0 || targetIndex >= allCards.value.length) return
 
       isScrolling.value = true
+      scrollDirection.value = direction
 
       // Update URL without triggering navigation
       const newCardId = allCards.value[targetIndex].id
       window.history.replaceState({}, '', `/card/${newCardId}`)
 
+      // Wait for the scroll animation to complete
+      await new Promise(resolve => setTimeout(resolve, 300))
+
       // Update current index
       currentCardIndex.value = targetIndex
 
-      // Update displayed cards immediately
+      // Reset transform to middle position without animation
+      scrollDirection.value = null
+      
+      // Update displayed cards
       updateDisplayedCards()
 
       // Load detailed info for new adjacent cards
       await loadDetailedCardInfo()
 
-      // Wait for transition to complete
-      setTimeout(() => {
-        isScrolling.value = false
-      }, 300)
+      // Reset scrolling state
+      isScrolling.value = false
     }
 
     const goToPreviousCard = () => {
       if (isFirstCard.value || isScrolling.value) return
-      navigateToCard(currentCardIndex.value - 1)
+      navigateToCard(currentCardIndex.value - 1, 'left')
     }
 
     const goToNextCard = () => {
       if (isLastCard.value || isScrolling.value) return
-      navigateToCard(currentCardIndex.value + 1)
+      navigateToCard(currentCardIndex.value + 1, 'right')
     }
 
     const goBackToCategory = () => {
@@ -488,16 +515,6 @@ export default {
 .card-page.next-card {
   /* Next card is on the right */
   order: 3;
-}
-
-/* REMOVED: Transparency effects for adjacent cards */
-.card-page.previous-card,
-.card-page.next-card {
-  /* No opacity changes - all cards are fully visible */
-}
-
-.card-page.current-card {
-  /* Current card stays fully visible */
 }
 
 .empty-card-placeholder {
