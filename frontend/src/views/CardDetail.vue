@@ -115,7 +115,7 @@ export default {
     const isUserAllowed = ref(false)
 
     // Card navigation
-    const allCards = ref([]) // All cards in the current category
+    const allCards = ref([])
     const currentCardIndex = ref(0)
     const isScrolling = ref(false)
     
@@ -129,8 +129,9 @@ export default {
     const isFirstCard = computed(() => currentCardIndex.value <= 0)
     const isLastCard = computed(() => currentCardIndex.value >= allCards.value.length - 1)
 
+    // Always show the current card in the middle (100vw offset)
     const containerStyle = computed(() => ({
-      transform: `translateX(-${currentCardIndex.value * 100}vw)`,
+      transform: `translateX(-100vw)`,
       transition: isScrolling.value ? 'transform 0.3s ease' : 'none'
     }))
 
@@ -254,7 +255,7 @@ export default {
       }
     }
 
-    const scrollToCard = async (targetIndex) => {
+    const navigateToCard = async (targetIndex) => {
       if (isScrolling.value || targetIndex < 0 || targetIndex >= allCards.value.length) return
 
       isScrolling.value = true
@@ -280,12 +281,12 @@ export default {
 
     const goToPreviousCard = () => {
       if (isFirstCard.value || isScrolling.value) return
-      scrollToCard(currentCardIndex.value - 1)
+      navigateToCard(currentCardIndex.value - 1)
     }
 
     const goToNextCard = () => {
       if (isLastCard.value || isScrolling.value) return
-      scrollToCard(currentCardIndex.value + 1)
+      navigateToCard(currentCardIndex.value + 1)
     }
 
     const goBackToCategory = () => {
@@ -434,7 +435,6 @@ export default {
 </script>
 
 <style scoped>
-/* Your existing styles remain exactly the same */
 .fixed-container {
   position: fixed;
   top: 0;
@@ -473,6 +473,21 @@ export default {
   justify-content: center;
   padding: 20px;
   box-sizing: border-box;
+}
+
+.card-page.previous-card {
+  /* Previous card is on the left */
+  order: 1;
+}
+
+.card-page.current-card {
+  /* Current card is in the middle */
+  order: 2;
+}
+
+.card-page.next-card {
+  /* Next card is on the right */
+  order: 3;
 }
 
 .card-page.previous-card,
