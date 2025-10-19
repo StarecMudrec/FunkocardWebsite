@@ -33,42 +33,43 @@
       </div>
 
       <!-- Multi-card container -->
-      <div class="multi-card-container" ref="multiCardContainer">
-        <!-- Previous Card -->
-        <div 
-          class="card-page previous-card" 
-          :class="{ 'hidden': !hasPreviousCard }"
-          @click="scrollToCard(currentCardIndex - 1)"
-        >
-          <CardDetailContainer 
-            v-if="cardsData[currentCardIndex - 1]"
-            :card="cardsData[currentCardIndex - 1]"
-            :is-active="false"
-          />
-        </div>
+      <div class="multi-card-viewport" ref="multiCardViewport">
+        <div class="multi-card-container" ref="multiCardContainer" :style="containerStyle">
+          <!-- Previous Card -->
+          <div 
+            class="card-page previous-card" 
+            :class="{ 'hidden': !hasPreviousCard }"
+          >
+            <CardDetailContainer 
+              v-if="cardsData[currentCardIndex - 1]"
+              :card="cardsData[currentCardIndex - 1]"
+              :is-active="false"
+            />
+          </div>
 
-        <!-- Current Card -->
-        <div class="card-page current-card" ref="currentCard">
-          <CardDetailContainer 
-            v-if="cardsData[currentCardIndex]"
-            :card="cardsData[currentCardIndex]"
-            :is-active="true"
-            @media-double-click="handleMediaDoubleClick"
-            @go-back="goBackToCategory"
-          />
-        </div>
+          <!-- Current Card -->
+          <div class="card-page current-card">
+            <CardDetailContainer 
+              v-if="cardsData[currentCardIndex]"
+              :card="cardsData[currentCardIndex]"
+              :is-active="true"
+              @media-double-click="handleMediaDoubleClick"
+              @go-back="goBackToCategory"
+              @save-error="handleSaveError"
+            />
+          </div>
 
-        <!-- Next Card -->
-        <div 
-          class="card-page next-card" 
-          :class="{ 'hidden': !hasNextCard }"
-          @click="scrollToCard(currentCardIndex + 1)"
-        >
-          <CardDetailContainer 
-            v-if="cardsData[currentCardIndex + 1]"
-            :card="cardsData[currentCardIndex + 1]"
-            :is-active="false"
-          />
+          <!-- Next Card -->
+          <div 
+            class="card-page next-card" 
+            :class="{ 'hidden': !hasNextCard }"
+          >
+            <CardDetailContainer 
+              v-if="cardsData[currentCardIndex + 1]"
+              :card="cardsData[currentCardIndex + 1]"
+              :is-active="false"
+            />
+          </div>
         </div>
       </div>
 
@@ -110,10 +111,10 @@ export default {
   setup(props) {
     const router = useRouter()
     const fileInput = ref(null)
+    const multiCardViewport = ref(null)
     const multiCardContainer = ref(null)
-    const currentCard = ref(null)
 
-    const cardsData = ref([]) // Array to hold current and adjacent cards
+    const cardsData = ref([])
     const loading = ref(true)
     const error = ref(null)
     const saveError = ref(null)
@@ -121,17 +122,24 @@ export default {
 
     // Card navigation
     const sortedCards = ref([])
-    const currentCardIndex = ref(-1)
+    const currentCardIndex = ref(0)
     const isScrolling = ref(false)
+    const containerWidth = ref(0)
 
     const isFirstCard = computed(() => currentCardIndex.value <= 0)
     const isLastCard = computed(() => currentCardIndex.value >= sortedCards.value.length - 1)
     const hasPreviousCard = computed(() => currentCardIndex.value > 0)
     const hasNextCard = computed(() => currentCardIndex.value < sortedCards.value.length - 1)
 
+    const containerStyle = computed(() => ({
+      transform: `translateX(-${currentCardIndex.value * 100}%)`,
+      transition: isScrolling.value ? 'transform 0.3s ease' : 'none'
+    }))
+
     const findCurrentCardIndex = () => {
-      if (!props.id || !sortedCards.value.length) return -1
-      return sortedCards.value.findIndex(c => c.id.toString() === props.id.toString())
+      if (!props.id || !sortedCards.value.length) return 0
+      const index = sortedCards.value.findIndex(c => c.id.toString() === props.id.toString())
+      return index >= 0 ? index : 0
     }
 
     const getCategoryDisplayName = () => {
@@ -187,11 +195,17 @@ export default {
     }
 
     const loadCurrentAndAdjacentCards = async () => {
-      if (!sortedCards.value.length || currentCardIndex.value === -1) return
+      if (!sortedCards.value.length) return
 
       const cardsToLoad = []
 
-      // Previous card
+      // Always load current card
+      cardsToLoad.push({
+        index: currentCardIndex.value,
+        cardId: sortedCards.value[currentCardIndex.value].id
+      })
+
+      // Load previous card if exists
       if (currentCardIndex.value > 0) {
         cardsToLoad.push({
           index: currentCardIndex.value - 1,
@@ -199,13 +213,7 @@ export default {
         })
       }
 
-      // Current card
-      cardsToLoad.push({
-        index: currentCardIndex.value,
-        cardId: sortedCards.value[currentCardIndex.value].id
-      })
-
-      // Next card
+      // Load next card if exists
       if (currentCardIndex.value < sortedCards.value.length - 1) {
         cardsToLoad.push({
           index: currentCardIndex.value + 1,
@@ -218,6 +226,7 @@ export default {
           // Only load if not already loaded or if it's a different card
           if (!cardsData.value[index] || cardsData.value[index].id !== cardId) {
             const cardData = await fetchCardInfo(cardId)
+            // Use Vue.set equivalent for reactive array updates
             cardsData.value[index] = cardData
           }
         })
@@ -243,12 +252,7 @@ export default {
       // Load new adjacent cards
       await loadCurrentAndAdjacentCards()
 
-      // Reset scroll position
-      if (multiCardContainer.value) {
-        multiCardContainer.value.scrollLeft = multiCardContainer.value.clientWidth
-      }
-
-      // Allow time for DOM update and scrolling
+      // Wait for transition to complete
       setTimeout(() => {
         isScrolling.value = false
       }, 300)
@@ -288,6 +292,10 @@ export default {
       }
     }
 
+    const handleSaveError = (error) => {
+      saveError.value = error
+    }
+
     const handleFileChange = async (event) => {
       const file = event.target.files[0]
       if (!file || !isUserAllowed.value) return
@@ -315,17 +323,25 @@ export default {
         cardsData.value[currentCardIndex.value] = updatedCard
       } catch (err) {
         console.error('Error uploading image:', err)
+        saveError.value = err.message
+      }
+    }
+
+    const updateContainerWidth = () => {
+      if (multiCardViewport.value) {
+        containerWidth.value = multiCardViewport.value.clientWidth
       }
     }
 
     const loadData = async () => {
       try {
         loading.value = true
+        error.value = null
         
         // Load initial card
         const initialCard = await fetchCardInfo(props.id)
         
-        // Initialize cardsData with the initial card
+        // Initialize cardsData
         cardsData.value = []
         currentCardIndex.value = 0
         
@@ -353,21 +369,17 @@ export default {
 
     onMounted(() => {
       loadData()
+      updateContainerWidth()
       
       if (router.meta) {
         router.meta.navigationType = 'from-card-detail'
       }
 
-      // Initialize scroll position after mount
-      nextTick(() => {
-        if (multiCardContainer.value) {
-          multiCardContainer.value.scrollLeft = multiCardContainer.value.clientWidth
-        }
-      })
+      window.addEventListener('resize', updateContainerWidth)
     })
 
     onUnmounted(() => {
-      // Cleanup if needed
+      window.removeEventListener('resize', updateContainerWidth)
     })
 
     watch(() => props.id, async (newId) => {
@@ -383,17 +395,19 @@ export default {
       saveError,
       isUserAllowed,
       fileInput,
+      multiCardViewport,
       multiCardContainer,
-      currentCard,
       isFirstCard,
       isLastCard,
       hasPreviousCard,
       hasNextCard,
+      containerStyle,
       goToPreviousCard,
       goToNextCard,
       scrollToCard,
       goBackToCategory,
       handleMediaDoubleClick,
+      handleSaveError,
       handleFileChange,
       getCategoryDisplayName
     }
@@ -417,44 +431,41 @@ export default {
   justify-content: center;
 }
 
-.multi-card-container {
-  display: flex;
+.multi-card-viewport {
   width: 100%;
   height: 100%;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  overflow: hidden;
+  position: relative;
 }
 
-.multi-card-container::-webkit-scrollbar {
-  display: none;
+.multi-card-container {
+  display: flex;
+  width: 300%; /* 3 cards */
+  height: 100%;
+  transition: transform 0.3s ease;
 }
 
 .card-page {
-  flex: 0 0 100%;
-  width: 100%;
+  flex: 0 0 33.333%; /* Each card takes 1/3 of the container */
+  width: 33.333%;
   height: 100%;
-  scroll-snap-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
   box-sizing: border-box;
-  position: relative;
 }
 
 .card-page.previous-card,
 .card-page.next-card {
-  cursor: pointer;
-  opacity: 0.7;
+  opacity: 0.3;
   transition: opacity 0.3s ease;
 }
 
 .card-page.previous-card:hover,
 .card-page.next-card:hover {
-  opacity: 0.9;
+  opacity: 0.6;
+  cursor: pointer;
 }
 
 .card-page.hidden {
@@ -580,6 +591,20 @@ export default {
   color: #ff6b6b;
 }
 
+.error-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 107, 107, 0.9);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 1000;
+  max-width: 80%;
+  text-align: center;
+}
+
 @keyframes rotate {
   100% {
     transform: rotate(360deg);
@@ -622,6 +647,15 @@ export default {
   .arrow-icon-wrapper {
     width: 30px;
     height: 30px;
+  }
+  
+  .multi-card-container {
+    width: 300%; /* Still 3 cards on mobile */
+  }
+  
+  .card-page {
+    flex: 0 0 33.333%;
+    width: 33.333%;
   }
 }
 </style>
