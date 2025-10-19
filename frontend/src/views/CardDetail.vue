@@ -16,49 +16,68 @@
       </div>
 
       <div v-if="loading" class="loading-overlay">
-        <!-- ... loading spinner ... -->
+        <div class="loading-content">
+          <svg class="spinner" viewBox="0 0 50 50">
+            <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+          </svg>
+          <div class="loading-text">Loading card details...</div>
+        </div>
+      </div>
+      <div v-if="error" class="loading-overlay error-overlay">
+        <div class="loading-content">
+          <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div class="loading-text error-text">Error loading card: {{ error }}</div>
+        </div>
       </div>
 
       <!-- Scroll container for horizontal snap -->
       <div class="cards-scroll-container" ref="scrollContainer">
         <div class="cards-scroll-wrapper">
           <div 
-            v-for="(cardId, index) in visibleCards" 
-            :key="cardId" 
+            v-for="(cardItem, index) in sortedCards" 
+            :key="cardItem.id" 
             class="card-slide"
-            :class="{ 'active': cardId === card.id.toString() }"
+            :class="{ 'active': cardItem.id.toString() === card.id.toString() }"
           >
-            <div v-if="isCardLoaded(index)" class="card-detail-container">
-              <!-- Render card content using getCardForSlide(index) -->
+            <div class="card-detail-container">
               <div class="card-detail">
                 <div class="card-content-wrapper">
+                  <!-- Название карточки и главная разделительная линия -->
                   <div class="card-header-section">
                     <div class="title-container">
                       <h1 :ref="el => setCardNameRef(el, index)">
-                        <span>{{ getCardForSlide(index).name }}</span>
+                        <span>{{ cardItem.name }}</span>
                       </h1>
                     </div>
                     <div v-if="nameError" class="error-message">{{ nameError }}</div>
                     <div class="main-divider"></div>
                   </div>
                   
+                  <!-- Rarity and Points section under main divider -->
                   <h3 style="margin: 60px 0px 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
-                    <strong>Rarity: </strong>{{ getCardForSlide(index).category }}
+                    <strong>Rarity: </strong>{{ cardItem.category }}
                   </h3>
+                  <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
                   
-                  <p style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);" v-html="formatDescription(getCardForSlide(index).description)"></p>
+                  <p style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);" v-html="formatDescription(cardItem.description)"></p>
+                  <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
 
+                  
                   <div class="secondary-divider"></div>
                   
+                  <!-- Available at shop section under secondary divider -->
                   <div class="shop-section">
                     <div class="shop-info">
                       <h3>Available at shop:</h3>
-                      <p :class="{ 'available-glow': isShopAvailable(getCardForSlide(index).shop) }">
-                        {{ formatShopInfo(getCardForSlide(index).shop) }}
+                      <p :class="{ 'available-glow': isShopAvailable(cardItem.shop) }">
+                        {{ formatShopInfo(cardItem.shop) }}
                       </p>
                     </div>
                   </div>
 
+                  <!-- Back to category button -->
                   <div class="back-to-category-section">
                     <button @click="goBackToCategory" class="back-to-category-button">
                       ← Back to {{ getCategoryDisplayName() }}
@@ -67,10 +86,10 @@
                 </div>
                 
                 <div class="card-image-container">
-                  <!-- Media content for loaded cards -->
+                  <!-- Video for Limited cards -->
                   <video 
-                    v-if="getCardForSlide(index).category === 'Limited ⚠️' && getCardForSlide(index).img && !mediaError" 
-                    :src="`/api/card_image/${getCardForSlide(index).img}`" 
+                    v-if="cardItem.category === 'Limited ⚠️' && cardItem.img && !mediaError" 
+                    :src="`/api/card_image/${cardItem.img}`" 
                     class="card-detail-media"
                     autoplay
                     loop
@@ -81,10 +100,11 @@
                     disablePictureInPicture
                   ></video>
                   
+                  <!-- Image for non-Limited cards -->
                   <img 
-                    v-else-if="getCardForSlide(index).img && !mediaError" 
-                    :src="`/api/card_image/${getCardForSlide(index).img}`" 
-                    :alt="getCardForSlide(index).name" 
+                    v-else-if="cardItem.img && !mediaError" 
+                    :src="`/api/card_image/${cardItem.img}`" 
+                    :alt="cardItem.name" 
                     class="card-detail-media"
                     @error="mediaError = true"
                     @dblclick="handleMediaDoubleClick"
@@ -94,20 +114,11 @@
                 </div>
               </div>
             </div>
-            <div v-else class="card-detail-container">
-              <div class="loading-overlay">
-                <div class="loading-content">
-                  <svg class="spinner" viewBox="0 0 50 50">
-                    <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
-                  </svg>
-                  <div class="loading-text">Loading card...</div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
+      <div v-if="saveError" class="error-message">{{ saveError }}</div>
       <!-- Right Arrow -->
       <div 
         class="nav-arrow right-arrow" 
@@ -126,7 +137,7 @@
 </template>
 
 <script>
-  import { fetchCardInfo, checkUserPermission, fetchUserInfo, fetchCardsByCategory, fetchCardById } from '@/api'
+  import { fetchCardInfo, checkUserPermission, fetchUserInfo, fetchCardsByCategory } from '@/api'
   import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
   import { useRouter } from 'vue-router'
 
@@ -154,7 +165,7 @@
       const nameError = ref(null)
       const descriptionError = ref(null)
       const categoryError = ref(null)
-      const cardNameRefs = ref([])
+      const cardNameRefs = ref([]) // Changed to array for multiple cards
       const isUserAllowed = ref(false)
       const editing = ref({
         name: false,
@@ -162,15 +173,16 @@
         category: false
       })
 
-      // Card navigation with lazy loading
-      const visibleCards = ref([]) // Only store currently visible cards
+      // Card navigation
+      const sortedCards = ref([])
       const currentCardIndex = ref(-1)
-      const cardIds = ref([]) // Store only IDs for the current category
-      const loadedCards = ref({}) // Cache for loaded card data
-      const loadingNeighbors = ref(false)
 
       const isFirstCard = computed(() => currentCardIndex.value <= 0)
-      const isLastCard = computed(() => currentCardIndex.value >= cardIds.value.length - 1)
+      const isLastCard = computed(() => currentCardIndex.value >= sortedCards.value.length - 1)
+
+      const preloadedCards = ref({})
+      const isPreloading = ref(false)
+      const preloadError = ref(null)
 
       // Computed property to check if current card is Limited
       const isLimitedCard = computed(() => {
@@ -184,7 +196,68 @@
         }
       }
 
-      const loadCardIds = async () => {
+      const findCurrentCardIndex = () => {
+        if (!card.value?.id || !sortedCards.value.length) return -1;
+        
+        // Convert both IDs to strings for comparison
+        const currentCardId = card.value.id.toString();
+        return sortedCards.value.findIndex(c => c.id.toString() === currentCardId);
+      }
+
+      const scrollToCard = (index) => {
+        if (!scrollContainer.value || index < 0 || index >= sortedCards.value.length) return;
+        
+        const scrollWrapper = scrollContainer.value;
+        const cardWidth = scrollWrapper.clientWidth;
+        scrollWrapper.scrollTo({
+          left: index * cardWidth,
+          behavior: 'smooth'
+        });
+      }
+
+      const handleScroll = () => {
+        if (!scrollContainer.value) return;
+        
+        const scrollWrapper = scrollContainer.value;
+        const scrollLeft = scrollWrapper.scrollLeft;
+        const cardWidth = scrollWrapper.clientWidth;
+        const newIndex = Math.round(scrollLeft / cardWidth);
+        
+        if (newIndex !== currentCardIndex.value && newIndex >= 0 && newIndex < sortedCards.value.length) {
+          currentCardIndex.value = newIndex;
+          const newCard = sortedCards.value[newIndex];
+          
+          // Update URL without triggering full navigation
+          if (newCard && newCard.id.toString() !== props.id) {
+            router.replace(`/card/${newCard.id}`);
+          }
+        }
+      }
+
+      const getCategoryDisplayName = () => {
+        const previousCategory = sessionStorage.getItem('previousCategory');
+        
+        if (previousCategory) {
+          // Convert the stored category ID to a display name
+          if (previousCategory === 'all') return 'All Cards';
+          if (previousCategory === 'shop') return 'Available at Shop';
+          if (previousCategory.startsWith('rarity_')) {
+            return previousCategory.replace('rarity_', '');
+          }
+          return previousCategory;
+        } else {
+          // Fallback to card's category
+          return card.value?.category || 'Category';
+        }
+      }
+      
+      const formatDescription = (description) => {
+        if (!description) return '';
+        // Make "Points:" bold
+        return description.replace(/Points:/g, '<strong>Points:</strong>');
+      }
+
+      const loadSortedCards = async () => {
         try {
           if (!card.value?.category) {
             console.log('No category on card:', card.value);
@@ -212,143 +285,25 @@
           }
           
           // For navigation, we need to use the category ID format that matches the API
+          // The API expects categories in the format "rarity_{categoryName}"
           const categoryId = previousCategory || `rarity_${card.value.category}`;
-          console.log('Loading card IDs for category ID:', categoryId, 'with sort:', sortField, sortDirection);
+          console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection);
           
           const response = await fetchCardsByCategory(categoryId, sortField, sortDirection);
           
-          // Extract only the card IDs for navigation
-          cardIds.value = (response.cards || []).map(card => card.id.toString());
-          console.log('Loaded card IDs:', cardIds.value);
+          // Extract the cards array from the response
+          sortedCards.value = response.cards || [];
+          currentCardIndex.value = findCurrentCardIndex();
           
-          // Find current card index
-          currentCardIndex.value = cardIds.value.findIndex(id => id === props.id);
+          console.log('Loaded cards by category with sort:', sortedCards.value);
+          console.log('Current card ID:', card.value.id);
           console.log('Current card index:', currentCardIndex.value);
-          
+          console.log('Card IDs in sortedCards:', sortedCards.value.map(c => c.id));
         } catch (error) {
-          console.error('Error loading card IDs:', error);
-          cardIds.value = [];
+          console.error('Error loading sorted cards by category:', error);
+          // Initialize as empty array to prevent future errors
+          sortedCards.value = [];
         }
-      }
-
-      const loadCardData = async (cardId) => {
-        // Return cached card if available
-        if (loadedCards.value[cardId]) {
-          return loadedCards.value[cardId];
-        }
-
-        try {
-          const cardData = await fetchCardInfo(cardId);
-          loadedCards.value[cardId] = cardData;
-          return cardData;
-        } catch (error) {
-          console.error('Error loading card data:', error);
-          return null;
-        }
-      }
-
-      const updateVisibleCards = async () => {
-        if (currentCardIndex.value === -1 || cardIds.value.length === 0) return;
-
-        loadingNeighbors.value = true;
-        
-        const newVisibleCards = [];
-        
-        // Always include current card
-        const currentCardData = await loadCardData(cardIds.value[currentCardIndex.value]);
-        if (currentCardData) {
-          newVisibleCards[currentCardIndex.value] = currentCardData;
-        }
-        
-        // Load previous card if exists
-        if (currentCardIndex.value > 0) {
-          const prevCardData = await loadCardData(cardIds.value[currentCardIndex.value - 1]);
-          if (prevCardData) {
-            newVisibleCards[currentCardIndex.value - 1] = prevCardData;
-          }
-        }
-        
-        // Load next card if exists
-        if (currentCardIndex.value < cardIds.value.length - 1) {
-          const nextCardData = await loadCardData(cardIds.value[currentCardIndex.value + 1]);
-          if (nextCardData) {
-            newVisibleCards[currentCardIndex.value + 1] = nextCardData;
-          }
-        }
-        
-        // Update visible cards array
-        visibleCards.value = newVisibleCards;
-        loadingNeighbors.value = false;
-        
-        console.log('Updated visible cards at indices:', Object.keys(newVisibleCards));
-      }
-
-      const scrollToCard = (index) => {
-        if (!scrollContainer.value || index < 0 || index >= cardIds.value.length) return;
-        
-        const scrollWrapper = scrollContainer.value;
-        const cardWidth = scrollWrapper.clientWidth;
-        scrollWrapper.scrollTo({
-          left: index * cardWidth,
-          behavior: 'smooth'
-        });
-      }
-
-      const handleScroll = async () => {
-        if (!scrollContainer.value || loadingNeighbors.value) return;
-        
-        const scrollWrapper = scrollContainer.value;
-        const scrollLeft = scrollWrapper.scrollLeft;
-        const cardWidth = scrollWrapper.clientWidth;
-        const newIndex = Math.round(scrollLeft / cardWidth);
-        
-        if (newIndex !== currentCardIndex.value && newIndex >= 0 && newIndex < cardIds.value.length) {
-          console.log('Scrolling to index:', newIndex);
-          currentCardIndex.value = newIndex;
-          const newCardId = cardIds.value[newIndex];
-          
-          // Update URL without triggering full navigation
-          if (newCardId && newCardId !== props.id) {
-            router.replace(`/card/${newCardId}`);
-          }
-          
-          // Load neighboring cards for the new position
-          await updateVisibleCards();
-          
-          // Update current card reference
-          if (visibleCards.value[newIndex]) {
-            card.value = visibleCards.value[newIndex];
-            editableCard.value = { ...card.value };
-          }
-        }
-      }
-
-      const getCardForSlide = (index) => {
-        return visibleCards.value[index] || { id: cardIds.value[index], name: 'Loading...' };
-      }
-
-      const isCardLoaded = (index) => {
-        return !!visibleCards.value[index];
-      }
-
-      const getCategoryDisplayName = () => {
-        const previousCategory = sessionStorage.getItem('previousCategory');
-        
-        if (previousCategory) {
-          if (previousCategory === 'all') return 'All Cards';
-          if (previousCategory === 'shop') return 'Available at Shop';
-          if (previousCategory.startsWith('rarity_')) {
-            return previousCategory.replace('rarity_', '');
-          }
-          return previousCategory;
-        } else {
-          return card.value?.category || 'Category';
-        }
-      }
-      
-      const formatDescription = (description) => {
-        if (!description) return '';
-        return description.replace(/Points:/g, '<strong>Points:</strong>');
       }
 
       const formatShopInfo = (shopData) => {
@@ -356,10 +311,12 @@
           return 'Not available';
         }
         
+        // If shop data is a simple string, return it as is
         if (typeof shopData === 'string') {
           return "Available";
         }
         
+        // If shop data is an object or needs formatting, handle it here
         return shopData.toString();
       }
       
@@ -368,68 +325,290 @@
           return false;
         }
         
+        // Check if the shop data indicates availability
         if (typeof shopData === 'string') {
+          // You can add more conditions here if needed
           return shopData !== '-' && shopData !== 'null' && shopData !== 'None';
         }
         
         return false;
       }
 
+      // Add the goBackToCategory method
       const goBackToCategory = () => {
+        // Use the navigation type to indicate we're returning to category
         if (router.meta) {
           router.meta.navigationType = 'to-category'
         }
         
+        // Get the previous category from sessionStorage
         const previousCategory = sessionStorage.getItem('previousCategory');
         
+        // Navigate back to the previous category page if available
         if (previousCategory) {
           router.push(`/category/${previousCategory}`)
         } else {
+          // Fallback: use card's category
           if (card.value?.category) {
             const categoryId = `rarity_${card.value.category}`
             router.push(`/category/${categoryId}`)
           } else {
+            // Final fallback: go back in history
             router.go(-1)
           }
         }
       }
 
-      // ... keep all your existing helper functions (isOverflown, resizeText, adjustFontSize, etc.)
+      const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
+        scrollWidth > clientWidth || scrollHeight > clientHeight
 
-      const goToPreviousCard = async () => {
-        if (isFirstCard.value || currentCardIndex.value === -1 || cardIds.value.length === 0) {
-          console.log('Cannot go to previous card - no cards loaded or at beginning');
-          return;
+      const resizeText = ({ 
+        element, 
+        minSize = 32, 
+        maxSize = 60, 
+        step = 1,
+        maxWidth = 350,
+        maxHeight = 150
+      }) => {
+        // Create a temporary parent container for measurement
+        const tempParent = document.createElement('div');
+        tempParent.style.width = `${maxWidth}px`;
+        tempParent.style.height = `${maxHeight}px`;
+        tempParent.style.visibility = 'hidden';
+        tempParent.style.position = 'absolute';
+        tempParent.style.top = '0';
+        tempParent.style.left = '0';
+        tempParent.style.overflow = 'hidden';
+        
+        const tempElement = element.cloneNode(true);
+        tempElement.style.whiteSpace = 'nowrap';
+        tempElement.style.width = 'auto';
+        tempElement.style.height = 'auto';
+        tempElement.style.lineHeight = '1';
+        
+        tempParent.appendChild(tempElement);
+        document.body.appendChild(tempParent);
+        
+        // Try without wrapping first
+        let i = minSize;
+        let overflow = false;
+        let needsWrap = false;
+        
+        while (!overflow && i < maxSize) {
+          tempElement.style.fontSize = `${i}px`;
+          
+          // Force reflow
+          void tempElement.offsetWidth;
+          
+          // Check for overflow
+          overflow = isOverflown({
+            clientWidth: maxWidth,
+            clientHeight: maxHeight,
+            scrollWidth: tempElement.scrollWidth,
+            scrollHeight: tempElement.scrollHeight
+          });
+          
+          if (!overflow) i += step;
         }
         
-        const prevIndex = currentCardIndex.value - 1;
-        scrollToCard(prevIndex);
-      }
-
-      const goToNextCard = async () => {
-        if (isLastCard.value || currentCardIndex.value === -1 || cardIds.value.length === 0) {
-          console.log('Cannot go to next card - no cards loaded or at end');
-          return;
+        let optimalSize = overflow ? i - step : i;
+        
+        // If text doesn't fit even at minimum size, try with text wrapping
+        if (optimalSize <= minSize && overflow) {
+          // Reset for wrapped text
+          tempElement.style.whiteSpace = 'normal';
+          tempElement.style.lineHeight = '1.1';
+          tempElement.style.width = '100%';
+          
+          i = minSize;
+          overflow = false;
+          
+          while (!overflow && i < maxSize) {
+            tempElement.style.fontSize = `${i}px`;
+            
+            // Force reflow
+            void tempElement.offsetWidth;
+            
+            // Check only vertical overflow for wrapped text
+            overflow = tempElement.scrollHeight > maxHeight;
+            
+            if (!overflow) i += step;
+          }
+          
+          optimalSize = overflow ? i - step : i;
+          needsWrap = true;
         }
         
-        const nextIndex = currentCardIndex.value + 1;
-        scrollToCard(nextIndex);
+        // Clean up
+        document.body.removeChild(tempParent);
+        
+        return { optimalSize, needsWrap };
       }
+
+      const adjustFontSize = () => {
+        nextTick(() => {
+          if (!cardNameRefs.value.length) return;
+          
+          // Adjust font size for all card name elements
+          cardNameRefs.value.forEach((element, index) => {
+            if (!element) return;
+            
+            // Reset styles
+            element.style.fontSize = '';
+            element.style.whiteSpace = 'nowrap';
+            element.style.lineHeight = '1';
+            element.style.width = 'auto';
+            element.style.height = 'auto';
+            element.classList.remove('wrapped');
+            
+            const { optimalSize, needsWrap } = resizeText({
+              element: element,
+              minSize: 32,
+              maxSize: 60,
+              step: 1,
+              maxWidth: 350,
+              maxHeight: 150
+            });
+            
+            // Apply the calculated size to the actual element
+            element.style.fontSize = `${optimalSize}px`;
+            
+            if (needsWrap) {
+              element.classList.add('wrapped');
+              element.style.whiteSpace = 'normal';
+              element.style.lineHeight = '1.1';
+              element.style.width = '100%';
+            } else {
+              element.style.whiteSpace = 'nowrap';
+              element.style.lineHeight = '1';
+              element.style.width = 'auto';
+            }
+            
+            console.log(`Card ${index} - Font size:`, optimalSize, 'Wrapped:', needsWrap);
+          });
+        });
+      };
+
+      const toggleEdit = (field) => {
+        if (editing.value[field]) {
+          cancelEdit(field)
+        } else {
+          startEditing(field)
+        }
+      }
+
+      const cancelEdit = (field) => {
+        editing.value = { ...editing.value, [field]: false }
+      }
+
+      const startEditing = (field) => {
+        editing.value = { ...editing.value, [field]: true }
+        editableCard.value = { ...card.value }
+        
+        nextTick(() => {
+          switch(field) {
+            case 'name':
+              nameInput.value?.focus()
+              nameInput.value?.select()
+              break
+            case 'category':
+              categoryInput.value?.focus()
+              categoryInput.value?.select()
+              break;
+            case 'description':
+              descriptionInput.value?.focus()
+              break
+          }
+        })
+      }
+
+      const saveField = async (field) => {
+        saveError.value = null;
+        try {
+          let dataToSend = {};
+          
+          if (field === 'category') {
+              if (editableCard.value.category && editableCard.value.category.length > 20) {
+                  categoryError.value = 'Category cannot exceed 20 characters.';
+                  throw new Error('Validation failed on frontend.');
+              }
+              dataToSend = { [field]: editableCard.value[field] };
+          } else {
+            dataToSend = {
+              [field]: editableCard.value[field]
+            };
+          }
+
+          const response = await fetch(`/api/cards/${card.value.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: JSON.stringify(dataToSend)
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update card');
+          }
+
+          card.value[field] = editableCard.value[field];
+          editing.value = { ...editing.value, [field]: false };
+          
+          // Reload sorted cards if category was changed
+          if (field === 'category') {
+            await loadSortedCards();
+          }
+        } catch (err) {
+          console.error('Error updating card:', err);
+          saveError.value = err.message || 'Failed to update card';
+        }
+      }
+
+      const handleMediaDoubleClick = () => {
+        if (isUserAllowed.value && fileInput.value) {
+          fileInput.value.click();
+        }
+      };
+
+      const handleFileChange = async (event) => {
+        const file = event.target.files[0];
+        if (!file || !isUserAllowed.value) return;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+          const response = await fetch(`/api/cards/${card.value.id}/image`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: formData
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to upload image');
+          }
+
+          loadData();
+        } catch (err) {
+          console.error('Error uploading image:', err);
+        }
+      };
 
       const loadData = async () => {
         try {
           loading.value = true;
-          mediaError.value = false;
+          mediaError.value = false; // Reset media error when loading new card
           
-          // Load current card data
           card.value = await fetchCardInfo(props.id);
           editableCard.value = { ...card.value };
           
-          // Load card IDs for navigation
-          await loadCardIds();
-          
-          // Load initial visible cards (current + neighbors)
-          await updateVisibleCards();
+          // Load sorted cards for navigation, but don't block the UI if it fails
+          await loadSortedCards();
           
           // Check user permissions
           try {
@@ -454,6 +633,26 @@
         } finally {
           loading.value = false
         }
+      }
+
+      const goToPreviousCard = () => {
+        if (isFirstCard.value || currentCardIndex.value === -1 || sortedCards.value.length === 0) {
+          console.log('Cannot go to previous card - no cards loaded or at beginning');
+          return;
+        }
+        
+        const prevIndex = currentCardIndex.value - 1;
+        scrollToCard(prevIndex);
+      }
+
+      const goToNextCard = () => {
+        if (isLastCard.value || currentCardIndex.value === -1 || sortedCards.value.length === 0) {
+          console.log('Cannot go to next card - no cards loaded or at end');
+          return;
+        }
+        
+        const nextIndex = currentCardIndex.value + 1;
+        scrollToCard(nextIndex);
       }
 
       onMounted(() => {
@@ -486,7 +685,41 @@
         }
       })
 
-      // ... keep all your existing watchers
+      watch(() => editableCard.value.name, (newName) => {
+        if (newName && newName.length > 100) {
+          nameError.value = 'Name cannot exceed 100 characters.';
+        } else {
+          nameError.value = null;
+        }
+      });
+
+      watch(() => editableCard.value.description, (newDescription) => {
+        if (newDescription && newDescription.length > 1000) {
+          descriptionError.value = 'Description cannot exceed 1000 characters.';
+        } else {
+          descriptionError.value = null;
+        }
+      });
+
+      watch(() => editableCard.value.category, (newCategory) => {
+        if (newCategory && newCategory.length > 20) {
+          categoryError.value = 'Category cannot exceed 20 characters.';
+        } else {
+          categoryError.value = null;
+        }
+      });
+
+      // Add this to your existing watchers
+      watch(() => card.value.name, (newName, oldName) => {
+        if (newName !== oldName) {
+          setTimeout(adjustFontSize, 100);
+        }
+      });
+
+      // Watch for sortedCards changes to adjust font sizes when cards load
+      watch(() => sortedCards.value, () => {
+        setTimeout(adjustFontSize, 200);
+      }, { deep: true });
 
       return {
         card,
@@ -521,15 +754,15 @@
         goToPreviousCard,
         goToNextCard,
         goBackToCategory,
+        preloadedCards,
+        isPreloading,
+        preloadError,
         formatShopInfo,
         isShopAvailable,
         formatDescription,
         getCategoryDisplayName,
         isLimitedCard,
-        visibleCards: cardIds, // Use cardIds for the template loop
-        getCardForSlide,
-        isCardLoaded,
-        loadingNeighbors
+        sortedCards
       }
     }
   }
