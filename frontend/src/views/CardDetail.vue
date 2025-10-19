@@ -991,9 +991,9 @@
     height: 100vh;
     width: 100vw;
     font-family: 'Afacad', sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; /* Add this */
+    align-items: center; /* Add this for vertical centering */
+    justify-content: center; /* Add this for horizontal centering */
   }
 
   /* Transition styles */
@@ -1051,32 +1051,19 @@
     opacity: 0;
   }
 
-  .card-detail-wrapper {
+  .card-detail-container {
     position: absolute;
-    top: 0;
+    top: 50%;
     left: 0;
     right: 0;
-    bottom: 0;
-    overflow: hidden;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .card-detail-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 67px;
-    box-sizing: border-box;
+    transform: translateY(-50%);
     overflow-y: auto;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    width: 100%;
+    overflow: hidden;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
 
   /* Force hide scrollbars on all browsers */
@@ -1096,6 +1083,26 @@
     opacity: 0.2;
     pointer-events: none;
     cursor: not-allowed;
+  }
+  .transition-container {
+    position: relative;
+    width: 100%;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+  /* Add these new styles */
+  .card-detail-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .nav-arrow {
@@ -1130,14 +1137,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: none;
+    pointer-events: none; /* Makes only the icon clickable */
   }
 
   .arrow-icon {
     width: 100%;
     height: 100%;
     fill: var(--accent-color);
-    pointer-events: auto;
+    pointer-events: auto; /* Re-enable pointer events for the icon */
   }
 
   /* Make sure your card container has proper z-index */
@@ -1187,17 +1194,17 @@
 
   /* New error-specific styles */
   .error-overlay {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.7); /* Slightly darker for errors */
   }
 
   .error-icon {
     width: 50px;
     height: 50px;
-    color: #ff4444;
+    color: #ff4444; /* Red color for error icon */
   }
 
   .error-text {
-    color: #ff6b6b;
+    color: #ff6b6b; /* Lighter red for error text */
   }
 
   @keyframes rotate {
@@ -1221,7 +1228,7 @@
     }
   }
 
-  /* Edit icon styles */
+  /* Существующие стили остаются без изменений */
   .edit-icon {
     margin-left: 10px;
     cursor: pointer;
@@ -1260,6 +1267,7 @@
   }
 
   .shop-section {
+    /* padding: 20px 0; */
     text-align: center;
     text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
   }
@@ -1281,7 +1289,7 @@
   }
 
   .available-glow {
-    color: #4ade80 !important;
+    color: #4ade80 !important; /* Green color */
     text-shadow: 
       0 0 5px #4ade80,
       0 0 10px #4ade80,
@@ -1308,7 +1316,8 @@
     }
   }
 
-  /* Edit input styles */
+
+  /* Стили для полей ввода при редактировании */
   .edit-input {
     font-size: inherit;
     font-family: inherit;
@@ -1337,9 +1346,9 @@
     font-size: 20px;
     text-align: center; 
     cursor: pointer;
-    appearance: none;
+    appearance: none; /* Remove default dropdown arrow */
     margin-top: 6px;
-    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E');
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E'); /* Custom dropdown arrow */
     background-repeat: no-repeat;
     background-position: right 15px center;
     background-size: 1em;
@@ -1378,13 +1387,14 @@
     color: white;
     border: none;
     border-radius: 5px;
+    /* cursor: pointer; */
     font-size: 26px;
     font-family: var(--font-family-main);
     font-weight: 500;
     transition: background-color 0.3s ease;
   }
 
-  /* Background and card styles */
+  /* Остальные существующие стили без изменений */
   .background-container {
     position: absolute;
     top: 0;
@@ -1398,9 +1408,34 @@
     filter: blur(10px);
   }
 
+  .card-detail-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 67px;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .card-detail-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 67px;
+    box-sizing: border-box;
+  }
+
+  .card-detail-container {
+    transform: none !important;
+    top: auto !important;
+  }
+
   .card-detail {
     display: grid;
-    grid-template-columns: 350px 1fr;
+    grid-template-columns: 350px 1fr; /* Change from 1fr 2fr to equal columns */
     gap: 40px;
     background-color: var(--card-bg);
     backdrop-filter: blur(5px);
@@ -1408,9 +1443,10 @@
     border-radius: 17px;
     border: 2px solid #333;
     box-shadow: 0 4px 3px rgba(0, 0, 0, 0.2);
-    height: 600px;
-    max-width: 1200px;
-    width: 100%;
+    /* Set a fixed height for the card */
+    height: 600px; /* Fixed height for consistency */
+    max-width: 1200px; /* Limit maximum width */
+    /* width: 100%; */
     align-items: stretch;
     overflow: hidden;
   }
@@ -1425,20 +1461,22 @@
   }
 
   .card-detail-image {
-    max-height: 100%;
-    max-width: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
+    max-height: 100%; /* Limit height to container */
+    max-width: 100%; /* Limit width to container */
+    width: auto; /* Let width adjust based on aspect ratio */
+    height: auto; /* Let height adjust based on aspect ratio */
+    object-fit: contain; /* Ensure entire image is visible */
+    /* border-radius: 17px; */
     background-color: #1e1e1e;
   }
 
   .card-detail-media {
-    max-height: 100%;
-    max-width: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
+    max-height: 100%; /* Limit height to container */
+    max-width: 100%; /* Limit width to container */
+    width: auto; /* Let width adjust based on aspect ratio */
+    height: auto; /* Let height adjust based on aspect ratio */
+    object-fit: contain; /* Ensure entire media is visible */
+    /* border-radius: 17px; */
     background-color: #1e1e1e;
   }
 
@@ -1451,6 +1489,7 @@
     justify-content: center;
     background-color: #1e1e1e;
     color: #666;
+    /* border-radius: 17px; */
   }
 
   .card-content-wrapper {
@@ -1462,6 +1501,7 @@
   }
 
   .card-header-section {
+    /* margin-top: 64px; */
     position: relative;
     min-height: 150px;
     display: flex;
@@ -1489,7 +1529,7 @@
     transform-origin: left bottom;
     transition: font-size 0.3s ease, line-height 0.3s ease, white-space 0.3s ease;
     text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
-    word-break: break-word;
+    word-break: break-word; /* Add this for better text wrapping */
   }
 
   .card-header-section h1.wrapped {
@@ -1607,9 +1647,11 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
+      /* Reset height for mobile */
       height: auto;
     }
     .card-image-container {
+      /* Reset height for mobile */
       height: auto;
     }
     .card-header-section {
@@ -1620,7 +1662,7 @@
 
     .card-content-wrapper {
       max-width: 100%;
-      width: 100%;
+      width: 100%; /* Full width on mobile */
       padding: 0 15px;
     }
     .title-container {
@@ -1655,7 +1697,8 @@
 
     .card-detail-image {
       border-radius: 15px;
-      height: 400px;
+      /* Keep border on mobile if needed, but adjust height */
+      height: 400px; /* Or whatever height works for mobile */
     }
 
     .edit-input {
