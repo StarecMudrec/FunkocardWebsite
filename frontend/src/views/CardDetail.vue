@@ -270,16 +270,12 @@ export default {
       const newCardId = allCards.value[targetIndex].id
       window.history.replaceState({}, '', `/card/${newCardId}`)
 
-      // STEP 1: First update the current card to the target card
-      currentCardIndex.value = targetIndex
-      updateDisplayedCards()
-
-      // STEP 2: Calculate target transform based on direction and animate
+      // Calculate target transform based on direction
       let targetTransform
       if (direction === 'left') {
-        targetTransform = 0 // Move to show previous card position
+        targetTransform = 0 // Move to show previous card
       } else {
-        targetTransform = -200 // Move to show next card position
+        targetTransform = -200 // Move to show next card
       }
 
       // Animate to the target position
@@ -288,15 +284,18 @@ export default {
       // Wait for the scroll animation to complete
       await new Promise(resolve => setTimeout(resolve, 300))
 
-      // STEP 3: Load detailed info for new adjacent cards
+      // Update current index
+      currentCardIndex.value = targetIndex
+      
+      // Update displayed cards
+      updateDisplayedCards()
+
+      // Load detailed info for new adjacent cards
       await loadDetailedCardInfo()
 
-      // STEP 4: Reset to center position with animation
-      currentTransform.value = -100
-      await new Promise(resolve => setTimeout(resolve, 300))
-
-      // Reset scrolling state
+      // INSTANTLY reset to center position without animation
       isScrolling.value = false
+      currentTransform.value = -100
       scrollDirection.value = null
     }
 
