@@ -36,39 +36,36 @@
       <div class="multi-card-viewport" ref="multiCardViewport">
         <div class="multi-card-container" ref="multiCardContainer" :style="containerStyle">
           <!-- Previous Card -->
-          <div 
-            class="card-page previous-card" 
-            :class="{ 'hidden': !hasPreviousCard }"
-          >
+          <div class="card-page previous-card">
             <CardDetailContainer 
-              v-if="cardsData[currentCardIndex - 1]"
-              :card="cardsData[currentCardIndex - 1]"
+              v-if="previousCard"
+              :card="previousCard"
               :is-active="false"
             />
+            <div v-else class="empty-card-placeholder"></div>
           </div>
 
           <!-- Current Card -->
           <div class="card-page current-card">
             <CardDetailContainer 
-              v-if="cardsData[currentCardIndex]"
-              :card="cardsData[currentCardIndex]"
+              v-if="currentCard"
+              :card="currentCard"
               :is-active="true"
               @media-double-click="handleMediaDoubleClick"
               @go-back="goBackToCategory"
               @save-error="handleSaveError"
             />
+            <div v-else class="empty-card-placeholder"></div>
           </div>
 
           <!-- Next Card -->
-          <div 
-            class="card-page next-card" 
-            :class="{ 'hidden': !hasNextCard }"
-          >
+          <div class="card-page next-card">
             <CardDetailContainer 
-              v-if="cardsData[currentCardIndex + 1]"
-              :card="cardsData[currentCardIndex + 1]"
+              v-if="nextCard"
+              :card="nextCard"
               :is-active="false"
             />
+            <div v-else class="empty-card-placeholder"></div>
           </div>
         </div>
       </div>
@@ -114,7 +111,7 @@ export default {
     const multiCardViewport = ref(null)
     const multiCardContainer = ref(null)
 
-    const cardsData = ref([])
+    const cardsData = ref({}) // Use object instead of array for better tracking
     const loading = ref(true)
     const error = ref(null)
     const saveError = ref(null)
@@ -124,15 +121,17 @@ export default {
     const sortedCards = ref([])
     const currentCardIndex = ref(0)
     const isScrolling = ref(false)
-    const containerWidth = ref(0)
+
+    // Computed properties for current and adjacent cards
+    const currentCard = computed(() => sortedCards.value[currentCardIndex.value])
+    const previousCard = computed(() => sortedCards.value[currentCardIndex.value - 1])
+    const nextCard = computed(() => sortedCards.value[currentCardIndex.value + 1])
 
     const isFirstCard = computed(() => currentCardIndex.value <= 0)
     const isLastCard = computed(() => currentCardIndex.value >= sortedCards.value.length - 1)
-    const hasPreviousCard = computed(() => currentCardIndex.value > 0)
-    const hasNextCard = computed(() => currentCardIndex.value < sortedCards.value.length - 1)
 
     const containerStyle = computed(() => ({
-      transform: `translateX(-${currentCardIndex.value * 100}%)`,
+      transform: `translateX(-${currentCardIndex.value * 100}vw)`,
       transition: isScrolling.value ? 'transform 0.3s ease' : 'none'
     }))
 
@@ -152,7 +151,7 @@ export default {
         }
         return previousCategory
       } else {
-        return cardsData.value[currentCardIndex.value]?.category || 'Category'
+        return currentCard.value?.category || 'Category'
       }
     }
 
@@ -176,7 +175,7 @@ export default {
           }
         }
         
-        const categoryId = previousCategory || `rarity_${cardsData.value[currentCardIndex.value]?.category}`
+        const categoryId = previousCategory || `rarity_${currentCard.value?.category}`
         console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection)
         
         const response = await fetchCardsByCategory(categoryId, sortField, sortDirection)
@@ -185,8 +184,9 @@ export default {
         
         console.log('Loaded cards by category:', sortedCards.value.length)
         console.log('Current card index:', currentCardIndex.value)
+        console.log('Current card:', currentCard.value)
         
-        // Load current and adjacent cards
+        // Load current and adjacent cards data
         await loadCurrentAndAdjacentCards()
       } catch (error) {
         console.error('Error loading sorted cards by category:', error)
@@ -200,38 +200,32 @@ export default {
       const cardsToLoad = []
 
       // Always load current card
-      cardsToLoad.push({
-        index: currentCardIndex.value,
-        cardId: sortedCards.value[currentCardIndex.value].id
-      })
+      if (currentCard.value && !cardsData.value[currentCard.value.id]) {
+        cardsToLoad.push(currentCard.value.id)
+      }
 
       // Load previous card if exists
-      if (currentCardIndex.value > 0) {
-        cardsToLoad.push({
-          index: currentCardIndex.value - 1,
-          cardId: sortedCards.value[currentCardIndex.value - 1].id
-        })
+      if (previousCard.value && !cardsData.value[previousCard.value.id]) {
+        cardsToLoad.push(previousCard.value.id)
       }
 
       // Load next card if exists
-      if (currentCardIndex.value < sortedCards.value.length - 1) {
-        cardsToLoad.push({
-          index: currentCardIndex.value + 1,
-          cardId: sortedCards.value[currentCardIndex.value + 1].id
-        })
+      if (nextCard.value && !cardsData.value[nextCard.value.id]) {
+        cardsToLoad.push(nextCard.value.id)
       }
 
       try {
-        const loadPromises = cardsToLoad.map(async ({ index, cardId }) => {
-          // Only load if not already loaded or if it's a different card
-          if (!cardsData.value[index] || cardsData.value[index].id !== cardId) {
-            const cardData = await fetchCardInfo(cardId)
-            // Use Vue.set equivalent for reactive array updates
-            cardsData.value[index] = cardData
-          }
+        const loadPromises = cardsToLoad.map(async (cardId) => {
+          const cardData = await fetchCardInfo(cardId)
+          cardsData.value[cardId] = cardData
         })
 
         await Promise.all(loadPromises)
+        
+        // Update sortedCards with detailed card data
+        sortedCards.value = sortedCards.value.map(card => {
+          return cardsData.value[card.id] || card
+        })
       } catch (err) {
         console.error('Error loading adjacent cards:', err)
       }
@@ -277,8 +271,8 @@ export default {
       if (previousCategory) {
         router.push(`/category/${previousCategory}`)
       } else {
-        if (cardsData.value[currentCardIndex.value]?.category) {
-          const categoryId = `rarity_${cardsData.value[currentCardIndex.value].category}`
+        if (currentCard.value?.category) {
+          const categoryId = `rarity_${currentCard.value.category}`
           router.push(`/category/${categoryId}`)
         } else {
           router.go(-1)
@@ -304,8 +298,7 @@ export default {
       formData.append('image', file)
 
       try {
-        const currentCardData = cardsData.value[currentCardIndex.value]
-        const response = await fetch(`/api/cards/${currentCardData.id}/image`, {
+        const response = await fetch(`/api/cards/${currentCard.value.id}/image`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -319,17 +312,12 @@ export default {
         }
 
         // Reload current card data
-        const updatedCard = await fetchCardInfo(currentCardData.id)
-        cardsData.value[currentCardIndex.value] = updatedCard
+        const updatedCard = await fetchCardInfo(currentCard.value.id)
+        cardsData.value[currentCard.value.id] = updatedCard
+        sortedCards.value[currentCardIndex.value] = updatedCard
       } catch (err) {
         console.error('Error uploading image:', err)
         saveError.value = err.message
-      }
-    }
-
-    const updateContainerWidth = () => {
-      if (multiCardViewport.value) {
-        containerWidth.value = multiCardViewport.value.clientWidth
       }
     }
 
@@ -340,9 +328,10 @@ export default {
         
         // Load initial card
         const initialCard = await fetchCardInfo(props.id)
+        cardsData.value[initialCard.id] = initialCard
         
-        // Initialize cardsData
-        cardsData.value = []
+        // Initialize sortedCards with the initial card
+        sortedCards.value = [initialCard]
         currentCardIndex.value = 0
         
         // Load sorted cards for navigation
@@ -369,17 +358,14 @@ export default {
 
     onMounted(() => {
       loadData()
-      updateContainerWidth()
       
       if (router.meta) {
         router.meta.navigationType = 'from-card-detail'
       }
-
-      window.addEventListener('resize', updateContainerWidth)
     })
 
     onUnmounted(() => {
-      window.removeEventListener('resize', updateContainerWidth)
+      // Cleanup if needed
     })
 
     watch(() => props.id, async (newId) => {
@@ -389,7 +375,9 @@ export default {
     })
 
     return {
-      cardsData,
+      currentCard,
+      previousCard,
+      nextCard,
       loading,
       error,
       saveError,
@@ -399,8 +387,6 @@ export default {
       multiCardContainer,
       isFirstCard,
       isLastCard,
-      hasPreviousCard,
-      hasNextCard,
       containerStyle,
       goToPreviousCard,
       goToNextCard,
@@ -432,22 +418,22 @@ export default {
 }
 
 .multi-card-viewport {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
   position: relative;
 }
 
 .multi-card-container {
   display: flex;
-  width: 300%; /* 3 cards */
+  width: 300vw; /* 3 viewport widths for 3 cards */
   height: 100%;
   transition: transform 0.3s ease;
 }
 
 .card-page {
-  flex: 0 0 33.333%; /* Each card takes 1/3 of the container */
-  width: 33.333%;
+  flex: 0 0 100vw; /* Each card takes full viewport width */
+  width: 100vw;
   height: 100%;
   display: flex;
   align-items: center;
@@ -468,13 +454,18 @@ export default {
   cursor: pointer;
 }
 
-.card-page.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .card-page.current-card {
   opacity: 1;
+}
+
+.empty-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 18px;
 }
 
 /* Keep all your existing styles below */
@@ -650,12 +641,11 @@ export default {
   }
   
   .multi-card-container {
-    width: 300%; /* Still 3 cards on mobile */
+    width: 300vw;
   }
   
   .card-page {
-    flex: 0 0 33.333%;
-    width: 33.333%;
+    flex: 0 0 100vw;
   }
 }
 </style>
