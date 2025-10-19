@@ -9,7 +9,7 @@
         @click="goToPreviousCard"
       >
         <div class="arrow-icon-wrapper">
-          <svg width="160" height="160" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="107" height="107" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g filter="url(#filter0_d_26_86)">
               <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF"/>
             </g>
@@ -93,7 +93,7 @@
         @click="goToNextCard"
       >
         <div class="arrow-icon-wrapper">
-          <svg width="160" height="160" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="107" height="107" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g filter="url(#filter0_d_26_86)">
               <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF" transform="rotate(180 104 104)"/>
             </g>
@@ -574,24 +574,30 @@ export default {
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  height: 320px; /* Increased from 160px (2x bigger) */
+  height: 213px; /* 1.5x smaller from 320px (320 / 1.5 = 213.33) */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 100;
-  opacity: 1; /* Changed from 0.5 to 1 (not transparent) */
-  transition: opacity 0.2s ease;
+  opacity: 1;
+  transition: all 0.3s ease;
+  will-change: transform;
 }
 
 .nav-arrow:hover {
-  opacity: 0.8; /* Slight opacity change on hover for feedback */
+  opacity: 0.8;
+  transform: translateY(-50%) scale(1.05);
 }
 
 .nav-arrow.disabled {
-  opacity: 0.3; /* Reduced opacity for disabled state */
+  opacity: 0.3;
   pointer-events: none;
   cursor: not-allowed;
+}
+
+.nav-arrow.disabled:hover {
+  transform: translateY(-50%) scale(1);
 }
 
 .left-arrow {
@@ -603,12 +609,18 @@ export default {
 }
 
 .arrow-icon-wrapper {
-  width: 160px; /* Increased from 80px (2x bigger) */
-  height: 160px; /* Increased from 80px (2x bigger) */
+  width: 107px; /* 1.5x smaller from 160px (160 / 1.5 = 106.67) */
+  height: 107px; /* 1.5x smaller from 160px (160 / 1.5 = 106.67) */
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+.nav-arrow:hover .arrow-icon-wrapper {
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
 }
 
 .arrow-icon {
@@ -705,14 +717,36 @@ export default {
   }
 }
 
-/* Add responsive design */
+/* Responsive design - similar to Home.vue */
+@media (max-width: 1200px) {
+  .nav-arrow {
+    height: 180px;
+  }
+  
+  .arrow-icon-wrapper {
+    width: 90px;
+    height: 90px;
+  }
+}
+
+@media (max-width: 992px) {
+  .nav-arrow {
+    height: 160px;
+  }
+  
+  .arrow-icon-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+}
+
 @media (max-width: 768px) {
   .card-page {
     padding: 10px;
   }
   
   .nav-arrow {
-    height: 120px; /* Increased from 60px (2x bigger) */
+    height: 80px; /* 1.5x smaller from 120px (120 / 1.5 = 80) */
   }
   
   .left-arrow {
@@ -724,8 +758,8 @@ export default {
   }
   
   .arrow-icon-wrapper {
-    width: 60px; /* Increased from 30px (2x bigger) */
-    height: 60px; /* Increased from 30px (2x bigger) */
+    width: 40px; /* 1.5x smaller from 60px (60 / 1.5 = 40) */
+    height: 40px; /* 1.5x smaller from 60px (60 / 1.5 = 40) */
   }
   
   .multi-card-container {
@@ -734,6 +768,50 @@ export default {
   
   .card-page {
     flex: 0 0 100vw;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-arrow {
+    height: 60px;
+  }
+  
+  .arrow-icon-wrapper {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .left-arrow {
+    left: 2px;
+  }
+  
+  .right-arrow {
+    right: 2px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .nav-arrow {
+    opacity: 0.9;
+  }
+  
+  .nav-arrow:hover {
+    transform: translateY(-50%) scale(1);
+    opacity: 0.9;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .nav-arrow,
+  .arrow-icon-wrapper,
+  .multi-card-container {
+    transition: none;
+  }
+  
+  .nav-arrow:hover {
+    transform: translateY(-50%);
   }
 }
 </style>
