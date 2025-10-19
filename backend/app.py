@@ -210,6 +210,8 @@ def home():
 
 #API ROUTES
 
+HIDDEN_CARD_NAMES = ['срать в помогатор апельсины', 'test', 'фаланга пальца']
+
 @app.route("/api/db-status")
 def db_status():
     connection = get_db_conn()
@@ -368,34 +370,37 @@ def get_categories():
             # Define hidden categories to exclude - only Scarface remains hidden
             hidden_categories = ['Scarface - Tony Montana']
             
-            # Get total card count (excluding hidden categories)
+            # Get total card count (excluding hidden categories AND hidden card names)
             cursor.execute("""
                 SELECT COUNT(*) as total 
                 FROM files 
                 WHERE rare NOT IN (%s)
-            """, hidden_categories)
+                AND name NOT IN (%s, %s, %s)
+            """, hidden_categories + HIDDEN_CARD_NAMES)
             total_cards = cursor.fetchone()['total']
             
-            # Get shop available count (excluding hidden categories)
+            # Get shop available count (excluding hidden categories AND hidden card names)
             cursor.execute("""
                 SELECT COUNT(*) as shop_count 
                 FROM files 
                 WHERE shop != '-' AND shop IS NOT NULL 
                 AND rare NOT IN (%s)
-            """, hidden_categories)
+                AND name NOT IN (%s, %s, %s)
+            """, hidden_categories + HIDDEN_CARD_NAMES)
             shop_count = cursor.fetchone()['shop_count']
             
-            # Get all rarities with counts (excluding hidden categories)
+            # Get all rarities with counts (excluding hidden categories AND hidden card names)
             cursor.execute("""
                 SELECT rare, COUNT(*) as count 
                 FROM files 
                 WHERE rare NOT IN (%s)
+                AND name NOT IN (%s, %s, %s)
                 GROUP BY rare 
                 ORDER BY count DESC
-            """, hidden_categories)
+            """, hidden_categories + HIDDEN_CARD_NAMES)
             rarities_data = cursor.fetchall()
             
-            # Build categories list
+            # Build categories list (same as before)
             categories = [
                 {
                     'id': 'all',
@@ -446,28 +451,30 @@ def get_cards_by_category(category_id):
         with connection.cursor() as cursor:
             # Handle different category types
             if category_id == 'all':
-                # Get all cards except hidden categories
+                # Get all cards except hidden categories AND hidden card names
                 query = f"""
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
                     WHERE rare NOT IN (%s)
+                    AND name NOT IN (%s, %s, %s)
                     ORDER BY {sort_field} {sort_direction}
                 """
-                cursor.execute(query, hidden_categories)
+                cursor.execute(query, hidden_categories + HIDDEN_CARD_NAMES)
                 
             elif category_id == 'shop':
-                # Get only cards available in shop, excluding hidden categories
+                # Get only cards available in shop, excluding hidden categories AND hidden card names
                 query = f"""
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
                     WHERE shop != '-' AND shop IS NOT NULL
                     AND rare NOT IN (%s)
+                    AND name NOT IN (%s, %s, %s)
                     ORDER BY {sort_field} {sort_direction}
                 """
-                cursor.execute(query, hidden_categories)
+                cursor.execute(query, hidden_categories + HIDDEN_CARD_NAMES)
                 
             elif category_id.startswith('rarity_'):
-                # Get cards by specific rarity (this will naturally exclude hidden ones since they're not in categories)
+                # Get cards by specific rarity, excluding hidden card names
                 rarity_name = category_id.replace('rarity_', '')
                 # Handle URL encoding for special characters
                 import urllib.parse
@@ -477,9 +484,10 @@ def get_cards_by_category(category_id):
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
                     WHERE rare = %s
+                    AND name NOT IN (%s, %s, %s)
                     ORDER BY {sort_field} {sort_direction}
                 """
-                cursor.execute(query, (rarity_name,))
+                cursor.execute(query, (rarity_name,) + tuple(HIDDEN_CARD_NAMES))
                 
             else:
                 return jsonify({'error': 'Invalid category ID'}), 400
@@ -528,7 +536,7 @@ def get_rarity_newest_cards():
         hidden_categories = ['Scarface - Tony Montana']
         
         with connection.cursor() as cursor:
-            # Get the newest card (highest ID) for each rarity
+            # Get the newest card (highest ID) for each rarity, excluding hidden card names
             cursor.execute("""
                 SELECT f1.rare, f1.tg_id as photo, f1.name
                 FROM files f1
@@ -536,10 +544,11 @@ def get_rarity_newest_cards():
                     SELECT rare, MAX(id) as max_id
                     FROM files 
                     WHERE rare NOT IN (%s)
+                    AND name NOT IN (%s, %s, %s)
                     GROUP BY rare
                 ) f2 ON f1.rare = f2.rare AND f1.id = f2.max_id
                 ORDER BY f1.rare
-            """, hidden_categories)
+            """, hidden_categories + HIDDEN_CARD_NAMES)
             
             newest_cards = cursor.fetchall()
             
@@ -558,7 +567,7 @@ def get_rarity_newest_cards():
         return jsonify({'error': 'Failed to fetch newest cards'}), 500
     finally:
         connection.close()
-        
+
 
 @app.route("/api/all_categories_newest_cards")
 def get_all_categories_newest_cards():
@@ -574,14 +583,15 @@ def get_all_categories_newest_cards():
         with connection.cursor() as cursor:
             result = {}
             
-            # Get newest card for "All Cards" category (overall newest card)
+            # Get newest card for "All Cards" category (overall newest card), excluding hidden card names
             cursor.execute("""
                 SELECT tg_id as photo, name, rare as rarity
                 FROM files 
                 WHERE rare NOT IN (%s)
+                AND name NOT IN (%s, %s, %s)
                 ORDER BY id DESC 
                 LIMIT 1
-            """, hidden_categories)
+            """, hidden_categories + HIDDEN_CARD_NAMES)
             
             all_cards_newest = cursor.fetchone()
             if all_cards_newest:
@@ -590,15 +600,16 @@ def get_all_categories_newest_cards():
                     'name': all_cards_newest['name']
                 }
             
-            # Get newest card for "Shop" category (newest card available in shop)
+            # Get newest card for "Shop" category (newest card available in shop), excluding hidden card names
             cursor.execute("""
                 SELECT tg_id as photo, name, rare as rarity
                 FROM files 
                 WHERE shop != '-' AND shop IS NOT NULL
                 AND rare NOT IN (%s)
+                AND name NOT IN (%s, %s, %s)
                 ORDER BY id DESC 
                 LIMIT 1
-            """, hidden_categories)
+            """, hidden_categories + HIDDEN_CARD_NAMES)
             
             shop_newest = cursor.fetchone()
             if shop_newest:
@@ -607,7 +618,7 @@ def get_all_categories_newest_cards():
                     'name': shop_newest['name']
                 }
             
-            # Also include all rarity categories for consistency
+            # Also include all rarity categories for consistency, excluding hidden card names
             cursor.execute("""
                 SELECT f1.rare, f1.tg_id as photo, f1.name
                 FROM files f1
@@ -615,10 +626,11 @@ def get_all_categories_newest_cards():
                     SELECT rare, MAX(id) as max_id
                     FROM files 
                     WHERE rare NOT IN (%s)
+                    AND name NOT IN (%s, %s, %s)
                     GROUP BY rare
                 ) f2 ON f1.rare = f2.rare AND f1.id = f2.max_id
                 ORDER BY f1.rare
-            """, hidden_categories)
+            """, hidden_categories + HIDDEN_CARD_NAMES)
             
             rarity_newest_cards = cursor.fetchall()
             for card in rarity_newest_cards:
@@ -666,9 +678,9 @@ def get_card_info(card_id):
             if not row:
                 return jsonify({'error': 'Card not found'}), 404
             
-            # Check if card is in hidden category
+            # Check if card is in hidden category OR has a hidden name
             hidden_categories = ['Scarface - Tony Montana']
-            if row['rarity'] in hidden_categories:
+            if row['rarity'] in hidden_categories or row['name'] in HIDDEN_CARD_NAMES:
                 return jsonify({'error': 'Card not found'}), 404
 
             return jsonify({
