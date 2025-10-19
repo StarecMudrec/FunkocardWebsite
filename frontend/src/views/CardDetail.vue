@@ -111,7 +111,7 @@ export default {
     const multiCardViewport = ref(null)
     const multiCardContainer = ref(null)
 
-    const cardsData = ref({}) // Use object instead of array for better tracking
+    const cardsData = ref({})
     const loading = ref(true)
     const error = ref(null)
     const saveError = ref(null)
@@ -180,11 +180,13 @@ export default {
         
         const response = await fetchCardsByCategory(categoryId, sortField, sortDirection)
         sortedCards.value = response.cards || []
-        currentCardIndex.value = findCurrentCardIndex()
         
         console.log('Loaded cards by category:', sortedCards.value.length)
+        console.log('Cards:', sortedCards.value)
+        
+        // Find current card index after loading sorted cards
+        currentCardIndex.value = findCurrentCardIndex()
         console.log('Current card index:', currentCardIndex.value)
-        console.log('Current card:', currentCard.value)
         
         // Load current and adjacent cards data
         await loadCurrentAndAdjacentCards()
@@ -214,18 +216,32 @@ export default {
         cardsToLoad.push(nextCard.value.id)
       }
 
+      console.log('Cards to load:', cardsToLoad)
+
       try {
         const loadPromises = cardsToLoad.map(async (cardId) => {
-          const cardData = await fetchCardInfo(cardId)
-          cardsData.value[cardId] = cardData
+          try {
+            const cardData = await fetchCardInfo(cardId)
+            cardsData.value[cardId] = cardData
+            console.log(`Loaded card ${cardId}:`, cardData.name)
+          } catch (err) {
+            console.error(`Failed to load card ${cardId}:`, err)
+            // Create a placeholder card with basic info
+            const placeholderCard = sortedCards.value.find(c => c.id === cardId)
+            if (placeholderCard) {
+              cardsData.value[cardId] = { ...placeholderCard }
+            }
+          }
         })
 
         await Promise.all(loadPromises)
         
-        // Update sortedCards with detailed card data
+        // Update sortedCards with detailed card data, preserving order
         sortedCards.value = sortedCards.value.map(card => {
           return cardsData.value[card.id] || card
         })
+
+        console.log('Updated sortedCards:', sortedCards.value)
       } catch (err) {
         console.error('Error loading adjacent cards:', err)
       }
@@ -314,7 +330,11 @@ export default {
         // Reload current card data
         const updatedCard = await fetchCardInfo(currentCard.value.id)
         cardsData.value[currentCard.value.id] = updatedCard
-        sortedCards.value[currentCardIndex.value] = updatedCard
+        // Update the card in sortedCards
+        const cardIndex = sortedCards.value.findIndex(c => c.id === currentCard.value.id)
+        if (cardIndex >= 0) {
+          sortedCards.value[cardIndex] = updatedCard
+        }
       } catch (err) {
         console.error('Error uploading image:', err)
         saveError.value = err.message
@@ -326,7 +346,12 @@ export default {
         loading.value = true
         error.value = null
         
-        // Load initial card
+        // Reset cards data
+        cardsData.value = {}
+        sortedCards.value = []
+        
+        // Load initial card first
+        console.log('Loading initial card:', props.id)
         const initialCard = await fetchCardInfo(props.id)
         cardsData.value[initialCard.id] = initialCard
         
@@ -334,7 +359,9 @@ export default {
         sortedCards.value = [initialCard]
         currentCardIndex.value = 0
         
-        // Load sorted cards for navigation
+        console.log('Initial card loaded:', initialCard)
+        
+        // Now load sorted cards for navigation
         await loadSortedCards()
         
         // Check user permissions
