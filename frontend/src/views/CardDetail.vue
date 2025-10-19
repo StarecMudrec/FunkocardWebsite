@@ -270,7 +270,7 @@ export default {
       const newCardId = allCards.value[targetIndex].id
       window.history.replaceState({}, '', `/card/${newCardId}`)
 
-      // Calculate target transform based on direction
+      // STEP 1: Scroll to adjacent card
       let targetTransform
       if (direction === 'left') {
         targetTransform = 0 // Move to show previous card
@@ -284,18 +284,27 @@ export default {
       // Wait for the scroll animation to complete
       await new Promise(resolve => setTimeout(resolve, 300))
 
-      // Update current index
+      // STEP 2: Replace the center section card with the new card
       currentCardIndex.value = targetIndex
       
-      // Update displayed cards
+      // Update displayed cards - this replaces the center card
       updateDisplayedCards()
 
-      // Load detailed info for new adjacent cards
+      // STEP 3: Teleport back to center position without animation
+      isScrolling.value = false // Disable transition for instant teleport
+      currentTransform.value = -100 // Reset to center
+      
+      // Force a reflow to ensure the teleport happens immediately
+      await nextTick()
+      
+      // Re-enable transitions for future animations
+      isScrolling.value = true
+
+      // STEP 4: Replace adjacent cards for new ones
       await loadDetailedCardInfo()
 
-      // INSTANTLY reset to center position without animation
+      // Final cleanup
       isScrolling.value = false
-      currentTransform.value = -100
       scrollDirection.value = null
     }
 
