@@ -11,7 +11,7 @@
         <div class="arrow-icon-wrapper">
           <svg width="40" height="40" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g filter="url(#filter0_d_26_86)">
-              <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF" transform="rotate(-90 104 104)"/>
+              <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF"/>
             </g>
             <defs>
               <filter id="filter0_d_26_86" x="-4" y="0" width="216" height="216" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
@@ -95,7 +95,7 @@
         <div class="arrow-icon-wrapper">
           <svg width="40" height="40" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g filter="url(#filter0_d_26_86)">
-              <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF" transform="rotate(90 104 104)"/>
+              <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF" transform="rotate(180 104 104)"/>
             </g>
             <defs>
               <filter id="filter0_d_26_86" x="-4" y="0" width="216" height="216" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
