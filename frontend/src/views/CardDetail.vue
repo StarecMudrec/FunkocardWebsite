@@ -9,9 +9,9 @@
         @click="goToPreviousCard"
       >
         <div class="arrow-icon-wrapper">
-          <svg width="80" height="80" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="160" height="160" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g filter="url(#filter0_d_26_86)">
-              <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FFFFFF"/>
+              <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF"/>
             </g>
             <defs>
               <filter id="filter0_d_26_86" x="-4" y="0" width="216" height="216" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
@@ -93,9 +93,9 @@
         @click="goToNextCard"
       >
         <div class="arrow-icon-wrapper">
-          <svg width="80" height="80" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="160" height="160" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g filter="url(#filter0_d_26_86)">
-              <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FFFFFF" transform="rotate(180 104 104)"/>
+              <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF" transform="rotate(180 104 104)"/>
             </g>
             <defs>
               <filter id="filter0_d_26_86" x="-4" y="0" width="216" height="216" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
@@ -574,22 +574,22 @@ export default {
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  height: 160px; /* Increased from 100px */
+  height: 320px; /* Increased from 160px (2x bigger) */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 100;
-  opacity: 0.5;
+  opacity: 1; /* Changed from 0.5 to 1 (not transparent) */
   transition: opacity 0.2s ease;
 }
 
 .nav-arrow:hover {
-  opacity: 1;
+  opacity: 0.8; /* Slight opacity change on hover for feedback */
 }
 
 .nav-arrow.disabled {
-  opacity: 0.2;
+  opacity: 0.3; /* Reduced opacity for disabled state */
   pointer-events: none;
   cursor: not-allowed;
 }
@@ -603,8 +603,8 @@ export default {
 }
 
 .arrow-icon-wrapper {
-  width: 80px; /* Increased from 40px */
-  height: 80px; /* Increased from 40px */
+  width: 160px; /* Increased from 80px (2x bigger) */
+  height: 160px; /* Increased from 80px (2x bigger) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -712,7 +712,7 @@ export default {
   }
   
   .nav-arrow {
-    height: 60px;
+    height: 120px; /* Increased from 60px (2x bigger) */
   }
   
   .left-arrow {
@@ -724,8 +724,8 @@ export default {
   }
   
   .arrow-icon-wrapper {
-    width: 30px;
-    height: 30px;
+    width: 60px; /* Increased from 30px (2x bigger) */
+    height: 60px; /* Increased from 30px (2x bigger) */
   }
   
   .multi-card-container {
