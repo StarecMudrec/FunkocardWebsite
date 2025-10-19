@@ -106,6 +106,7 @@
               :key="card.id"
               :card="card || {}"
               @card-clicked="handleCardClicked"
+              @card-middle-click="handleCardMiddleClick"
               class="card-item"
             />
           </transition-group>
@@ -410,6 +411,16 @@ export default {
         this.$route.meta.navigationType = 'to-card-detail'
       }
       this.$router.push(`/card/${cardId}`)
+    },
+    
+    // Add this method to handle middle mouse button clicks
+    handleCardMiddleClick(cardId) {
+      // Save the current category ID
+      sessionStorage.setItem('previousCategory', this.categoryId);
+      
+      // Open card in new tab/window
+      const routeData = this.$router.resolve(`/card/${cardId}`);
+      window.open(routeData.href, '_blank');
     },
     
     handleSearch() {
