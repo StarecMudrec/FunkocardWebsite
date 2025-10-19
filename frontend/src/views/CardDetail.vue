@@ -1009,45 +1009,48 @@
     height: 100%;
     top: 0;
     left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .slide-left-enter-from {
-    transform: translateX(100%);
+    transform: translateX(100%) translateY(-50%);
     opacity: 0;
   }
 
   .slide-left-enter-to {
-    transform: translateX(0);
+    transform: translateX(0) translateY(-50%);
     opacity: 1;
   }
 
   .slide-left-leave-from {
-    transform: translateX(0);
+    transform: translateX(0) translateY(-50%);
     opacity: 1;
   }
 
   .slide-left-leave-to {
-    transform: translateX(-100%);
+    transform: translateX(-100%) translateY(-50%);
     opacity: 0;
   }
 
   .slide-right-enter-from {
-    transform: translateX(-100%);
+    transform: translateX(-100%) translateY(-50%);
     opacity: 0;
   }
 
   .slide-right-enter-to {
-    transform: translateX(0);
+    transform: translateX(0) translateY(-50%);
     opacity: 1;
   }
 
   .slide-right-leave-from {
-    transform: translateX(0);
+    transform: translateX(0) translateY(-50%);
     opacity: 1;
   }
 
   .slide-right-leave-to {
-    transform: translateX(100%);
+    transform: translateX(100%) translateY(-50%);
     opacity: 0;
   }
 
@@ -1098,11 +1101,9 @@
     right: 0;
     bottom: 0;
     overflow: hidden;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+    position: relative;
   }
 
   .nav-arrow {
@@ -1415,22 +1416,6 @@
     height: 100%;
     display: flex;
     align-items: stretch;
-  }
-
-  .card-detail-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 67px;
-    box-sizing: border-box;
-  }
-
-  .card-detail-container {
-    transform: none !important;
-    top: auto !important;
   }
 
   .card-detail {
