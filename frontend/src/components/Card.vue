@@ -8,9 +8,7 @@
     }"
     v-if="card"
     @click="handleCardClick"
-    @mouseup="handleMouseUp" <!-- Add this line -->
   >
-    <!-- Rest of your template remains the same -->
     <div class="card-inner-content">
       <div class="image-wrapper">
         <!-- Video for Limited cards -->
@@ -167,16 +165,6 @@ export default {
           this.videoObserver.observe(videoElement);
         }
       });
-    },
-    
-    // Add this method to handle mouse up events
-    handleMouseUp(event) {
-      // Check if middle mouse button was clicked (button === 1)
-      if (event.button === 1) {
-        event.preventDefault(); // Prevent default middle click behavior
-        event.stopPropagation(); // Prevent the click event from firing
-        this.$emit('card-middle-click', this.card.id);
-      }
     },
     
     handleCardClick(event) {
