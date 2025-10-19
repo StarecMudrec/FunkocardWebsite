@@ -1419,7 +1419,7 @@
 
   .card-detail-container {
     position: relative;
-    /* width: 100%; */
+    width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
@@ -1446,7 +1446,7 @@
     /* Set a fixed height for the card */
     height: 600px; /* Fixed height for consistency */
     max-width: 1200px; /* Limit maximum width */
-    width: 100%;
+    /* width: 100%; */
     align-items: stretch;
     overflow: hidden;
   }
