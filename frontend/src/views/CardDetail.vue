@@ -32,92 +32,81 @@
         </div>
       </div>
 
-      <!-- Scroll container for horizontal snap -->
-      <div class="cards-scroll-container" ref="scrollContainer">
-        <div class="cards-scroll-wrapper">
-          <div 
-            v-for="cardItem in sortedCards" 
-            :key="cardItem.id" 
-            class="card-slide"
-            :class="{ 'active': cardItem.id.toString() === card.id.toString() }"
-          >
-            <div class="card-detail-container">
-              <div class="card-detail">
-                <div class="card-content-wrapper">
-                  <!-- Название карточки и главная разделительная линия -->
-                  <div class="card-header-section">
-                    <div class="title-container">
-                      <h1 ref="cardNameRef">
-                        <span>{{ cardItem.name }}</span>
-                      </h1>
-                    </div>
-                    <div v-if="nameError" class="error-message">{{ nameError }}</div>
-                    <div class="main-divider"></div>
-                  </div>
-                  
-                  <!-- Rarity and Points section under main divider -->
-                  <h3 style="margin: 60px 0px 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
-                    <strong>Rarity: </strong>{{ cardItem.category }}
-                  </h3>
-                  <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
-                  
-                  <p style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);" v-html="formatDescription(cardItem.description)"></p>
-                  <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
-
-                  
-                  <div class="secondary-divider"></div>
-                  
-                  <!-- Available at shop section under secondary divider -->
-                  <div class="shop-section">
-                    <div class="shop-info">
-                      <h3>Available at shop:</h3>
-                      <p :class="{ 'available-glow': isShopAvailable(cardItem.shop) }">
-                        {{ formatShopInfo(cardItem.shop) }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Back to category button -->
-                  <div class="back-to-category-section">
-                    <button @click="goBackToCategory" class="back-to-category-button">
-                      ← Back to {{ getCategoryDisplayName() }}
-                    </button>
-                  </div>
+      <transition :name="showTransition ? transitionName : ''">
+        <div :key="card.id" class="card-detail-container">
+          <div class="card-detail">
+            <div class="card-content-wrapper">
+              <!-- Название карточки и главная разделительная линия -->
+              <div class="card-header-section">
+                <div class="title-container">
+                  <h1 ref="cardNameRef">
+                    <span>{{ card.name }}</span>
+                  </h1>
                 </div>
-                
-                <div class="card-image-container">
-                  <!-- Video for Limited cards -->
-                  <video 
-                    v-if="cardItem.category === 'Limited ⚠️' && cardItem.img && !mediaError" 
-                    :src="`/api/card_image/${cardItem.img}`" 
-                    class="card-detail-media"
-                    autoplay
-                    loop
-                    muted
-                    playsinline
-                    @error="mediaError = true"
-                    @dblclick="handleMediaDoubleClick"
-                    disablePictureInPicture
-                  ></video>
-                  
-                  <!-- Image for non-Limited cards -->
-                  <img 
-                    v-else-if="cardItem.img && !mediaError" 
-                    :src="`/api/card_image/${cardItem.img}`" 
-                    :alt="cardItem.name" 
-                    class="card-detail-media"
-                    @error="mediaError = true"
-                    @dblclick="handleMediaDoubleClick"
-                  />
-                  
-                  <div v-else class="image-placeholder">No media available</div>
+                <div v-if="nameError" class="error-message">{{ nameError }}</div>
+                <div class="main-divider"></div>
+              </div>
+              
+              <!-- Rarity and Points section under main divider -->
+              <h3 style="margin: 60px 0px 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
+                <strong>Rarity: </strong>{{ card.category }}
+              </h3>
+              <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
+              
+              <p style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);" v-html="formatDescription(card.description)"></p>
+              <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
+
+              
+              <div class="secondary-divider"></div>
+              
+              <!-- Available at shop section under secondary divider -->
+              <div class="shop-section">
+                <div class="shop-info">
+                  <h3>Available at shop:</h3>
+                  <p :class="{ 'available-glow': isShopAvailable(card.shop) }">
+                    {{ formatShopInfo(card.shop) }}
+                  </p>
                 </div>
               </div>
+
+              <!-- Back to category button -->
+              <div class="back-to-category-section">
+                <button @click="goBackToCategory" class="back-to-category-button">
+                  ← Back to {{ getCategoryDisplayName() }}
+                </button>
+              </div>
+            </div>
+            
+            <div class="card-image-container">
+              <!-- Video for Limited cards -->
+              <video 
+                v-if="isLimitedCard && card.img && !mediaError" 
+                :src="`/api/card_image/${card.img}`" 
+                class="card-detail-media"
+                autoplay
+                loop
+                muted
+                playsinline
+                @error="mediaError = true"
+                @dblclick="handleMediaDoubleClick"
+                disablePictureInPicture
+              ></video>
+              
+              <!-- Image for non-Limited cards -->
+              <img 
+                v-else-if="card.img && !mediaError" 
+                :src="`/api/card_image/${card.img}`" 
+                :alt="card.name" 
+                class="card-detail-media"
+                @error="mediaError = true"
+                @dblclick="handleMediaDoubleClick"
+              />
+              
+              <div v-else class="image-placeholder">No media available</div>
             </div>
           </div>
         </div>
-      </div>
-
+      </transition>
       <div v-if="saveError" class="error-message">{{ saveError }}</div>
       <!-- Right Arrow -->
       <div 
@@ -132,7 +121,7 @@
         </div>
       </div>
     </div>
-    <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" style="display: none;">
+  <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" style="display: none;">
   </div>
 </template>
 
@@ -154,13 +143,12 @@
       const nameInput = ref(null)
       const descriptionInput = ref(null)
       const categoryInput = ref(null)
-      const scrollContainer = ref(null)
 
       const card = ref({})
       const editableCard = ref({})
       const loading = ref(true)
       const error = ref(null)
-      const mediaError = ref(false)
+      const mediaError = ref(false) // Changed from imageError to mediaError
       const saveError = ref(null)
       const nameError = ref(null)
       const descriptionError = ref(null)
@@ -172,6 +160,7 @@
         description: false,
         category: false
       })
+      const transitionName = ref('slide-left');
 
       // Card navigation
       const sortedCards = ref([])
@@ -184,6 +173,8 @@
       const isPreloading = ref(false)
       const preloadError = ref(null)
 
+      const showTransition = ref(false);
+
       // Computed property to check if current card is Limited
       const isLimitedCard = computed(() => {
         return card.value.category === 'Limited ⚠️';
@@ -195,36 +186,6 @@
         // Convert both IDs to strings for comparison
         const currentCardId = card.value.id.toString();
         return sortedCards.value.findIndex(c => c.id.toString() === currentCardId);
-      }
-
-      const scrollToCard = (index) => {
-        if (!scrollContainer.value || index < 0 || index >= sortedCards.value.length) return;
-        
-        const scrollWrapper = scrollContainer.value;
-        const cardWidth = scrollWrapper.clientWidth;
-        scrollWrapper.scrollTo({
-          left: index * cardWidth,
-          behavior: 'smooth'
-        });
-      }
-
-      const handleScroll = () => {
-        if (!scrollContainer.value) return;
-        
-        const scrollWrapper = scrollContainer.value;
-        const scrollLeft = scrollWrapper.scrollLeft;
-        const cardWidth = scrollWrapper.clientWidth;
-        const newIndex = Math.round(scrollLeft / cardWidth);
-        
-        if (newIndex !== currentCardIndex.value && newIndex >= 0 && newIndex < sortedCards.value.length) {
-          currentCardIndex.value = newIndex;
-          const newCard = sortedCards.value[newIndex];
-          
-          // Update URL without triggering full navigation
-          if (newCard && newCard.id.toString() !== props.id) {
-            router.replace(`/card/${newCard.id}`);
-          }
-        }
       }
 
       const getCategoryDisplayName = () => {
@@ -292,10 +253,66 @@
           console.log('Current card ID:', card.value.id);
           console.log('Current card index:', currentCardIndex.value);
           console.log('Card IDs in sortedCards:', sortedCards.value.map(c => c.id));
+          
+          // Preload adjacent cards after we have the sorted list
+          preloadAdjacentCards();
         } catch (error) {
           console.error('Error loading sorted cards by category:', error);
           // Initialize as empty array to prevent future errors
           sortedCards.value = [];
+          // Don't throw the error here, just log it
+          // This allows the card detail to still load even if navigation fails
+        }
+      }
+
+      // Add this new function to preload adjacent cards
+      const preloadAdjacentCards = async () => {
+        if (isPreloading.value || !sortedCards.value.length) return;
+        
+        isPreloading.value = true;
+        preloadError.value = null;
+        
+        try {
+          const preloadPromises = [];
+          
+          // Preload previous card if it exists
+          if (currentCardIndex.value > 0) {
+            const prevCardId = sortedCards.value[currentCardIndex.value - 1].id;
+            if (!preloadedCards.value[prevCardId]) {
+              preloadPromises.push(
+                fetchCardInfo(prevCardId)
+                  .then(cardData => {
+                    preloadedCards.value[prevCardId] = cardData;
+                  })
+                  .catch(err => {
+                    console.error(`Failed to preload card ${prevCardId}:`, err);
+                  })
+              );
+            }
+          }
+          
+          // Preload next card if it exists
+          if (currentCardIndex.value < sortedCards.value.length - 1) {
+            const nextCardId = sortedCards.value[currentCardIndex.value + 1].id;
+            if (!preloadedCards.value[nextCardId]) {
+              preloadPromises.push(
+                fetchCardInfo(nextCardId)
+                  .then(cardData => {
+                    preloadedCards.value[nextCardId] = cardData;
+                  })
+                  .catch(err => {
+                    console.error(`Failed to preload card ${nextCardId}:`, err);
+                  })
+              );
+            }
+          }
+          
+          await Promise.all(preloadPromises);
+        } catch (err) {
+          preloadError.value = err.message || 'Failed to preload cards';
+          console.error('Error preloading cards:', err);
+        } finally {
+          isPreloading.value = false;
         }
       }
 
@@ -695,7 +712,10 @@
           editableCard.value = { ...card.value };
           
           // Load sorted cards for navigation, but don't block the UI if it fails
-          await loadSortedCards();
+          loadSortedCards().catch(err => {
+            console.error('Failed to load sorted cards for navigation:', err);
+            // Continue loading the card detail even if navigation fails
+          });
           
           // Check user permissions
           try {
@@ -709,11 +729,7 @@
             isUserAllowed.value = false
           }
           
-          // Scroll to current card after data is loaded
-          nextTick(() => {
-            scrollToCard(currentCardIndex.value);
-            setTimeout(adjustFontSize, 0);
-          });
+          setTimeout(adjustFontSize, 0)
         } catch (err) {
           error.value = err.message || 'Failed to load card details'
           console.error('Error loading card:', err)
@@ -728,8 +744,20 @@
           return;
         }
         
-        const prevIndex = currentCardIndex.value - 1;
-        scrollToCard(prevIndex);
+        showTransition.value = true;
+        transitionName.value = 'slide-right';
+        const prevCard = sortedCards.value[currentCardIndex.value - 1];
+        
+        if (prevCard) {
+          console.log('Navigating to previous card:', prevCard.id);
+          // Set navigation type before navigating
+          if (router.meta) {
+            router.meta.navigationType = 'to-card-detail'
+          }
+          router.push(`/card/${prevCard.id}`);
+        } else {
+          console.log('No previous card available');
+        }
       }
 
       const goToNextCard = () => {
@@ -738,18 +766,25 @@
           return;
         }
         
-        const nextIndex = currentCardIndex.value + 1;
-        scrollToCard(nextIndex);
+        showTransition.value = true;
+        transitionName.value = 'slide-left';
+        const nextCard = sortedCards.value[currentCardIndex.value + 1];
+        
+        if (nextCard) {
+          console.log('Navigating to next card:', nextCard.id);
+          // Set navigation type before navigating
+          if (router.meta) {
+            router.meta.navigationType = 'to-card-detail'
+          }
+          router.push(`/card/${nextCard.id}`);
+        } else {
+          console.log('No next card available');
+        }
       }
 
       onMounted(() => {
         window.addEventListener('resize', adjustFontSize)
         loadData()
-        
-        // Add scroll event listener
-        if (scrollContainer.value) {
-          scrollContainer.value.addEventListener('scroll', handleScroll);
-        }
         
         // Set navigation type when entering card detail
         if (router.meta) {
@@ -760,15 +795,21 @@
       onUnmounted(() => {
         window.removeEventListener('resize', adjustFontSize)
         
-        // Remove scroll event listener
-        if (scrollContainer.value) {
-          scrollContainer.value.removeEventListener('scroll', handleScroll);
+        // Set navigation type when leaving card detail to return to category
+        // This is handled by the router navigation guard now
+      })
+
+      // Watch for card changes to preload new adjacent cards
+      watch(() => card.value.id, (newId) => {
+        if (newId) {
+          preloadAdjacentCards();
         }
       })
 
       watch(() => props.id, async (newId) => {
         if (newId && card.value?.id !== newId) {
           await loadData()
+          showTransition.value = false; // Reset after navigation
         }
       })
 
@@ -803,6 +844,22 @@
         }
       });
 
+      watch(showTransition, (newVal) => {
+        if (!newVal) {
+          // Transition ended, adjust font size
+          setTimeout(adjustFontSize, 50);
+        }
+      });
+
+      // Add this to your existing watchers
+      watch(() => loading.value, (newLoading) => {
+        if (!newLoading) {
+          // Component finished loading, adjust font size with delays
+          setTimeout(adjustFontSize, 100);
+          setTimeout(adjustFontSize, 500);
+        }
+      });
+
       return {
         card,
         editableCard,
@@ -812,7 +869,7 @@
         nameError,
         descriptionError,
         saveError,
-        mediaError,
+        mediaError, // Changed from imageError to mediaError
         cardNameRef,
         editing,
         isUserAllowed,
@@ -820,30 +877,30 @@
         descriptionInput,
         categoryInput,
         fileInput,
-        scrollContainer,
-        handleMediaDoubleClick,
+        handleMediaDoubleClick, // Changed from handleImageDoubleClick
         handleFileChange,
         startEditing,
         saveField,
         toggleEdit,
         cancelEdit,
         fileInput,  
-        handleMediaDoubleClick,
+        handleMediaDoubleClick, // Changed from handleImageDoubleClick
         handleFileChange,
         isFirstCard,
         isLastCard,
         goToPreviousCard,
         goToNextCard,
-        goBackToCategory,
+        goBackToCategory, // Add this to the return object
+        transitionName,
         preloadedCards,
         isPreloading,
         preloadError,
+        showTransition,
         formatShopInfo,
         isShopAvailable,
         formatDescription,
-        getCategoryDisplayName,
-        isLimitedCard,
-        sortedCards
+        getCategoryDisplayName, // Add this to the return object
+        isLimitedCard, // Add the computed property to return object
       }
     }
   }
@@ -860,53 +917,6 @@
     overflow: hidden;
     width: 100%;
     height: 100%;
-  }
-
-  /* Scroll Snap Styles */
-  .cards-scroll-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .cards-scroll-container::-webkit-scrollbar {
-    display: none;
-  }
-
-  .cards-scroll-wrapper {
-    display: flex;
-    height: 100%;
-    width: 100%;
-  }
-
-  .card-slide {
-    flex: 0 0 100%;
-    height: 100%;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 20px;
-  }
-
-  .card-detail-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 67px;
-    height: 100%;
-    display: flex;
-    align-items: stretch;
-    width: 100%;
   }
 
   .back-to-category-section {
@@ -991,7 +1001,12 @@
   .slide-left-leave-active,
   .slide-right-enter-active,
   .slide-right-leave-active {
-    display: none;
+    transition: 
+      transform 0.5s ease,
+      opacity 0.4s ease 0.1s;
+    position: absolute;
+    width: 100%;
+    height: 100%;
   }
 
   .slide-left-enter-from {
@@ -1118,14 +1133,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: none;
+    pointer-events: none; /* Makes only the icon clickable */
   }
 
   .arrow-icon {
     width: 100%;
     height: 100%;
     fill: var(--accent-color);
-    pointer-events: auto;
+    pointer-events: auto; /* Re-enable pointer events for the icon */
   }
 
   /* Make sure your card container has proper z-index */
