@@ -488,7 +488,7 @@ export default {
   padding: 67px;
   height: 100%;
   display: flex;
-  align-items: stretch;
+  align-items: center;
 }
 
 .card-detail {
