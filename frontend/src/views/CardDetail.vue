@@ -126,7 +126,7 @@
 </template>
 
 <script>
-  import { fetchCardInfo, checkUserPermission, fetchUserInfo, fetchCardsByCategory } from '@/api'
+  import { fetchCardInfo, checkUserPermission, fetchUserInfo, fetchCardsByCategory, fetchCardById } from '@/api'
   import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
   import { useRouter } from 'vue-router'
 
@@ -238,7 +238,7 @@
         }
 
         try {
-          const cardData = await fetchCardInfo(cardId); // Use fetchCardInfo here
+          const cardData = await fetchCardInfo(cardId);
           loadedCards.value[cardId] = cardData;
           return cardData;
         } catch (error) {
