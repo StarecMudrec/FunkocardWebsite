@@ -119,6 +119,7 @@ export default {
     const currentCardIndex = ref(0)
     const isScrolling = ref(false)
     const scrollDirection = ref(null) // 'left' or 'right'
+    const currentTransform = ref(-100) // Current transform in vw units
     
     // Store displayed cards separately to ensure reactivity
     const displayedCards = ref({
@@ -131,31 +132,10 @@ export default {
     const isLastCard = computed(() => currentCardIndex.value >= allCards.value.length - 1)
 
     // Dynamic transform based on scroll direction
-    const containerStyle = computed(() => {
-      if (!isScrolling.value) {
-        return {
-          transform: `translateX(-100vw)`,
-          transition: 'none'
-        }
-      }
-      
-      if (scrollDirection.value === 'left') {
-        return {
-          transform: `translateX(0)`,
-          transition: 'transform 0.3s ease'
-        }
-      } else if (scrollDirection.value === 'right') {
-        return {
-          transform: `translateX(-200vw)`,
-          transition: 'transform 0.3s ease'
-        }
-      }
-      
-      return {
-        transform: `translateX(-100vw)`,
-        transition: 'transform 0.3s ease'
-      }
-    })
+    const containerStyle = computed(() => ({
+      transform: `translateX(${currentTransform.value}vw)`,
+      transition: isScrolling.value ? 'transform 0.3s ease' : 'none'
+    }))
 
     const findCurrentCardIndex = () => {
       if (!props.id || !allCards.value.length) return 0
@@ -211,6 +191,9 @@ export default {
         // Find current card index
         currentCardIndex.value = findCurrentCardIndex()
         console.log('Current card index:', currentCardIndex.value)
+        
+        // Reset transform to center
+        currentTransform.value = -100
         
         // Update displayed cards immediately with basic data
         updateDisplayedCards()
@@ -287,14 +270,22 @@ export default {
       const newCardId = allCards.value[targetIndex].id
       window.history.replaceState({}, '', `/card/${newCardId}`)
 
+      // Calculate target transform based on direction
+      let targetTransform
+      if (direction === 'left') {
+        targetTransform = 0 // Move to show previous card
+      } else {
+        targetTransform = -200 // Move to show next card
+      }
+
+      // Animate to the target position
+      currentTransform.value = targetTransform
+
       // Wait for the scroll animation to complete
       await new Promise(resolve => setTimeout(resolve, 300))
 
       // Update current index
       currentCardIndex.value = targetIndex
-
-      // Reset transform to middle position without animation
-      scrollDirection.value = null
       
       // Update displayed cards
       updateDisplayedCards()
@@ -302,8 +293,10 @@ export default {
       // Load detailed info for new adjacent cards
       await loadDetailedCardInfo()
 
-      // Reset scrolling state
+      // INSTANTLY reset to center position without animation
       isScrolling.value = false
+      currentTransform.value = -100
+      scrollDirection.value = null
     }
 
     const goToPreviousCard = () => {
