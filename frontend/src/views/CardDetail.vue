@@ -9,8 +9,22 @@
         @click="goToPreviousCard"
       >
         <div class="arrow-icon-wrapper">
-          <svg class="arrow-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 20.1L6.9 12 15 3.9z"/>
+          <svg width="40" height="40" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g filter="url(#filter0_d_26_86)">
+              <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF" transform="rotate(-90 104 104)"/>
+            </g>
+            <defs>
+              <filter id="filter0_d_26_86" x="-4" y="0" width="216" height="216" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                <feOffset dy="4"/>
+                <feGaussianBlur stdDeviation="2"/>
+                <feComposite in2="hardAlpha" operator="out"/>
+                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+                <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_26_86"/>
+                <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_26_86" result="shape"/>
+              </filter>
+            </defs>
           </svg>
         </div>
       </div>
@@ -79,8 +93,22 @@
         @click="goToNextCard"
       >
         <div class="arrow-icon-wrapper">
-          <svg class="arrow-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9 3.9L17.1 12 9 20.1z"/>
+          <svg width="40" height="40" viewBox="0 0 208 208" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g filter="url(#filter0_d_26_86)">
+              <path d="M93.6 104L133.467 143.867L121.333 156L69.3334 104L121.333 52L133.467 64.1333L93.6 104Z" fill="#FEF7FF" transform="rotate(90 104 104)"/>
+            </g>
+            <defs>
+              <filter id="filter0_d_26_86" x="-4" y="0" width="216" height="216" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                <feOffset dy="4"/>
+                <feGaussianBlur stdDeviation="2"/>
+                <feComposite in2="hardAlpha" operator="out"/>
+                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+                <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_26_86"/>
+                <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_26_86" result="shape"/>
+              </filter>
+            </defs>
           </svg>
         </div>
       </div>
