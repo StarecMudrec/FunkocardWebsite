@@ -597,7 +597,7 @@ export default {
   height: 100%;
   max-width: 350px;
   justify-content: center;
-  padding-top: 20px;
+  padding-top: 30px;
 }
 
 .card-header-section {
