@@ -31,6 +31,16 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 
+def get_db_conn():
+    """Get MySQL database connection"""
+    try:
+        connection = pymysql.connect(**Config.MYSQL_CONFIG)
+        return connection
+    except Exception as e:
+        logging.error(f"Error creating MySQL connection: {e}")
+        return None
+
+
 def populate_all_cards_metadata():
     """Populate upload metadata for all cards in the database"""
     try:
@@ -97,15 +107,6 @@ with app.app_context():
     populate_all_cards_metadata()
 
 
-
-def get_db_conn():
-    """Get MySQL database connection"""
-    try:
-        connection = pymysql.connect(**Config.MYSQL_CONFIG)
-        return connection
-    except Exception as e:
-        logging.error(f"Error creating MySQL connection: {e}")
-        return None
 
 @app.route('/placeholder.jpg')
 def serve_placeholder():
