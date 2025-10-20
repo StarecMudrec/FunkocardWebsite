@@ -4,33 +4,45 @@ from datetime import datetime
 from models import db, CardUploadMetadata
 import logging
 import time
+import re
 
 class TelegramService:
     def __init__(self):
         self.bot_token = os.getenv("CARDS_BOT_TOKEN")
         self.channel_username = "@funkocardsall"
     
-    def get_channel_messages(self, limit=100, offset_id=0):
-        """Get messages from public channel"""
+    def get_channel_messages_web(self, limit=100):
+        """Get messages from public channel using web scraping approach"""
         if not self.bot_token:
             logging.error("CARDS_BOT_TOKEN not set")
             return []
         
-        url = f"https://api.telegram.org/bot{self.bot_token}/getChatHistory"
+        # For public channels, we need to use a different approach
+        # This method uses the getUpdates method which works for public channels
+        # that the bot is subscribed to
+        
+        url = f"https://api.telegram.org/bot{self.bot_token}/getUpdates"
         payload = {
-            "chat_id": self.channel_username,
-            "limit": limit
+            "offset": 0,
+            "limit": limit,
+            "timeout": 10
         }
         
-        if offset_id > 0:
-            payload["from_message_id"] = offset_id
-        
         try:
-            response = requests.post(url, json=payload)
+            response = requests.post(url, json=payload, timeout=30)
             if response.status_code == 200:
                 result = response.json()
                 if result.get("ok"):
-                    return result.get("result", [])
+                    updates = result.get("result", [])
+                    
+                    # Filter for channel posts
+                    channel_messages = []
+                    for update in updates:
+                        if 'channel_post' in update:
+                            channel_messages.append(update['channel_post'])
+                    
+                    logging.info(f"Found {len(channel_messages)} channel messages via getUpdates")
+                    return channel_messages
                 else:
                     logging.error(f"Telegram API error: {result.get('description')}")
             else:
@@ -40,31 +52,88 @@ class TelegramService:
         
         return []
     
+    def get_channel_messages_alternative(self):
+        """Alternative method using forward_from_chat approach"""
+        if not self.bot_token:
+            logging.error("CARDS_BOT_TOKEN not set")
+            return []
+        
+        # This method requires the bot to be in the channel and have access
+        # We'll try to get recent messages
+        
+        url = f"https://api.telegram.org/bot{self.bot_token}/getChat"
+        payload = {
+            "chat_id": self.channel_username
+        }
+        
+        try:
+            response = requests.post(url, json=payload)
+            if response.status_code == 200:
+                chat_info = response.json()
+                logging.info(f"Channel info: {chat_info}")
+                
+                # If we can get chat info, try to get messages
+                # This might not work for all public channels
+                messages_url = f"https://api.telegram.org/bot{self.bot_token}/getChatHistory"
+                messages_payload = {
+                    "chat_id": self.channel_username,
+                    "limit": 50
+                }
+                
+                messages_response = requests.post(messages_url, json=messages_payload)
+                if messages_response.status_code == 200:
+                    messages_result = messages_response.json()
+                    if messages_result.get("ok"):
+                        return messages_result.get("result", [])
+            else:
+                logging.error(f"Failed to get channel info: {response.text}")
+        except Exception as e:
+            logging.error(f"Error in alternative method: {e}")
+        
+        return []
+    
     def extract_card_id_from_message(self, message):
-        """Extract card ID from message text/caption"""
+        """Extract card ID from message text/caption with improved patterns"""
         if not message:
             return None
             
         text = message.get("caption") or message.get("text", "")
         
-        # Look for card ID patterns in the message
-        # Common patterns: "ID: 123", "Card ID: 123", or just a number
-        import re
+        if not text:
+            return None
         
-        # Pattern 1: "ID: 123" or "Card ID: 123"
-        id_pattern1 = re.search(r'(?:ID|Card ID)[:\s]*(\d+)', text, re.IGNORECASE)
-        if id_pattern1:
-            return int(id_pattern1.group(1))
+        # More robust card ID extraction patterns
+        patterns = [
+            r'(?:ID|Card ID|Card)[:\s]*#?(\d+)',  # "ID: 123", "Card ID: 123", "Card: 123"
+            r'^\s*#?(\d+)\s*$',  # Just a number at start/end
+            r'[\[\(]#?(\d+)[\]\)]',  # Number in brackets/parentheses
+            r'\b(\d{2,4})\b',  # 2-4 digit numbers (common card IDs)
+            r'Card\s+#?(\d+)',  # "Card 123"
+            r'#(\d+)',  # Hashtag format #123
+        ]
         
-        # Pattern 2: Just a number at the start or prominent position
-        id_pattern2 = re.search(r'^\s*(\d+)\s*$', text.strip())
-        if id_pattern2:
-            return int(id_pattern2.group(1))
-            
-        # Pattern 3: Number in brackets or parentheses
-        id_pattern3 = re.search(r'[\[\(](\d+)[\]\)]', text)
-        if id_pattern3:
-            return int(id_pattern3.group(1))
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                try:
+                    card_id = int(match.group(1))
+                    # Validate reasonable card ID range (adjust based on your data)
+                    if 1 <= card_id <= 1000:  # Adjust max based on your card count
+                        logging.debug(f"Found card ID {card_id} with pattern: {pattern}")
+                        return card_id
+                except ValueError:
+                    continue
+        
+        # If no pattern matches, try to find any number that could be a card ID
+        all_numbers = re.findall(r'\b(\d{2,4})\b', text)
+        for num in all_numbers:
+            try:
+                card_id = int(num)
+                if 1 <= card_id <= 1000:  # Adjust based on your card range
+                    logging.debug(f"Found potential card ID {card_id} from text numbers")
+                    return card_id
+            except ValueError:
+                continue
         
         return None
     
@@ -91,25 +160,27 @@ class TelegramService:
         
         logging.info("Starting Telegram channel message sync...")
         
+        # Try different methods to get messages
         all_messages = []
-        offset_id = 0
-        batch_size = 100
         
-        # Fetch all messages from the channel
-        while True:
-            messages = self.get_channel_messages(limit=batch_size, offset_id=offset_id)
-            if not messages:
-                break
-                
-            all_messages.extend(messages)
-            logging.info(f"Fetched {len(messages)} messages, total: {len(all_messages)}")
-            
-            if len(messages) < batch_size:
-                break
-                
-            # Get the oldest message ID for next batch
-            offset_id = min(msg["message_id"] for msg in messages) - 1
-            time.sleep(0.5)  # Rate limiting
+        # Method 1: getUpdates (works if bot is in channel)
+        logging.info("Trying getUpdates method...")
+        messages_method1 = self.get_channel_messages_web(limit=200)
+        all_messages.extend(messages_method1)
+        
+        # Method 2: Alternative approach
+        if not all_messages:
+            logging.info("Trying alternative method...")
+            messages_method2 = self.get_channel_messages_alternative()
+            all_messages.extend(messages_method2)
+        
+        if not all_messages:
+            logging.warning("No messages could be retrieved from Telegram channel")
+            logging.warning("This might be because:")
+            logging.warning("1. The bot is not in the channel")
+            logging.warning("2. The channel is private and bot is not admin")
+            logging.warning("3. There are no recent messages")
+            return
         
         logging.info(f"Total messages fetched: {len(all_messages)}")
         
@@ -131,8 +202,15 @@ class TelegramService:
                     "upload_date": upload_date,
                     "season": season
                 }
+                
+                logging.debug(f"Found card {card_id} in message {message_id} - Date: {upload_date}, Season: {season}")
         
         logging.info(f"Found {len(card_metadata_map)} cards in channel messages")
+        
+        if not card_metadata_map:
+            logging.warning("No card IDs could be extracted from messages")
+            logging.warning("Check if message format contains card IDs")
+            return
         
         # Update database with actual metadata
         updated_count = 0
@@ -147,6 +225,7 @@ class TelegramService:
                 existing.upload_date = metadata["upload_date"]
                 existing.season = metadata["season"]
                 updated_count += 1
+                logging.debug(f"Updated metadata for card {card_id}")
             else:
                 # Create new record
                 new_metadata = CardUploadMetadata(
@@ -157,6 +236,7 @@ class TelegramService:
                 )
                 db.session.add(new_metadata)
                 created_count += 1
+                logging.debug(f"Created metadata for card {card_id}")
         
         try:
             db.session.commit()
@@ -164,6 +244,45 @@ class TelegramService:
         except Exception as e:
             db.session.rollback()
             logging.error(f"Error saving metadata: {e}")
+    
+    def manual_date_override(self):
+        """Manual method to set dates based on known card information"""
+        logging.info("Using manual date override for known cards")
+        
+        # This is a temporary solution - you should replace these with actual dates
+        # from your Telegram channel. Format: {card_id: (year, month, day), ...}
+        manual_dates = {
+            # Add your actual card dates here based on Telegram message dates
+            # Example: 
+            # 1: (2025, 1, 15),
+            # 2: (2025, 1, 16),
+            # ...
+        }
+        
+        for card_id, date_info in manual_dates.items():
+            year, month, day = date_info
+            upload_date = datetime(year, month, day)
+            season = self.calculate_season(upload_date)
+            
+            existing = CardUploadMetadata.query.filter_by(card_id=card_id).first()
+            if existing:
+                existing.upload_date = upload_date
+                existing.season = season
+            else:
+                new_metadata = CardUploadMetadata(
+                    card_id=card_id,
+                    telegram_message_id=0,  # Unknown message ID
+                    upload_date=upload_date,
+                    season=season
+                )
+                db.session.add(new_metadata)
+        
+        try:
+            db.session.commit()
+            logging.info("Manual date override completed")
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error in manual date override: {e}")
 
 # Global instance
 telegram_service = TelegramService()

@@ -44,18 +44,28 @@ def get_db_conn():
 
 
 def populate_all_cards_metadata():
-    """Populate upload metadata using actual Telegram channel data"""
+    """Populate upload metadata using actual Telegram channel data with fallback"""
     try:
         # First, try to sync with actual Telegram messages
         logging.info("Attempting to sync with Telegram channel messages...")
         telegram_service.sync_channel_messages()
         
-        # Then check for any missing cards and provide reasonable defaults
-        connection = get_db_conn()
-        if not connection:
-            logging.error("Cannot connect to MySQL database")
-            return
-            
+        # If no metadata was created/updated, try manual override
+        existing_metadata_count = CardUploadMetadata.query.count()
+        if existing_metadata_count == 0:
+            logging.warning("Telegram sync didn't create any metadata, trying manual override")
+            telegram_service.manual_date_override()
+        
+    except Exception as e:
+        logging.error(f"Error during Telegram sync: {e}")
+    
+    # Always check for missing cards and provide reasonable defaults
+    connection = get_db_conn()
+    if not connection:
+        logging.error("Cannot connect to MySQL database")
+        return
+        
+    try:
         with connection.cursor() as cursor:
             # Get all card IDs from MySQL
             cursor.execute("SELECT id FROM files WHERE name NOT IN (%s, %s, %s)", 
@@ -65,22 +75,36 @@ def populate_all_cards_metadata():
             existing_metadata_count = CardUploadMetadata.query.count()
             logging.info(f"Found {len(all_card_ids)} cards in MySQL, {existing_metadata_count} existing metadata entries")
             
-            # For cards without metadata, create reasonable defaults
+            # For cards without metadata, create reasonable defaults based on card ID
             missing_count = 0
             for card_id in all_card_ids:
                 existing = CardUploadMetadata.query.filter_by(card_id=card_id).first()
                 if existing:
                     continue
                     
-                # Create default metadata for missing cards
-                # Use a date based on card ID as fallback, but this should be rare
-                # after proper Telegram sync
-                default_date = datetime(2025, 1, 1)  # Conservative default
+                # Create default metadata based on card ID as fallback
+                # This is better than random dates but still not ideal
+                if card_id >= 400:
+                    upload_date = datetime(2025, 3, 1)
+                    season = 3
+                elif card_id >= 350:
+                    upload_date = datetime(2025, 2, 1) 
+                    season = 2
+                elif card_id >= 300:
+                    upload_date = datetime(2025, 1, 15)
+                    season = 1
+                elif card_id >= 200:
+                    upload_date = datetime(2025, 1, 10)
+                    season = 1
+                else:
+                    upload_date = datetime(2025, 1, 5)
+                    season = 1
+                
                 metadata = CardUploadMetadata(
                     card_id=card_id,
                     telegram_message_id=0,  # Indicates no Telegram message found
-                    upload_date=default_date,
-                    season=1
+                    upload_date=upload_date,
+                    season=season
                 )
                 
                 try:
@@ -99,7 +123,8 @@ def populate_all_cards_metadata():
     finally:
         if connection:
             connection.close()
-            
+
+
 # Create the database tables
 with app.app_context():
     try:
