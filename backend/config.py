@@ -2,7 +2,16 @@ import os
 from hashlib import sha256
 from sqlalchemy import create_engine
 import pymysql
+import asyncio
+from telethon import TelegramClient
+from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
+import os
+from datetime import datetime
 
+# Telegram client setup (add to config.py)
+TELEGRAM_API_ID = os.environ.get("TELEGRAM_API_ID")
+TELEGRAM_API_HASH = os.environ.get("TELEGRAM_API_HASH")
+CHANNEL_USERNAME = "funkocardsall"
 
 class Config:
     # Configuration
@@ -11,6 +20,9 @@ class Config:
     SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres:postgres@localhost:5433/cards"  # SQLite database
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get("SECRET_KEY")
+    TELEGRAM_API_ID = os.environ.get("TELEGRAM_API_ID")
+    TELEGRAM_API_HASH = os.environ.get("TELEGRAM_API_HASH")
+    CHANNEL_USERNAME = "funkocardsall"
 
     
     MYSQL_CONFIG = {
