@@ -9,6 +9,21 @@ class AllowedUser(db.Model):
     username = db.Column(db.String, nullable=False)
 
 
+class CardUploadMetadata(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    card_id = db.Column(db.Integer, nullable=False, unique=True)  # Maps to MySQL files.id
+    telegram_message_id = db.Column(db.Integer, nullable=False)
+    upload_date = db.Column(db.DateTime, nullable=False)
+    season = db.Column(db.Integer, nullable=False)
+
+    def present(self):
+        return {
+            "card_id": self.card_id,
+            "telegram_message_id": self.telegram_message_id,
+            "upload_date": self.upload_date.isoformat() if self.upload_date else None,
+            "season": self.season
+        }
+
 # Token Model
 class AuthToken(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

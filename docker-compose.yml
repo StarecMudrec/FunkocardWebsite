@@ -50,7 +50,9 @@ services:
       CARDS_BOT_TOKEN: ${CARDS_BOT_TOKEN}
       FLASK_APP: wsgi:app
     command: >      
-      sh -c "gunicorn --bind 0.0.0.0:8000 --worker-class gevent --timeout 120 wsgi:app"
+      sh -c "gunicorn --bind 0.0.0.0:8000 --worker-class gevent --timeout 120 wsgi:app
+            flask db migrate 
+            flask db upgrade"
     # flask --app wsgi db init &&
     # flask --app wsgi db migrate  &&
     # flask --app wsgi db upgrade &&

@@ -15,6 +15,8 @@ from config import Config
 from sqlalchemy import create_engine, select, and_, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlite3 import connect
+from telegram_service import telegram_service
+from datetime import datetime
 
 import pymysql
 
@@ -358,6 +360,17 @@ def serve_card_image(file_id):
         return send_from_directory('public', 'placeholder.jpg')
 
 
+@app.route("/api/sync-telegram-messages")
+def sync_telegram_messages():
+    """Endpoint to manually trigger Telegram message synchronization"""
+    try:
+        telegram_service.sync_channel_messages()
+        return jsonify({"status": "sync completed"}), 200
+    except Exception as e:
+        logging.error(f"Sync error: {e}")
+        return jsonify({"error": "Sync failed"}), 500
+
+
 @app.route("/api/categories")
 def get_categories():
     """Get all categories: all cards, available at shop, and rarities"""
@@ -494,9 +507,12 @@ def get_cards_by_category(category_id):
             
             cards = [dict(row) for row in cursor.fetchall()]
             
-            # Transform to match frontend expectations
+            # Transform to match frontend expectations and add upload metadata
             transformed_cards = []
             for card in cards:
+                # Get upload metadata from SQLite
+                metadata = CardUploadMetadata.query.filter_by(card_id=card['id']).first()
+                
                 transformed_card = {
                     'id': card['id'],
                     'uuid': card['id'],
@@ -504,7 +520,9 @@ def get_cards_by_category(category_id):
                     'name': card['name'],
                     'rarity': card['rarity'],
                     'category': card['rarity'],  # This should set category to rarity
-                    'points': card['points']
+                    'points': card['points'],
+                    'upload_date': metadata.upload_date.isoformat() if metadata else None,
+                    'season': metadata.season if metadata else 1  # Default to season 1 if no metadata
                 }
                 # Debug: Log Limited cards specifically
                 if card['rarity'] == 'Limited ⚠️':
@@ -683,15 +701,20 @@ def get_card_info(card_id):
             if row['rarity'] in hidden_categories or row['name'] in HIDDEN_CARD_NAMES:
                 return jsonify({'error': 'Card not found'}), 404
 
+            # Get upload metadata from SQLite
+            metadata = CardUploadMetadata.query.filter_by(card_id=int(card_id)).first()
+
             return jsonify({
                 'id': card_id,
                 'uuid': card_id,
-                'season_id': 1,  # Default season since we don't have season data
+                'season_id': metadata.season if metadata else 1,  # Use actual season from metadata
                 'img': row['photo'],
                 'category': row['rarity'],
                 'name': row['name'],
                 'description': f"Points: {row['points']}",
-                'shop': row['shop']  # Add shop information
+                'shop': row['shop'],  # Add shop information
+                'upload_date': metadata.upload_date.isoformat() if metadata else None,
+                'season': metadata.season if metadata else 1
             }), 200
             
     except ValueError:
