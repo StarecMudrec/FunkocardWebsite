@@ -44,29 +44,42 @@ with app.app_context():
 
 def init_upload_dates_db():
     """Initialize SQLite database for storing upload dates"""
-    conn = sqlite3.connect('card_upload_dates.db')
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS card_upload_dates (
-            card_id INTEGER PRIMARY KEY,
-            message_id INTEGER,
-            upload_date TIMESTAMP,
-            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Create index for faster lookups
-    cursor.execute('''
-        CREATE INDEX IF NOT EXISTS idx_card_id ON card_upload_dates(card_id)
-    ''')
-    
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect('card_upload_dates.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS card_upload_dates (
+                card_id INTEGER PRIMARY KEY,
+                message_id INTEGER,
+                upload_date TIMESTAMP,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Create index for faster lookups
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_card_id ON card_upload_dates(card_id)
+        ''')
+        
+        conn.commit()
+        logging.info("SQLite upload dates database initialized successfully")
+        conn.close()
+    except Exception as e:
+        logging.error(f"Error initializing upload dates database: {e}")
+
+
+init_upload_dates_db()
 
 def get_upload_dates_conn():
-    """Get SQLite database connection"""
-    return sqlite3.connect('card_upload_dates.db')
+    """Get SQLite database connection with error handling"""
+    try:
+        return sqlite3.connect('card_upload_dates.db')
+    except Exception as e:
+        logging.error(f"Error connecting to upload dates database: {e}")
+        # Try to reinitialize the database
+        init_upload_dates_db()
+        return sqlite3.connect('card_upload_dates.db')
 
 def store_upload_date(card_id, message_id, upload_date):
     """Store upload date in SQLite database"""
@@ -95,6 +108,11 @@ def get_upload_date(card_id):
     cursor = conn.cursor()
     
     try:
+        # Check if table exists, create if not
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='card_upload_dates'")
+        if not cursor.fetchone():
+            init_upload_dates_db()
+        
         cursor.execute(
             'SELECT upload_date FROM card_upload_dates WHERE card_id = ?', 
             (card_id,)
@@ -451,6 +469,39 @@ def db_status():
         return jsonify({"error": str(e)}), 500
     finally:
         connection.close()
+
+
+@app.route("/api/upload-dates-status")
+def upload_dates_status():
+    """Check if upload dates database is working"""
+    try:
+        conn = get_upload_dates_conn()
+        cursor = conn.cursor()
+        
+        # Check if table exists and get row count
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='card_upload_dates'")
+        table_exists = cursor.fetchone() is not None
+        
+        if table_exists:
+            cursor.execute("SELECT COUNT(*) as count FROM card_upload_dates")
+            row_count = cursor.fetchone()[0]
+        else:
+            row_count = 0
+            
+        conn.close()
+        
+        return jsonify({
+            'status': 'healthy',
+            'table_exists': table_exists,
+            'stored_dates_count': row_count
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Upload dates database health check failed: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 
 @app.route('/api/card_image/<path:file_id>')
@@ -1058,6 +1109,7 @@ def get_user_info():
 
 
 if __name__ == "__main__":
+    # Ensure the database is initialized before starting the app
     init_upload_dates_db()
     app.run(debug=True, port=8000)
 
