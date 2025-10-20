@@ -499,6 +499,13 @@ export default {
             }
           })
           break
+        
+        case 'id':
+          // Keep ID sorting as fallback
+          sortedCards.sort((a, b) => {
+            return direction === 'asc' ? a.id - b.id : b.id - a.id
+          })
+          break
       }
       
       this.filteredCards = sortedCards

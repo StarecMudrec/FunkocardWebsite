@@ -561,8 +561,8 @@ def get_cards_by_category(category_id):
         return jsonify({'error': 'Database connection failed'}), 500
     
     try:
-        sort_field = request.args.get('sort', 'season')  # Default to season
-        sort_direction = request.args.get('direction', 'desc')  # Default to descending
+        sort_field = request.args.get('sort', 'id')  # Default back to ID for now
+        sort_direction = request.args.get('direction', 'desc')
         
         # Define hidden categories to exclude - only Scarface remains hidden
         hidden_categories = ['Scarface - Tony Montana']
@@ -570,54 +570,24 @@ def get_cards_by_category(category_id):
         with connection.cursor() as cursor:
             # Handle different category types
             if category_id == 'all':
-                # For season sorting, we need to join with metadata
-                if sort_field == 'season':
-                    query = """
-                        SELECT f.id, f.tg_id as photo, f.name, f.rare as rarity, f.fame as points,
-                               COALESCE(m.season, 1) as season
-                        FROM files f
-                        LEFT JOIN card_upload_metadata m ON f.id = m.card_id
-                        WHERE f.rare NOT IN (%s)
-                        AND f.name NOT IN (%s, %s, %s)
-                        ORDER BY season {direction}, f.id {direction}
-                    """.format(direction=sort_direction)
-                else:
-                    query = """
-                        SELECT f.id, f.tg_id as photo, f.name, f.rare as rarity, f.fame as points,
-                               COALESCE(m.season, 1) as season
-                        FROM files f
-                        LEFT JOIN card_upload_metadata m ON f.id = m.card_id
-                        WHERE f.rare NOT IN (%s)
-                        AND f.name NOT IN (%s, %s, %s)
-                        ORDER BY {field} {direction}
-                    """.format(field=sort_field, direction=sort_direction)
-                
+                query = """
+                    SELECT id, tg_id as photo, name, rare as rarity, fame as points 
+                    FROM files 
+                    WHERE rare NOT IN (%s)
+                    AND name NOT IN (%s, %s, %s)
+                    ORDER BY {field} {direction}
+                """.format(field=sort_field, direction=sort_direction)
                 cursor.execute(query, hidden_categories + HIDDEN_CARD_NAMES)
                 
             elif category_id == 'shop':
-                if sort_field == 'season':
-                    query = """
-                        SELECT f.id, f.tg_id as photo, f.name, f.rare as rarity, f.fame as points,
-                               COALESCE(m.season, 1) as season
-                        FROM files f
-                        LEFT JOIN card_upload_metadata m ON f.id = m.card_id
-                        WHERE f.shop != '-' AND f.shop IS NOT NULL
-                        AND f.rare NOT IN (%s)
-                        AND f.name NOT IN (%s, %s, %s)
-                        ORDER BY season {direction}, f.id {direction}
-                    """.format(direction=sort_direction)
-                else:
-                    query = """
-                        SELECT f.id, f.tg_id as photo, f.name, f.rare as rarity, f.fame as points,
-                               COALESCE(m.season, 1) as season
-                        FROM files f
-                        LEFT JOIN card_upload_metadata m ON f.id = m.card_id
-                        WHERE f.shop != '-' AND f.shop IS NOT NULL
-                        AND f.rare NOT IN (%s)
-                        AND f.name NOT IN (%s, %s, %s)
-                        ORDER BY {field} {direction}
-                    """.format(field=sort_field, direction=sort_direction)
-                
+                query = """
+                    SELECT id, tg_id as photo, name, rare as rarity, fame as points 
+                    FROM files 
+                    WHERE shop != '-' AND shop IS NOT NULL
+                    AND rare NOT IN (%s)
+                    AND name NOT IN (%s, %s, %s)
+                    ORDER BY {field} {direction}
+                """.format(field=sort_field, direction=sort_direction)
                 cursor.execute(query, hidden_categories + HIDDEN_CARD_NAMES)
                 
             elif category_id.startswith('rarity_'):
@@ -625,27 +595,13 @@ def get_cards_by_category(category_id):
                 import urllib.parse
                 rarity_name = urllib.parse.unquote(rarity_name)
                 
-                if sort_field == 'season':
-                    query = """
-                        SELECT f.id, f.tg_id as photo, f.name, f.rare as rarity, f.fame as points,
-                               COALESCE(m.season, 1) as season
-                        FROM files f
-                        LEFT JOIN card_upload_metadata m ON f.id = m.card_id
-                        WHERE f.rare = %s
-                        AND f.name NOT IN (%s, %s, %s)
-                        ORDER BY season {direction}, f.id {direction}
-                    """.format(direction=sort_direction)
-                else:
-                    query = """
-                        SELECT f.id, f.tg_id as photo, f.name, f.rare as rarity, f.fame as points,
-                               COALESCE(m.season, 1) as season
-                        FROM files f
-                        LEFT JOIN card_upload_metadata m ON f.id = m.card_id
-                        WHERE f.rare = %s
-                        AND f.name NOT IN (%s, %s, %s)
-                        ORDER BY {field} {direction}
-                    """.format(field=sort_field, direction=sort_direction)
-                
+                query = """
+                    SELECT id, tg_id as photo, name, rare as rarity, fame as points 
+                    FROM files 
+                    WHERE rare = %s
+                    AND name NOT IN (%s, %s, %s)
+                    ORDER BY {field} {direction}
+                """.format(field=sort_field, direction=sort_direction)
                 cursor.execute(query, (rarity_name,) + tuple(HIDDEN_CARD_NAMES))
                 
             else:
@@ -653,19 +609,19 @@ def get_cards_by_category(category_id):
             
             cards = [dict(row) for row in cursor.fetchall()]
             
-            # Transform to match frontend expectations and add upload metadata
+            # Transform to match frontend expectations and add upload metadata from SQLite
             transformed_cards = []
             for card in cards:
-                # Get upload metadata from SQLite
+                # Get upload metadata from SQLite (separate database)
                 metadata = CardUploadMetadata.query.filter_by(card_id=card['id']).first()
                 
-                # Ensure we have valid date and season
+                # Default values if no metadata
                 upload_date = None
-                season = card.get('season', 1)  # Use the season from query if available
+                season = 1
                 
                 if metadata:
                     upload_date = metadata.upload_date.isoformat() if metadata.upload_date else None
-                    season = metadata.season if metadata.season else season
+                    season = metadata.season if metadata.season else 1
                 
                 transformed_card = {
                     'id': card['id'],
@@ -679,6 +635,11 @@ def get_cards_by_category(category_id):
                     'season': season
                 }
                 transformed_cards.append(transformed_card)
+            
+            # Apply season sorting in Python if requested
+            if sort_field == 'season':
+                transformed_cards.sort(key=lambda x: x.get('season', 1), 
+                                     reverse=(sort_direction == 'desc'))
             
             return jsonify({
                 'cards': transformed_cards,
