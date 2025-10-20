@@ -75,6 +75,17 @@
         </p>
         <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
 
+        <!-- Season section - ADDED THIS -->
+        <div class="season-section">
+          <h3 style="margin: 20px 0px 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
+            <strong>Season: </strong>
+            <span>{{ formatSeasonInfo(card.season, card.upload_date) }}</span>
+          </h3>
+          <p v-if="card.upload_date" style="margin: 0;margin-bottom: 10px;font-size: 18px;line-height: 1.6;color: #888888;text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
+            Uploaded: {{ formatUploadDate(card.upload_date) }}
+          </p>
+        </div>
+
         <div class="secondary-divider"></div>
         
         <!-- Available at shop section -->
@@ -190,6 +201,33 @@ export default {
       return false
     }
 
+    // ADDED: Season formatting functions
+    const formatSeasonInfo = (season, uploadDate) => {
+      if (season && season !== 1) {
+        return `Season ${season}`
+      }
+      if (uploadDate) {
+        return 'Season 1'
+      }
+      return 'Unknown Season'
+    }
+
+    const formatUploadDate = (uploadDate) => {
+      if (!uploadDate) return 'Unknown date'
+      
+      try {
+        const date = new Date(uploadDate)
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      } catch (error) {
+        console.error('Error formatting upload date:', error)
+        return 'Invalid date'
+      }
+    }
+
     const getCategoryDisplayName = () => {
       const previousCategory = sessionStorage.getItem('previousCategory')
       if (previousCategory) {
@@ -203,6 +241,8 @@ export default {
         return props.card?.category || 'Category'
       }
     }
+
+    // ... rest of the existing functions remain the same (isOverflown, resizeText, adjustFontSize, etc.)
 
     // Font size adjustment functions
     const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
@@ -471,6 +511,8 @@ export default {
       formatDescription,
       formatShopInfo,
       isShopAvailable,
+      formatSeasonInfo, // ADDED
+      formatUploadDate, // ADDED
       getCategoryDisplayName,
       toggleEdit,
       cancelEdit,
@@ -616,6 +658,11 @@ export default {
   margin-left: 50%;
   background-color: #333;
   margin-top: 20px;
+}
+
+/* ADDED: Season section styles */
+.season-section {
+  margin-bottom: 10px;
 }
 
 .shop-section {
