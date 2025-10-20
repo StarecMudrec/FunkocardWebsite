@@ -30,9 +30,70 @@ db.init_app(app)
 
 migrate = Migrate(app, db)
 
+
+def populate_sample_metadata():
+    """Populate sample upload metadata for testing"""
+    try:
+        # Check if we already have some data
+        existing_count = CardUploadMetadata.query.count()
+        if existing_count > 0:
+            logging.info(f"Already have {existing_count} metadata entries")
+            return
+        
+        # Add sample data for cards 334, 335, 336, etc.
+        sample_metadata = [
+            CardUploadMetadata(
+                card_id=334,
+                telegram_message_id=1001,
+                upload_date=datetime(2025, 1, 15),  # January 2025 = Season 1
+                season=1
+            ),
+            CardUploadMetadata(
+                card_id=335,
+                telegram_message_id=1002,
+                upload_date=datetime(2025, 2, 10),  # February 2025 = Season 2
+                season=2
+            ),
+            CardUploadMetadata(
+                card_id=336,
+                telegram_message_id=1003,
+                upload_date=datetime(2025, 3, 5),   # March 2025 = Season 3
+                season=3
+            ),
+            # Add more cards as needed
+            CardUploadMetadata(
+                card_id=337,
+                telegram_message_id=1004,
+                upload_date=datetime(2025, 1, 20),  # January 2025 = Season 1
+                season=1
+            ),
+            CardUploadMetadata(
+                card_id=338,
+                telegram_message_id=1005,
+                upload_date=datetime(2025, 4, 15),  # April 2025 = Season 4
+                season=4
+            ),
+        ]
+        
+        for metadata in sample_metadata:
+            try:
+                db.session.add(metadata)
+                logging.info(f"Adding metadata for card {metadata.card_id} - Season {metadata.season}")
+            except Exception as e:
+                logging.warning(f"Could not add metadata for card {metadata.card_id}: {e}")
+        
+        db.session.commit()
+        logging.info(f"Successfully added {len(sample_metadata)} sample metadata entries")
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error populating sample metadata: {e}")
+
+
 # Create the database tables
 with app.app_context():
     db.create_all()
+    populate_sample_metadata()
 
 
 
@@ -246,6 +307,49 @@ def db_status():
         return jsonify({"error": str(e)}), 500
     finally:
         connection.close()
+
+
+@app.route("/api/test-metadata")
+def test_metadata():
+    """Test endpoint to check metadata functionality"""
+    try:
+        # Test with card ID 336 (from your example)
+        metadata = CardUploadMetadata.query.filter_by(card_id=336).first()
+        
+        if metadata:
+            return jsonify({
+                'success': True,
+                'metadata': metadata.present(),
+                'message': 'Metadata found for card 336'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'No metadata found for card 336'
+            })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/populate-sample")
+def populate_sample():
+    """Endpoint to manually populate sample metadata"""
+    try:
+        populate_sample_metadata()
+        return jsonify({'status': 'Sample data populated'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/all-metadata")
+def get_all_metadata():
+    """Get all metadata entries (for debugging)"""
+    try:
+        all_metadata = CardUploadMetadata.query.all()
+        return jsonify({
+            'count': len(all_metadata),
+            'metadata': [m.present() for m in all_metadata]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/card_image/<path:file_id>')
