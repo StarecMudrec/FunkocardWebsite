@@ -254,7 +254,7 @@ export default {
       maxSize = 60, 
       step = 1,
       maxWidth = 350,
-      maxHeight = 150
+      maxHeight = 120
     }) => {
       const tempParent = document.createElement('div')
       tempParent.style.width = `${maxWidth}px`
@@ -338,7 +338,7 @@ export default {
           maxSize: 60,
           step: 1,
           maxWidth: 350,
-          maxHeight: 150
+          maxHeight: 120
         })
         
         element.style.fontSize = `${optimalSize}px`
