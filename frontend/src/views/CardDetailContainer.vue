@@ -717,6 +717,7 @@ export default {
 .back-to-category-section {
   text-align: center;
   margin-top: -17px;
+  margin-bottom: 40px;
 }
 
 .back-to-category-button {
