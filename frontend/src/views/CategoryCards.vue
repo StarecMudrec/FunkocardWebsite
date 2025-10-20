@@ -466,20 +466,9 @@ export default {
       switch (field) {
         case 'season':
           sortedCards.sort((a, b) => {
-            // First sort by season
             const seasonA = a.season || 1
             const seasonB = b.season || 1
-            
-            // If seasons are different, sort by season
-            if (seasonA !== seasonB) {
-              return direction === 'asc' ? seasonA - seasonB : seasonB - seasonA
-            }
-            
-            // If seasons are the same, sort by date (newest first for desc, oldest first for asc)
-            const dateA = a.date ? new Date(a.date) : new Date(0)
-            const dateB = b.date ? new Date(b.date) : new Date(0)
-            
-            return direction === 'desc' ? dateB - dateA : dateA - dateB
+            return direction === 'asc' ? seasonA - seasonB : seasonB - seasonA
           })
           break
         
