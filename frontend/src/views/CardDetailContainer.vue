@@ -81,7 +81,7 @@
             <strong>Season: </strong>
             <span>{{ formatSeasonInfo(card.season, card.upload_date) }}</span>
           </h3>
-          <p v-if="card.upload_date" style="margin: 0;margin-bottom: 10px;font-size: 18px;line-height: 1.6;color: #888888;text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
+          <p v-if="card.upload_date" style="margin: 0;font-size: 18px;line-height: 1.6;color: #888888;text-align: start;left: 40px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
             Uploaded: {{ formatUploadDate(card.upload_date) }}
           </p>
         </div>
@@ -597,7 +597,7 @@ export default {
   height: 100%;
   max-width: 350px;
   justify-content: center;
-  padding-top: 30px;
+  /* padding-top: 30px; */
 }
 
 .card-header-section {
