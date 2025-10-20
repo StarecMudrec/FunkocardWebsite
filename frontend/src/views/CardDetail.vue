@@ -261,15 +261,19 @@ export default {
         const loadPromises = cardsToLoad.map(async (cardId) => {
           try {
             const detailedCard = await fetchCardInfo(cardId)
-            // Update the card in allCards with detailed info
+            // Update the card in allCards with detailed info - FIX: Proper merge
             const index = allCards.value.findIndex(c => c.id === cardId)
             if (index >= 0) {
-              // Preserve the original card data and merge with detailed info
+              // Preserve ALL original data and merge with detailed info
               allCards.value[index] = { 
-                ...allCards.value[index], 
-                ...detailedCard 
+                ...allCards.value[index], // Keep original data including upload_date
+                ...detailedCard  // Override with detailed info
               }
-              console.log(`Loaded detailed info for card ${cardId}:`, detailedCard.name)
+              console.log(`Loaded detailed info for card ${cardId}:`, {
+                name: detailedCard.name,
+                upload_date: detailedCard.upload_date,
+                season: detailedCard.season
+              })
             }
           } catch (err) {
             console.error(`Failed to load detailed info for card ${cardId}:`, err)

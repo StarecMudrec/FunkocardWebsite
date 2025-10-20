@@ -568,7 +568,6 @@ def get_cards_by_category(category_id):
         with connection.cursor() as cursor:
             # Handle different category types
             if category_id == 'all':
-                # Get all cards except hidden categories AND hidden card names
                 query = f"""
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
@@ -579,7 +578,6 @@ def get_cards_by_category(category_id):
                 cursor.execute(query, hidden_categories + HIDDEN_CARD_NAMES)
                 
             elif category_id == 'shop':
-                # Get only cards available in shop, excluding hidden categories AND hidden card names
                 query = f"""
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
@@ -591,9 +589,7 @@ def get_cards_by_category(category_id):
                 cursor.execute(query, hidden_categories + HIDDEN_CARD_NAMES)
                 
             elif category_id.startswith('rarity_'):
-                # Get cards by specific rarity, excluding hidden card names
                 rarity_name = category_id.replace('rarity_', '')
-                # Handle URL encoding for special characters
                 import urllib.parse
                 rarity_name = urllib.parse.unquote(rarity_name)
                 
@@ -614,8 +610,16 @@ def get_cards_by_category(category_id):
             # Transform to match frontend expectations and add upload metadata
             transformed_cards = []
             for card in cards:
-                # Get upload metadata from SQLite
+                # Get upload metadata from SQLite - FIX: Use consistent approach
                 metadata = CardUploadMetadata.query.filter_by(card_id=card['id']).first()
+                
+                # Ensure we have valid date and season
+                upload_date = None
+                season = 1
+                
+                if metadata:
+                    upload_date = metadata.upload_date.isoformat() if metadata.upload_date else None
+                    season = metadata.season if metadata.season else 1
                 
                 transformed_card = {
                     'id': card['id'],
@@ -623,14 +627,11 @@ def get_cards_by_category(category_id):
                     'img': card['photo'],
                     'name': card['name'],
                     'rarity': card['rarity'],
-                    'category': card['rarity'],  # This should set category to rarity
+                    'category': card['rarity'],
                     'points': card['points'],
-                    'upload_date': metadata.upload_date.isoformat() if metadata else None,
-                    'season': metadata.season if metadata else 1  # Default to season 1 if no metadata
+                    'upload_date': upload_date,  # Always include, even if null
+                    'season': season  # Always include, default to 1
                 }
-                # Debug: Log Limited cards specifically
-                if card['rarity'] == 'Limited ⚠️':
-                    logging.debug(f"Limited card transformation: {transformed_card}")
                 transformed_cards.append(transformed_card)
             
             return jsonify({
@@ -790,7 +791,6 @@ def get_card_info(card_id):
     
     try:
         with connection.cursor() as cursor:
-            # Query the files table with shop information
             cursor.execute(
                 "SELECT tg_id as photo, name, rare as rarity, fame as points, shop FROM files WHERE id = %s", 
                 (int(card_id),)
@@ -800,25 +800,32 @@ def get_card_info(card_id):
             if not row:
                 return jsonify({'error': 'Card not found'}), 404
             
-            # Check if card is in hidden category OR has a hidden name
             hidden_categories = ['Scarface - Tony Montana']
             if row['rarity'] in hidden_categories or row['name'] in HIDDEN_CARD_NAMES:
                 return jsonify({'error': 'Card not found'}), 404
 
-            # Get upload metadata from SQLite
+            # Get upload metadata - FIX: Ensure consistent data
             metadata = CardUploadMetadata.query.filter_by(card_id=int(card_id)).first()
+            
+            # Default values if no metadata
+            upload_date = None
+            season = 1
+            
+            if metadata:
+                upload_date = metadata.upload_date.isoformat() if metadata.upload_date else None
+                season = metadata.season if metadata.season else 1
 
             return jsonify({
                 'id': card_id,
                 'uuid': card_id,
-                'season_id': metadata.season if metadata else 1,  # Use actual season from metadata
+                'season_id': season,
                 'img': row['photo'],
                 'category': row['rarity'],
                 'name': row['name'],
                 'description': f"Points: {row['points']}",
-                'shop': row['shop'],  # Add shop information
-                'upload_date': metadata.upload_date.isoformat() if metadata else None,
-                'season': metadata.season if metadata else 1
+                'shop': row['shop'],
+                'upload_date': upload_date,  # Always include
+                'season': season  # Always include
             }), 200
             
     except ValueError:
