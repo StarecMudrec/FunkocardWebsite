@@ -10,7 +10,7 @@ import requests  # Import the requests library
 from joserfc.errors import JoseError
 import logging
 from flask_sqlalchemy import SQLAlchemy  # Database integration
-from models import db, AuthToken, Card, Season, Comment, AllowedUser
+from models import db, AuthToken, Card, Season, Comment, AllowedUser, CardUploadMetadata  
 from config import Config
 from sqlalchemy import create_engine, select, and_, text
 from sqlalchemy.orm import Session, sessionmaker
