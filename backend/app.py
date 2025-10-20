@@ -31,69 +31,70 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 
-def populate_sample_metadata():
-    """Populate sample upload metadata for testing"""
+def populate_all_cards_metadata():
+    """Populate upload metadata for all cards in the database"""
     try:
-        # Check if we already have some data
-        existing_count = CardUploadMetadata.query.count()
-        if existing_count > 0:
-            logging.info(f"Already have {existing_count} metadata entries")
+        connection = get_db_conn()
+        if not connection:
+            logging.error("Cannot connect to MySQL database")
             return
-        
-        # Add sample data for cards 334, 335, 336, etc.
-        sample_metadata = [
-            CardUploadMetadata(
-                card_id=334,
-                telegram_message_id=1001,
-                upload_date=datetime(2025, 1, 15),  # January 2025 = Season 1
-                season=1
-            ),
-            CardUploadMetadata(
-                card_id=335,
-                telegram_message_id=1002,
-                upload_date=datetime(2025, 2, 10),  # February 2025 = Season 2
-                season=2
-            ),
-            CardUploadMetadata(
-                card_id=336,
-                telegram_message_id=1003,
-                upload_date=datetime(2025, 3, 5),   # March 2025 = Season 3
-                season=3
-            ),
-            # Add more cards as needed
-            CardUploadMetadata(
-                card_id=337,
-                telegram_message_id=1004,
-                upload_date=datetime(2025, 1, 20),  # January 2025 = Season 1
-                season=1
-            ),
-            CardUploadMetadata(
-                card_id=338,
-                telegram_message_id=1005,
-                upload_date=datetime(2025, 4, 15),  # April 2025 = Season 4
-                season=4
-            ),
-        ]
-        
-        for metadata in sample_metadata:
-            try:
-                db.session.add(metadata)
-                logging.info(f"Adding metadata for card {metadata.card_id} - Season {metadata.season}")
-            except Exception as e:
-                logging.warning(f"Could not add metadata for card {metadata.card_id}: {e}")
-        
-        db.session.commit()
-        logging.info(f"Successfully added {len(sample_metadata)} sample metadata entries")
-        
+            
+        with connection.cursor() as cursor:
+            # Get all card IDs from MySQL
+            cursor.execute("SELECT id FROM files WHERE name NOT IN (%s, %s, %s)", 
+                         tuple(HIDDEN_CARD_NAMES))
+            all_card_ids = [row['id'] for row in cursor.fetchall()]
+            
+            existing_metadata_count = CardUploadMetadata.query.count()
+            logging.info(f"Found {len(all_card_ids)} cards in MySQL, {existing_metadata_count} existing metadata entries")
+            
+            added_count = 0
+            for card_id in all_card_ids:
+                # Check if metadata already exists
+                existing = CardUploadMetadata.query.filter_by(card_id=card_id).first()
+                if existing:
+                    continue
+                    
+                # Create synthetic metadata based on card ID
+                # You can adjust this logic based on your actual data
+                upload_date = datetime(2025, 1, 1)  # Default date
+                season = 1  # Default season
+                
+                # Simple logic: assign seasons based on card ID ranges
+                if card_id >= 400:
+                    upload_date = datetime(2025, 3, 1)
+                    season = 3
+                elif card_id >= 350:
+                    upload_date = datetime(2025, 2, 1) 
+                    season = 2
+                
+                metadata = CardUploadMetadata(
+                    card_id=card_id,
+                    telegram_message_id=1000 + card_id,  # Synthetic message ID
+                    upload_date=upload_date,
+                    season=season
+                )
+                
+                try:
+                    db.session.add(metadata)
+                    added_count += 1
+                except Exception as e:
+                    logging.warning(f"Could not add metadata for card {card_id}: {e}")
+            
+            db.session.commit()
+            logging.info(f"Successfully added metadata for {added_count} cards")
+            
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error populating sample metadata: {e}")
-
+        logging.error(f"Error populating card metadata: {e}")
+    finally:
+        if connection:
+            connection.close()
 
 # Create the database tables
 with app.app_context():
     db.create_all()
-    populate_sample_metadata()
+    populate_all_cards_metadata()
 
 
 
