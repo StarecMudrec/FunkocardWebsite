@@ -31,6 +31,8 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 
+HIDDEN_CARD_NAMES = ['срать в помогатор апельсины', 'test', 'фаланга пальца']
+
 def get_db_conn():
     """Get MySQL database connection"""
     try:
@@ -274,8 +276,6 @@ def home():
 
 
 #API ROUTES
-
-HIDDEN_CARD_NAMES = ['срать в помогатор апельсины', 'test', 'фаланга пальца']
 
 @app.route("/api/db-status")
 def db_status():
