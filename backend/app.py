@@ -192,52 +192,6 @@ def find_card_message_mapping():
     finally:
         connection.close()
 
-def calculate_season_from_date(upload_date):
-    """
-    Calculate season based on upload date
-    Season 1: January 2025
-    Season 2: February 2025
-    And so on...
-    """
-    if not upload_date:
-        return 1  # Default season if no date available
-    
-    # Convert to datetime object if it's a string
-    if isinstance(upload_date, str):
-        try:
-            upload_date = datetime.fromisoformat(upload_date.replace('Z', '+00:00'))
-        except:
-            return 1
-    
-    # Calculate season based on month difference from January 2025
-    base_year = 2025
-    base_month = 1  # January
-    
-    year = upload_date.year
-    month = upload_date.month
-    
-    # Calculate season number
-    season = (year - base_year) * 12 + (month - base_month) + 1
-    
-    # Ensure season is at least 1
-    return max(1, season)
-
-def get_season_for_card(card_id):
-    """Get season for a specific card"""
-    upload_date = get_upload_date(card_id)
-    return calculate_season_from_date(upload_date)
-
-def get_seasons_for_cards(card_ids):
-    """Get seasons for multiple cards efficiently"""
-    upload_dates = get_all_upload_dates()
-    seasons = {}
-    
-    for card_id in card_ids:
-        upload_date = upload_dates.get(card_id)
-        seasons[card_id] = calculate_season_from_date(upload_date)
-    
-    return seasons
-
 
 
 
@@ -567,22 +521,18 @@ def serve_card_image(file_id):
 
 @app.route("/api/card_upload_date/<card_id>")
 def get_card_upload_date(card_id):
-    """Get upload date and season for a specific card"""
+    """Get upload date for a specific card"""
     try:
         upload_date = get_upload_date(int(card_id))
-        season = calculate_season_from_date(upload_date)
-        
         if upload_date:
             return jsonify({
                 'card_id': card_id,
-                'upload_date': upload_date,
-                'season_id': season
+                'upload_date': upload_date
             }), 200
         else:
             return jsonify({
                 'card_id': card_id,
                 'upload_date': None,
-                'season_id': 1,  # Default season
                 'message': 'Upload date not available'
             }), 404
     except ValueError:
@@ -590,7 +540,6 @@ def get_card_upload_date(card_id):
     except Exception as e:
         logging.error(f"Error getting upload date: {e}")
         return jsonify({'error': 'Failed to fetch upload date'}), 500
-
 
 @app.route("/admin/fetch-upload-dates")
 def admin_fetch_upload_dates():
@@ -766,9 +715,6 @@ def get_cards_by_category(category_id):
             # Transform to match frontend expectations
             transformed_cards = []
             for card in cards:
-                upload_date = upload_dates.get(card['id'])
-                season = calculate_season_from_date(upload_date)
-                
                 transformed_card = {
                     'id': card['id'],
                     'uuid': card['id'],
@@ -777,8 +723,7 @@ def get_cards_by_category(category_id):
                     'rarity': card['rarity'],
                     'category': card['rarity'],  # This should set category to rarity
                     'points': card['points'],
-                    'upload_date': upload_date,  # Add upload date
-                    'season_id': season  # Add calculated season
+                    'upload_date': upload_dates.get(card['id'])  # Add upload date
                 }
                 transformed_cards.append(transformed_card)
             
@@ -954,14 +899,13 @@ def get_card_info(card_id):
             if row['rarity'] in hidden_categories or row['name'] in HIDDEN_CARD_NAMES:
                 return jsonify({'error': 'Card not found'}), 404
 
-            # Get upload date from SQLite database and calculate season
+            # Get upload date from SQLite database
             upload_date = get_upload_date(int(card_id))
-            season = calculate_season_from_date(upload_date)
 
             return jsonify({
                 'id': card_id,
                 'uuid': card_id,
-                'season_id': season,  # Use calculated season instead of default
+                'season_id': 1,  # Default season since we don't have season data
                 'img': row['photo'],
                 'category': row['rarity'],
                 'name': row['name'],
@@ -997,39 +941,6 @@ def get_season_info(season_id):
     except Exception as e:
         logging.error(f"Error fetching season info: {e}")
         return jsonify({'error': 'Failed to fetch season info'}), 500
-
-
-@app.route("/api/seasons")
-def get_all_seasons():
-    """Get information about all available seasons"""
-    try:
-        # Get all unique seasons from cards
-        connection = get_db_conn()
-        if not connection:
-            return jsonify({'error': 'Database connection failed'}), 500
-        
-        with connection.cursor() as cursor:
-            # Get all card IDs
-            cursor.execute("SELECT id FROM files")
-            card_ids = [row['id'] for row in cursor.fetchall()]
-        
-        # Get seasons for all cards
-        seasons_data = get_seasons_for_cards(card_ids)
-        unique_seasons = set(seasons_data.values())
-        
-        # Create season info for each unique season
-        seasons_list = []
-        for season_id in sorted(unique_seasons):
-            # Use the existing season_info endpoint logic to get season details
-            season_data = get_season_info(season_id)
-            if season_data[1] == 200:  # If successful
-                seasons_list.append(season_data[0].json)
-        
-        return jsonify(seasons_list), 200
-        
-    except Exception as e:
-        logging.error(f"Error fetching seasons: {e}")
-        return jsonify({'error': 'Failed to fetch seasons'}), 500
 
 
 @app.route("/api/check_auth")
