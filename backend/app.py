@@ -280,12 +280,17 @@ class TelegramCardService:
 # Global instance
 telegram_service = TelegramCardService()
 
-# Initialize Telegram service on app startup
-@app.before_first_request
 def initialize_telegram_service():
+    """Initialize Telegram service when app starts"""
     async def init():
         await telegram_service.initialize()
-    asyncio.run(init())
+    
+    # Run the async initialization
+    try:
+        asyncio.run(init())
+        logging.info("Telegram service initialized successfully")
+    except Exception as e:
+        logging.error(f"Failed to initialize Telegram service: {e}")
 
 
 
@@ -858,6 +863,7 @@ def get_user_info():
 
 
 if __name__ == "__main__":
+    initialize_telegram_service()
     app.run(debug=True, port=8000)
 
 @app.route('/avatars/<int:user_id>')
