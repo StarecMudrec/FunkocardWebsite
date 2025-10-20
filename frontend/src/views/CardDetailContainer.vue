@@ -77,7 +77,7 @@
 
         <!-- Season section - ADDED THIS -->
         <div class="season-section">
-          <h3 style="margin: 20px 0px 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
+          <h3 style="margin: 0px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
             <strong>Season: </strong>
             <span>{{ formatSeasonInfo(card.season, card.upload_date) }}</span>
           </h3>
@@ -716,7 +716,7 @@ export default {
 
 .back-to-category-section {
   text-align: center;
-  margin-top: 20px;
+  margin-top: -17px;
 }
 
 .back-to-category-button {
