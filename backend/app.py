@@ -640,23 +640,9 @@ def get_cards_by_category(category_id):
                 transformed_cards.append(transformed_card)
             
             # Apply season sorting in Python if requested
-            # Apply season sorting in Python if requested
             if sort_field == 'season':
-                def get_season_sort_key(card):
-                    # Get season (default to 1 if not available)
-                    season = card.get('season', 1)
-                    # Get upload date as timestamp (use 0 if not available)
-                    upload_date = card.get('upload_date')
-                    date_timestamp = 0
-                    if upload_date:
-                        try:
-                            date_timestamp = datetime.fromisoformat(upload_date.replace('Z', '+00:00')).timestamp()
-                        except:
-                            date_timestamp = 0
-                    return (season, date_timestamp)
-                
-                transformed_cards.sort(key=get_season_sort_key, 
-                                    reverse=(sort_direction == 'desc'))
+                transformed_cards.sort(key=lambda x: x.get('season', 1), 
+                                     reverse=(sort_direction == 'desc'))
             
             return jsonify({
                 'cards': transformed_cards,
