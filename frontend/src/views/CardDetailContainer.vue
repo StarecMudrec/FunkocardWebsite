@@ -609,7 +609,7 @@ export default {
 
 .title-container {
   position: absolute;
-  bottom: 17px;
+  /* bottom: 17px; */
   width: 100%;
   text-align: center;
   display: flex;
