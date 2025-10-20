@@ -208,89 +208,6 @@ def home():
 
 
 
-
-# Add this to app.py or create a new file telegram_service.py
-import asyncio
-from telethon import TelegramClient
-from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
-class TelegramCardService:
-    def __init__(self):
-        self.api_id = Config.TELEGRAM_API_ID
-        self.api_hash = Config.TELEGRAM_API_HASH
-        self.channel_username = Config.CHANNEL_USERNAME
-        self.client = None
-        self.message_cache = {}  # Cache for message data
-        
-    async def initialize(self):
-        """Initialize Telegram client"""
-        if not self.api_id or not self.api_hash:
-            logging.error("Telegram API credentials not configured")
-            return False
-            
-        self.client = TelegramClient('card_session', self.api_id, self.api_hash)
-        await self.client.start()
-        return True
-        
-    async def get_message_by_file_id(self, file_id):
-        """Find message containing specific file_id"""
-        if not self.client:
-            if not await self.initialize():
-                return None
-                
-        # Check cache first
-        if file_id in self.message_cache:
-            return self.message_cache[file_id]
-            
-        try:
-            channel = await self.client.get_entity(self.channel_username)
-            async for message in self.client.iter_messages(channel, limit=1000):
-                if message.media:
-                    media_file_id = self.extract_file_id(message.media)
-                    if media_file_id == file_id:
-                        result = {
-                            'message_id': message.id,
-                            'date': message.date,
-                            'file_id': file_id
-                        }
-                        self.message_cache[file_id] = result
-                        return result
-        except Exception as e:
-            logging.error(f"Error searching for file_id {file_id}: {e}")
-            
-        return None
-        
-    def extract_file_id(self, media):
-        """Extract file_id from different media types"""
-        if isinstance(media, MessageMediaPhoto):
-            return media.photo.id if media.photo else None
-        elif isinstance(media, MessageMediaDocument):
-            return media.document.id if media.document else None
-        return None
-        
-    def calculate_season(self, date):
-        """Calculate season based on upload date"""
-        # 1st season = January 2025, 2nd season = February 2025, etc.
-        if date.year == 2025:
-            return date.month  # January = 1, February = 2, etc.
-        elif date.year > 2025:
-            return (date.year - 2025) * 12 + date.month
-        else:
-            return 1  # Default to season 1 for dates before 2025
-
-# Global instance
-telegram_service = TelegramCardService()
-
-# Initialize Telegram service on app startup
-@app.before_first_request
-def initialize_telegram_service():
-    async def init():
-        await telegram_service.initialize()
-    asyncio.run(init())
-
-
-
-
-
 #API ROUTES
 
 HIDDEN_CARD_NAMES = ['срать в помогатор апельсины', 'test', 'фаланга пальца']
@@ -519,7 +436,7 @@ def get_categories():
 
 @app.route("/api/cards/by-category/<category_id>")
 def get_cards_by_category(category_id):
-    """Get cards filtered by category with upload date and season"""
+    """Get cards filtered by category (all cards, shop, or specific rarity)"""
     connection = get_db_conn()
     if not connection:
         return jsonify({'error': 'Database connection failed'}), 500
@@ -532,8 +449,9 @@ def get_cards_by_category(category_id):
         hidden_categories = ['Scarface - Tony Montana']
         
         with connection.cursor() as cursor:
-            # Handle different category types (same as before)
+            # Handle different category types
             if category_id == 'all':
+                # Get all cards except hidden categories AND hidden card names
                 query = f"""
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
@@ -544,6 +462,7 @@ def get_cards_by_category(category_id):
                 cursor.execute(query, hidden_categories + HIDDEN_CARD_NAMES)
                 
             elif category_id == 'shop':
+                # Get only cards available in shop, excluding hidden categories AND hidden card names
                 query = f"""
                     SELECT id, tg_id as photo, name, rare as rarity, fame as points 
                     FROM files 
@@ -555,7 +474,9 @@ def get_cards_by_category(category_id):
                 cursor.execute(query, hidden_categories + HIDDEN_CARD_NAMES)
                 
             elif category_id.startswith('rarity_'):
+                # Get cards by specific rarity, excluding hidden card names
                 rarity_name = category_id.replace('rarity_', '')
+                # Handle URL encoding for special characters
                 import urllib.parse
                 rarity_name = urllib.parse.unquote(rarity_name)
                 
@@ -573,37 +494,21 @@ def get_cards_by_category(category_id):
             
             cards = [dict(row) for row in cursor.fetchall()]
             
-            # Transform to match frontend expectations with async upload date lookup
+            # Transform to match frontend expectations
             transformed_cards = []
             for card in cards:
-                # Get upload date and season asynchronously
-                upload_date = None
-                season = 1
-                
-                # Try to get message data from Telegram
-                async def get_card_metadata():
-                    message_data = await telegram_service.get_message_by_file_id(card['photo'])
-                    if message_data:
-                        upload_date = message_data['date']
-                        season = telegram_service.calculate_season(upload_date)
-                        return upload_date, season
-                    return None, 1
-                
-                # Run async function synchronously for this simple case
-                # In production, you might want to use asyncio.run() or make the endpoint async
-                upload_date, season = asyncio.run(get_card_metadata())
-                
                 transformed_card = {
                     'id': card['id'],
                     'uuid': card['id'],
                     'img': card['photo'],
                     'name': card['name'],
                     'rarity': card['rarity'],
-                    'category': card['rarity'],
-                    'points': card['points'],
-                    'upload_date': upload_date.isoformat() if upload_date else None,
-                    'season': season
+                    'category': card['rarity'],  # This should set category to rarity
+                    'points': card['points']
                 }
+                # Debug: Log Limited cards specifically
+                if card['rarity'] == 'Limited ⚠️':
+                    logging.debug(f"Limited card transformation: {transformed_card}")
                 transformed_cards.append(transformed_card)
             
             return jsonify({
@@ -763,6 +668,7 @@ def get_card_info(card_id):
     
     try:
         with connection.cursor() as cursor:
+            # Query the files table with shop information
             cursor.execute(
                 "SELECT tg_id as photo, name, rare as rarity, fame as points, shop FROM files WHERE id = %s", 
                 (int(card_id),)
@@ -772,35 +678,20 @@ def get_card_info(card_id):
             if not row:
                 return jsonify({'error': 'Card not found'}), 404
             
+            # Check if card is in hidden category OR has a hidden name
             hidden_categories = ['Scarface - Tony Montana']
             if row['rarity'] in hidden_categories or row['name'] in HIDDEN_CARD_NAMES:
                 return jsonify({'error': 'Card not found'}), 404
 
-            # Get upload date and season
-            upload_date = None
-            season = 1
-            
-            async def get_card_metadata():
-                message_data = await telegram_service.get_message_by_file_id(row['photo'])
-                if message_data:
-                    upload_date = message_data['date']
-                    season = telegram_service.calculate_season(upload_date)
-                    return upload_date, season
-                return None, 1
-            
-            upload_date, season = asyncio.run(get_card_metadata())
-
             return jsonify({
                 'id': card_id,
                 'uuid': card_id,
-                'season_id': season,  # Use calculated season instead of default
+                'season_id': 1,  # Default season since we don't have season data
                 'img': row['photo'],
                 'category': row['rarity'],
                 'name': row['name'],
                 'description': f"Points: {row['points']}",
-                'shop': row['shop'],
-                'upload_date': upload_date.isoformat() if upload_date else None,
-                'season': season
+                'shop': row['shop']  # Add shop information
             }), 200
             
     except ValueError:
