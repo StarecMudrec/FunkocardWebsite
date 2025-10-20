@@ -44,8 +44,13 @@ def get_db_conn():
 
 
 def populate_all_cards_metadata():
-    """Populate upload metadata for all cards in the database"""
+    """Populate upload metadata using actual Telegram channel data"""
     try:
+        # First, try to sync with actual Telegram messages
+        logging.info("Attempting to sync with Telegram channel messages...")
+        telegram_service.sync_channel_messages()
+        
+        # Then check for any missing cards and provide reasonable defaults
         connection = get_db_conn()
         if not connection:
             logging.error("Cannot connect to MySQL database")
@@ -60,41 +65,33 @@ def populate_all_cards_metadata():
             existing_metadata_count = CardUploadMetadata.query.count()
             logging.info(f"Found {len(all_card_ids)} cards in MySQL, {existing_metadata_count} existing metadata entries")
             
-            added_count = 0
+            # For cards without metadata, create reasonable defaults
+            missing_count = 0
             for card_id in all_card_ids:
-                # Check if metadata already exists
                 existing = CardUploadMetadata.query.filter_by(card_id=card_id).first()
                 if existing:
                     continue
                     
-                # Create synthetic metadata based on card ID
-                # You can adjust this logic based on your actual data
-                upload_date = datetime(2025, 1, 1)  # Default date
-                season = 1  # Default season
-                
-                # Simple logic: assign seasons based on card ID ranges
-                if card_id >= 400:
-                    upload_date = datetime(2025, 3, 1)
-                    season = 3
-                elif card_id >= 350:
-                    upload_date = datetime(2025, 2, 1) 
-                    season = 2
-                
+                # Create default metadata for missing cards
+                # Use a date based on card ID as fallback, but this should be rare
+                # after proper Telegram sync
+                default_date = datetime(2025, 1, 1)  # Conservative default
                 metadata = CardUploadMetadata(
                     card_id=card_id,
-                    telegram_message_id=1000 + card_id,  # Synthetic message ID
-                    upload_date=upload_date,
-                    season=season
+                    telegram_message_id=0,  # Indicates no Telegram message found
+                    upload_date=default_date,
+                    season=1
                 )
                 
                 try:
                     db.session.add(metadata)
-                    added_count += 1
+                    missing_count += 1
                 except Exception as e:
                     logging.warning(f"Could not add metadata for card {card_id}: {e}")
             
-            db.session.commit()
-            logging.info(f"Successfully added metadata for {added_count} cards")
+            if missing_count > 0:
+                db.session.commit()
+                logging.info(f"Added default metadata for {missing_count} missing cards")
             
     except Exception as e:
         db.session.rollback()
@@ -102,11 +99,23 @@ def populate_all_cards_metadata():
     finally:
         if connection:
             connection.close()
-
+            
 # Create the database tables
 with app.app_context():
-    db.create_all()
-    populate_all_cards_metadata()
+    try:
+        db.create_all()
+        logging.info("Database tables created successfully")
+        
+        # Only populate metadata if the table is empty or we need to refresh
+        existing_count = CardUploadMetadata.query.count()
+        if existing_count == 0:
+            logging.info("No existing metadata found, populating...")
+            populate_all_cards_metadata()
+        else:
+            logging.info(f"Found {existing_count} existing metadata entries")
+            
+    except Exception as e:
+        logging.error(f"Error during database initialization: {e}")
 
 
 
