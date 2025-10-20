@@ -76,6 +76,8 @@
             </div>
             <transition name="sort-dropdown">
               <div class="sort-dropdown" v-if="showSortDropdown" v-click-outside="closeSortDropdown">
+                <div class="sort-option" @click="sortBy('date', 'desc')">Date (Newest first)</div>
+                <div class="sort-option" @click="sortBy('date', 'asc')">Date (Oldest first)</div>
                 <div class="sort-option" @click="sortBy('season', 'desc')">Season (Newest first)</div>
                 <div class="sort-option" @click="sortBy('season', 'asc')">Season (Oldest first)</div>
                 <div class="sort-option" @click="sortBy('amount', 'asc')">Points (Low to High)</div>
@@ -185,7 +187,7 @@ export default {
       isSearching: false,
       debouncedSearch: null,
       showSortDropdown: false,
-      currentSort: { field: 'season', direction: 'desc' },
+      currentSort: { field: 'date', direction: 'desc' }, // Changed default to date
       rarityOrder: {
         'Vinyl Figure💫': 1,
         'Legendary🧡': 2,
@@ -288,7 +290,7 @@ export default {
           // Check if state is not too old (e.g., 1 hour)
           if (Date.now() - state.timestamp < 60 * 60 * 1000) {
             this.searchQuery = state.searchQuery || ''
-            this.currentSort = state.currentSort || { field: 'id', direction: 'asc' }
+            this.currentSort = state.currentSort || { field: 'date', direction: 'desc' }
             this.scrollPosition = state.scrollPosition || 0
           } else {
             this.clearSavedState()
@@ -350,7 +352,7 @@ export default {
         } else {
           // Reset to default when coming from elsewhere
           this.searchQuery = ''
-          this.currentSort = { field: 'id', direction: 'asc' }
+          this.currentSort = { field: 'date', direction: 'desc' }
           this.filteredCards = [...this.cards]
           this.clearSavedState()
         }
@@ -386,7 +388,7 @@ export default {
       }
       
       // Then apply saved sort
-      if (this.currentSort.field !== 'id' || this.currentSort.direction !== 'asc') {
+      if (this.currentSort.field !== 'date' || this.currentSort.direction !== 'desc') {
         this.sortBy(this.currentSort.field, this.currentSort.direction, true)
       }
     },
@@ -464,6 +466,15 @@ export default {
       let sortedCards = [...this.filteredCards]
       
       switch (field) {
+        case 'date':
+          sortedCards.sort((a, b) => {
+            // Parse dates - assuming date is in ISO format or similar
+            const dateA = a.date ? new Date(a.date) : new Date(0)
+            const dateB = b.date ? new Date(b.date) : new Date(0)
+            return direction === 'asc' ? dateA - dateB : dateB - dateA
+          })
+          break
+        
         case 'season':
           sortedCards.sort((a, b) => {
             const seasonA = a.season || 1
@@ -518,6 +529,7 @@ export default {
 }
 </script>
 
+<!-- The styles remain exactly the same as in your original file -->
 <style scoped>
 /* Scroll to top button styles */
 .scroll-top-button {
@@ -773,8 +785,8 @@ export default {
   cursor: pointer;
   padding: 8px;
   border-radius: 8px;
-  /* background: var(--card-bg);
-  border: 1px solid #333; */
+  /* background: var(--card-bg); */
+  /* border: 1px solid #333; */
   transition: all 0.3s ease;
   width: 50px;
   height: 50px;
@@ -892,8 +904,8 @@ export default {
   border-radius: 50%;
   border-top-color: var(--accent-color);
   animation: spin 1s ease-in-out infinite;
-  /* margin-top: 20px;
-  margin-bottom: 20px; */
+  /* margin-top: 20px; */
+  /* margin-bottom: 20px; */
 }
 
 @keyframes spin {
