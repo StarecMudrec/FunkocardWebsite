@@ -602,7 +602,7 @@ export default {
 
 .card-header-section {
   position: relative;
-  min-height: 150px;
+  min-height: 180px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
