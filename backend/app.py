@@ -561,7 +561,7 @@ def get_cards_by_category(category_id):
         return jsonify({'error': 'Database connection failed'}), 500
     
     try:
-        sort_field = request.args.get('sort', 'id')  # Default to ID
+        sort_field = request.args.get('sort', 'id')  # Default back to ID for now
         sort_direction = request.args.get('direction', 'desc')
         
         # Define hidden categories to exclude - only Scarface remains hidden
@@ -576,8 +576,7 @@ def get_cards_by_category(category_id):
                     WHERE rare NOT IN (%s)
                     AND name NOT IN (%s, %s, %s)
                     ORDER BY {field} {direction}
-                """.format(field='id' if sort_field == 'season' else sort_field, 
-                          direction=sort_direction)
+                """.format(field=sort_field, direction=sort_direction)
                 cursor.execute(query, hidden_categories + HIDDEN_CARD_NAMES)
                 
             elif category_id == 'shop':
@@ -588,8 +587,7 @@ def get_cards_by_category(category_id):
                     AND rare NOT IN (%s)
                     AND name NOT IN (%s, %s, %s)
                     ORDER BY {field} {direction}
-                """.format(field='id' if sort_field == 'season' else sort_field, 
-                          direction=sort_direction)
+                """.format(field=sort_field, direction=sort_direction)
                 cursor.execute(query, hidden_categories + HIDDEN_CARD_NAMES)
                 
             elif category_id.startswith('rarity_'):
@@ -603,8 +601,7 @@ def get_cards_by_category(category_id):
                     WHERE rare = %s
                     AND name NOT IN (%s, %s, %s)
                     ORDER BY {field} {direction}
-                """.format(field='id' if sort_field == 'season' else sort_field, 
-                          direction=sort_direction)
+                """.format(field=sort_field, direction=sort_direction)
                 cursor.execute(query, (rarity_name,) + tuple(HIDDEN_CARD_NAMES))
                 
             else:

@@ -193,7 +193,7 @@ export default {
         const savedSortState = sessionStorage.getItem(`category_state_${previousCategory}`)
         
         let sortField = 'id'
-        let sortDirection = 'desc'
+        let sortDirection = 'asc'
         
         if (savedSortState) {
           try {
@@ -214,7 +214,7 @@ export default {
         allCards.value = response.cards || []
         
         console.log('Loaded all cards:', allCards.value.length)
-        console.log('All cards:', allCards.value.map(c => ({ id: c.id, name: c.name, season: c.season })))
+        console.log('All cards:', allCards.value.map(c => ({ id: c.id, name: c.name })))
         
         // Find current card index
         currentCardIndex.value = findCurrentCardIndex()
