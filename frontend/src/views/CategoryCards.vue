@@ -76,8 +76,8 @@
             </div>
             <transition name="sort-dropdown">
               <div class="sort-dropdown" v-if="showSortDropdown" v-click-outside="closeSortDropdown">
-                <div class="sort-option" @click="sortBy('id', 'asc')">Old first</div>
-                <div class="sort-option" @click="sortBy('id', 'desc')">New first</div>
+                <div class="sort-option" @click="sortBy('season', 'desc')">Season (Newest first)</div>
+                <div class="sort-option" @click="sortBy('season', 'asc')">Season (Oldest first)</div>
                 <div class="sort-option" @click="sortBy('amount', 'asc')">Points (Low to High)</div>
                 <div class="sort-option" @click="sortBy('amount', 'desc')">Points (High to Low)</div>
                 <div v-if="showRaritySort" class="sort-option" @click="sortBy('rarity', 'asc')">Rarity (Vinyl Figure💫 to Force🤷‍♂️)</div>
@@ -185,7 +185,7 @@ export default {
       isSearching: false,
       debouncedSearch: null,
       showSortDropdown: false,
-      currentSort: { field: 'id', direction: 'asc' },
+      currentSort: { field: 'season', direction: 'desc' },
       rarityOrder: {
         'Vinyl Figure💫': 1,
         'Legendary🧡': 2,
@@ -464,9 +464,11 @@ export default {
       let sortedCards = [...this.filteredCards]
       
       switch (field) {
-        case 'id':
+        case 'season':
           sortedCards.sort((a, b) => {
-            return direction === 'asc' ? a.id - b.id : b.id - a.id
+            const seasonA = a.season || 1
+            const seasonB = b.season || 1
+            return direction === 'asc' ? seasonA - seasonB : seasonB - seasonA
           })
           break
         
