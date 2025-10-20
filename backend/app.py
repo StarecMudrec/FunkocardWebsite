@@ -16,12 +16,6 @@ from sqlalchemy import create_engine, select, and_, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlite3 import connect
 
-import sqlite3
-from datetime import datetime
-import asyncio
-from telethon import TelegramClient
-from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
-
 import pymysql
 
 app = Flask(__name__)
@@ -37,161 +31,6 @@ migrate = Migrate(app, db)
 # Create the database tables
 with app.app_context():
     db.create_all()
-
-
-
-# Add this after your existing imports and before route definitions
-
-def init_upload_dates_db():
-    """Initialize SQLite database for storing upload dates"""
-    conn = sqlite3.connect('card_upload_dates.db')
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS card_upload_dates (
-            card_id INTEGER PRIMARY KEY,
-            message_id INTEGER,
-            upload_date TIMESTAMP,
-            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Create index for faster lookups
-    cursor.execute('''
-        CREATE INDEX IF NOT EXISTS idx_card_id ON card_upload_dates(card_id)
-    ''')
-    
-    conn.commit()
-    conn.close()
-
-def get_upload_dates_conn():
-    """Get SQLite database connection"""
-    return sqlite3.connect('card_upload_dates.db')
-
-def store_upload_date(card_id, message_id, upload_date):
-    """Store upload date in SQLite database"""
-    conn = get_upload_dates_conn()
-    cursor = conn.cursor()
-    
-    try:
-        cursor.execute('''
-            INSERT OR REPLACE INTO card_upload_dates 
-            (card_id, message_id, upload_date, last_updated) 
-            VALUES (?, ?, ?, ?)
-        ''', (card_id, message_id, upload_date, datetime.now()))
-        
-        conn.commit()
-        logging.debug(f"Stored upload date for card {card_id}")
-        return True
-    except Exception as e:
-        logging.error(f"Error storing upload date: {e}")
-        return False
-    finally:
-        conn.close()
-
-def get_upload_date(card_id):
-    """Get upload date from SQLite database"""
-    conn = get_upload_dates_conn()
-    cursor = conn.cursor()
-    
-    try:
-        cursor.execute(
-            'SELECT upload_date FROM card_upload_dates WHERE card_id = ?', 
-            (card_id,)
-        )
-        result = cursor.fetchone()
-        return result[0] if result else None
-    except Exception as e:
-        logging.error(f"Error getting upload date: {e}")
-        return None
-    finally:
-        conn.close()
-
-def get_all_upload_dates():
-    """Get all upload dates for batch operations"""
-    conn = get_upload_dates_conn()
-    cursor = conn.cursor()
-    
-    try:
-        cursor.execute('SELECT card_id, upload_date FROM card_upload_dates')
-        return {row[0]: row[1] for row in cursor.fetchall()}
-    except Exception as e:
-        logging.error(f"Error getting all upload dates: {e}")
-        return {}
-    finally:
-        conn.close()
-
-async def fetch_telegram_message_dates(channel_username, limit=1000):
-    """
-    Fetch message dates from Telegram channel
-    Requires these environment variables:
-    - TELEGRAM_API_ID: From https://my.telegram.org/apps
-    - TELEGRAM_API_HASH: From https://my.telegram.org/apps  
-    - TELEGRAM_PHONE_NUMBER: Your phone number
-    """
-    api_id = int(os.getenv('TELEGRAM_API_ID'))
-    api_hash = os.getenv('TELEGRAM_API_HASH')
-    phone_number = os.getenv('TELEGRAM_PHONE_NUMBER')
-    
-    if not all([api_id, api_hash, phone_number]):
-        logging.error("Telegram API credentials not set")
-        return {}
-    
-    client = TelegramClient('session_name', api_id, api_hash)
-    await client.start(phone=phone_number)
-    
-    try:
-        channel = await client.get_entity(channel_username)
-        message_dates = {}
-        
-        async for message in client.iter_messages(channel, limit=limit):
-            if message.media and message.id:
-                # Store message ID and date
-                message_dates[message.id] = message.date
-        
-        logging.info(f"Fetched {len(message_dates)} message dates from Telegram")
-        return message_dates
-    except Exception as e:
-        logging.error(f"Error fetching Telegram messages: {e}")
-        return {}
-    finally:
-        await client.disconnect()
-
-def sync_fetch_message_dates(channel_username, limit=1000):
-    """Sync wrapper for the async function"""
-    return asyncio.run(fetch_telegram_message_dates(channel_username, limit))
-
-def find_card_message_mapping():
-    """
-    This function attempts to find a mapping between card IDs and Telegram message IDs.
-    Since we don't have a direct mapping, we'll use a heuristic approach.
-    You'll need to customize this based on how your cards are organized.
-    """
-    connection = get_db_conn()
-    if not connection:
-        return {}
-    
-    try:
-        with connection.cursor() as cursor:
-            # Get all cards ordered by ID (assuming newer cards have higher IDs)
-            cursor.execute("SELECT id FROM files ORDER BY id")
-            cards = [row['id'] for row in cursor.fetchall()]
-            
-            # This is a simple mapping - you might need to adjust this logic
-            # Assuming card IDs roughly correspond to message order
-            mapping = {}
-            for i, card_id in enumerate(cards):
-                # Offset might be needed if your first card isn't message 1
-                mapping[card_id] = i + 1  # Message IDs usually start from 1
-            
-            return mapping
-            
-    except Exception as e:
-        logging.error(f"Error creating card mapping: {e}")
-        return {}
-    finally:
-        connection.close()
-
 
 
 
@@ -519,60 +358,6 @@ def serve_card_image(file_id):
         return send_from_directory('public', 'placeholder.jpg')
 
 
-@app.route("/api/card_upload_date/<card_id>")
-def get_card_upload_date(card_id):
-    """Get upload date for a specific card"""
-    try:
-        upload_date = get_upload_date(int(card_id))
-        if upload_date:
-            return jsonify({
-                'card_id': card_id,
-                'upload_date': upload_date
-            }), 200
-        else:
-            return jsonify({
-                'card_id': card_id,
-                'upload_date': None,
-                'message': 'Upload date not available'
-            }), 404
-    except ValueError:
-        return jsonify({'error': 'Invalid card ID'}), 400
-    except Exception as e:
-        logging.error(f"Error getting upload date: {e}")
-        return jsonify({'error': 'Failed to fetch upload date'}), 500
-
-@app.route("/admin/fetch-upload-dates")
-def admin_fetch_upload_dates():
-    """Admin endpoint to fetch and store upload dates from Telegram"""
-    # Add authentication check here if needed
-    channel_username = request.args.get('channel', '@your_channel_username')  # Replace with your channel
-    
-    try:
-        # Step 1: Fetch message dates from Telegram
-        message_dates = sync_fetch_message_dates(channel_username, limit=2000)
-        
-        # Step 2: Get card to message mapping
-        card_mapping = find_card_message_mapping()
-        
-        # Step 3: Store the dates
-        stored_count = 0
-        for card_id, message_id in card_mapping.items():
-            if message_id in message_dates:
-                if store_upload_date(card_id, message_id, message_dates[message_id]):
-                    stored_count += 1
-        
-        return jsonify({
-            'status': 'success', 
-            'message': f'Stored upload dates for {stored_count} cards',
-            'total_cards': len(card_mapping),
-            'total_messages': len(message_dates)
-        }), 200
-        
-    except Exception as e:
-        logging.error(f"Error fetching upload dates: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-
 @app.route("/api/categories")
 def get_categories():
     """Get all categories: all cards, available at shop, and rarities"""
@@ -709,9 +494,6 @@ def get_cards_by_category(category_id):
             
             cards = [dict(row) for row in cursor.fetchall()]
             
-            # Get upload dates for all cards in this batch
-            upload_dates = get_all_upload_dates()
-            
             # Transform to match frontend expectations
             transformed_cards = []
             for card in cards:
@@ -722,9 +504,11 @@ def get_cards_by_category(category_id):
                     'name': card['name'],
                     'rarity': card['rarity'],
                     'category': card['rarity'],  # This should set category to rarity
-                    'points': card['points'],
-                    'upload_date': upload_dates.get(card['id'])  # Add upload date
+                    'points': card['points']
                 }
+                # Debug: Log Limited cards specifically
+                if card['rarity'] == 'Limited ⚠️':
+                    logging.debug(f"Limited card transformation: {transformed_card}")
                 transformed_cards.append(transformed_card)
             
             return jsonify({
@@ -899,9 +683,6 @@ def get_card_info(card_id):
             if row['rarity'] in hidden_categories or row['name'] in HIDDEN_CARD_NAMES:
                 return jsonify({'error': 'Card not found'}), 404
 
-            # Get upload date from SQLite database
-            upload_date = get_upload_date(int(card_id))
-
             return jsonify({
                 'id': card_id,
                 'uuid': card_id,
@@ -910,8 +691,7 @@ def get_card_info(card_id):
                 'category': row['rarity'],
                 'name': row['name'],
                 'description': f"Points: {row['points']}",
-                'shop': row['shop'],  # Add shop information
-                'upload_date': upload_date  # Add upload date
+                'shop': row['shop']  # Add shop information
             }), 200
             
     except ValueError:
@@ -969,7 +749,6 @@ def get_user_info():
 
 
 if __name__ == "__main__":
-    init_upload_dates_db()
     app.run(debug=True, port=8000)
 
 @app.route('/avatars/<int:user_id>')
