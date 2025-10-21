@@ -250,7 +250,7 @@ export default {
 
     const resizeText = ({ 
       element, 
-      minSize = 20, 
+      minSize = 32, 
       maxSize = 60, 
       step = 1,
       maxWidth = 350,
@@ -334,7 +334,7 @@ export default {
         
         const { optimalSize, needsWrap } = resizeText({
           element: element,
-          minSize: 20,
+          minSize: 32,
           maxSize: 60,
           step: 1,
           maxWidth: 350,
