@@ -156,6 +156,9 @@ export default {
       next: null
     })
 
+    // Track which cards have been preloaded
+    const preloadedCards = ref(new Set())
+
     onUnmounted(() => {
       // Clean up saved card order when leaving the detail view
       sessionStorage.removeItem('currentCardOrder')
@@ -264,7 +267,7 @@ export default {
         // Update displayed cards immediately with basic data
         updateDisplayedCards()
         
-        // Load detailed info for current and adjacent cards
+        // Load detailed info for current and adjacent cards (5 on each side)
         await loadDetailedCardInfo()
         
       } catch (error) {
@@ -273,25 +276,26 @@ export default {
       }
     }
 
+    const getCardsToPreload = () => {
+      const cardsToPreload = []
+      const startIndex = Math.max(0, currentCardIndex.value - 5)
+      const endIndex = Math.min(allCards.value.length - 1, currentCardIndex.value + 5)
+      
+      for (let i = startIndex; i <= endIndex; i++) {
+        if (!preloadedCards.value.has(allCards.value[i].id)) {
+          cardsToPreload.push(allCards.value[i].id)
+        }
+      }
+      
+      console.log(`Preloading ${cardsToPreload.length} cards from index ${startIndex} to ${endIndex}`)
+      return cardsToPreload
+    }
+
     const loadDetailedCardInfo = async () => {
       if (!allCards.value.length) return
 
-      const cardsToLoad = []
-
-      // Always load current card
-      if (displayedCards.value.current) {
-        cardsToLoad.push(displayedCards.value.current.id)
-      }
-
-      // Load previous card if exists
-      if (displayedCards.value.previous) {
-        cardsToLoad.push(displayedCards.value.previous.id)
-      }
-
-      // Load next card if exists
-      if (displayedCards.value.next) {
-        cardsToLoad.push(displayedCards.value.next.id)
-      }
+      // Get cards to preload (5 on each side of current card)
+      const cardsToLoad = getCardsToPreload()
 
       console.log('Loading detailed info for cards:', cardsToLoad)
 
@@ -299,7 +303,7 @@ export default {
         const loadPromises = cardsToLoad.map(async (cardId) => {
           try {
             const detailedCard = await fetchCardInfo(cardId)
-            // Update the card in allCards with detailed info - FIX: Proper merge
+            // Update the card in allCards with detailed info
             const index = allCards.value.findIndex(c => c.id === cardId)
             if (index >= 0) {
               // Preserve ALL original data and merge with detailed info
@@ -307,6 +311,8 @@ export default {
                 ...allCards.value[index], // Keep original data including upload_date
                 ...detailedCard  // Override with detailed info
               }
+              // Mark as preloaded
+              preloadedCards.value.add(cardId)
               console.log(`Loaded detailed info for card ${cardId}:`, {
                 name: detailedCard.name,
                 upload_date: detailedCard.upload_date,
@@ -367,10 +373,7 @@ export default {
       // Force a reflow to ensure the teleport happens immediately
       await nextTick()
       
-      // Re-enable transitions for future animations
-      // isScrolling.value = true
-
-      // STEP 4: Replace adjacent cards for new ones
+      // STEP 4: Preload adjacent cards for the new position
       await loadDetailedCardInfo()
 
       // Final cleanup
@@ -447,6 +450,9 @@ export default {
           allCards.value[cardIndex] = updatedCard
           updateDisplayedCards()
         }
+        
+        // Update preloaded status
+        preloadedCards.value.add(displayedCards.value.current.id)
       } catch (err) {
         console.error('Error uploading image:', err)
         saveError.value = err.message
@@ -479,6 +485,7 @@ export default {
           current: null,
           next: null
         }
+        preloadedCards.value.clear()
         
         console.log('Starting to load data for card ID:', props.id)
         
