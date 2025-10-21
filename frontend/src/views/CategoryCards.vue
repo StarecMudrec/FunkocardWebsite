@@ -405,6 +405,9 @@ export default {
       // Save the current category ID before navigating to card detail
       sessionStorage.setItem('previousCategory', this.categoryId);
       
+      // Save the EXACT current card order for navigation
+      sessionStorage.setItem('currentCardOrder', JSON.stringify(this.filteredCards.map(card => card.id)));
+      
       // Set navigation type before navigating to card detail
       if (this.$route.meta) {
         this.$route.meta.navigationType = 'to-card-detail'

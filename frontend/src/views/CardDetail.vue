@@ -156,6 +156,11 @@ export default {
       next: null
     })
 
+    onUnmounted(() => {
+      // Clean up saved card order when leaving the detail view
+      sessionStorage.removeItem('currentCardOrder')
+    })
+
     const isFirstCard = computed(() => currentCardIndex.value <= 0)
     const isLastCard = computed(() => currentCardIndex.value >= allCards.value.length - 1)
 
@@ -167,8 +172,17 @@ export default {
 
     const findCurrentCardIndex = () => {
       if (!props.id || !allCards.value.length) return 0
+      
+      // Find the index of the current card in the allCards array
       const index = allCards.value.findIndex(c => c.id.toString() === props.id.toString())
-      return index >= 0 ? index : 0
+      
+      if (index >= 0) {
+        return index
+      }
+      
+      // If current card not found, try to find it by loading it individually
+      console.warn(`Current card ${props.id} not found in loaded cards, loading individually`)
+      return 0
     }
 
     const updateDisplayedCards = () => {
@@ -190,33 +204,55 @@ export default {
     const loadAllCards = async () => {
       try {
         const previousCategory = sessionStorage.getItem('previousCategory')
-        const savedSortState = sessionStorage.getItem(`category_state_${previousCategory}`)
         
-        let sortField = 'id'
-        let sortDirection = 'asc'
+        // Get the saved card order from sessionStorage
+        const savedCardOrder = sessionStorage.getItem('currentCardOrder')
         
-        if (savedSortState) {
-          try {
-            const state = JSON.parse(savedSortState)
-            if (state.currentSort) {
-              sortField = state.currentSort.field
-              sortDirection = state.currentSort.direction
+        if (savedCardOrder) {
+          // Use the exact card order that was saved from CategoryCards
+          const cardIds = JSON.parse(savedCardOrder)
+          console.log('Loading cards using saved order:', cardIds)
+          
+          // Load cards in the exact order they were displayed
+          const loadPromises = cardIds.map(async (cardId) => {
+            try {
+              const cardInfo = await fetchCardInfo(cardId)
+              return cardInfo
+            } catch (err) {
+              console.error(`Failed to load card ${cardId}:`, err)
+              return null
             }
-          } catch (e) {
-            console.warn('Failed to parse saved sort state:', e)
+          })
+          
+          const loadedCards = await Promise.all(loadPromises)
+          allCards.value = loadedCards.filter(card => card !== null)
+          
+          console.log('Loaded cards in saved order:', allCards.value.map(c => ({ id: c.id, name: c.name })))
+        } else {
+          // Fallback: load with saved sort parameters (existing logic)
+          const savedSortState = sessionStorage.getItem(`category_state_${previousCategory}`)
+          
+          let sortField = 'id'
+          let sortDirection = 'asc'
+          
+          if (savedSortState) {
+            try {
+              const state = JSON.parse(savedSortState)
+              if (state.currentSort) {
+                sortField = state.currentSort.field
+                sortDirection = state.currentSort.direction
+              }
+            } catch (e) {
+              console.warn('Failed to parse saved sort state:', e)
+            }
           }
+          
+          const categoryId = previousCategory
+          console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection)
+          
+          const response = await fetchCardsByCategory(categoryId, sortField, sortDirection)
+          allCards.value = response.cards || []
         }
-        
-        const categoryId = previousCategory
-        console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection)
-        
-        const response = await fetchCardsByCategory(categoryId, sortField, sortDirection)
-        
-        // IMPORTANT: Store the cards exactly as they come from the API (preserving the sorted order)
-        allCards.value = response.cards || []
-        
-        console.log('Loaded all cards:', allCards.value.length)
-        console.log('All cards:', allCards.value.map(c => ({ id: c.id, name: c.name, season: c.season })))
         
         // Find current card index in the sorted array
         currentCardIndex.value = findCurrentCardIndex()
@@ -356,6 +392,9 @@ export default {
       if (router.meta) {
         router.meta.navigationType = 'to-category'
       }
+      
+      // Clear the saved card order when going back to category
+      sessionStorage.removeItem('currentCardOrder')
       
       const previousCategory = sessionStorage.getItem('previousCategory')
       if (previousCategory) {
