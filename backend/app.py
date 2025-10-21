@@ -345,6 +345,47 @@ def db_status():
         connection.close()
 
 
+@app.route("/api/debug-telegram-sync")
+def debug_telegram_sync():
+    """Debug endpoint to test Telegram sync functionality"""
+    try:
+        from app import get_db_conn
+        
+        # Test 1: Check if we can get channel messages
+        messages = telegram_service.get_all_channel_messages()
+        
+        # Test 2: Check a specific card
+        connection = get_db_conn()
+        test_results = []
+        
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, name FROM files WHERE id IN (336, 1, 100) ORDER BY id")
+            test_cards = cursor.fetchall()
+            
+            for card in test_cards:
+                match = telegram_service.find_card_in_messages(card['name'], messages[:100] if messages else [])
+                test_results.append({
+                    'card_id': card['id'],
+                    'card_name': card['name'],
+                    'normalized_name': telegram_service.normalize_card_name(card['name']),
+                    'found_in_messages': match is not None,
+                    'match_message_text': (match.get('caption') or match.get('text', ''))[:100] + '...' if match else None
+                })
+        
+        return jsonify({
+            'total_messages_found': len(messages) if messages else 0,
+            'test_cards': test_results,
+            'message_sample': [{
+                'id': msg['id'],
+                'date': datetime.fromtimestamp(msg['date']).isoformat(),
+                'text': (msg.get('caption') or msg.get('text', ''))[:200]
+            } for msg in (messages[:5] if messages else [])]
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route("/api/test-metadata")
 def test_metadata():
     """Test endpoint to check metadata functionality"""
