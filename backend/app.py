@@ -15,8 +15,10 @@ from config import Config
 from sqlalchemy import create_engine, select, and_, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlite3 import connect
-from telegram_client_service import sync_telegram_messages
+# from telegram_client_service import sync_telegram_messages
 from datetime import datetime
+import subprocess
+import sys
 
 import pymysql
 
@@ -143,6 +145,25 @@ with app.app_context():
         logging.error(f"Error during database initialization: {e}")
 
 
+
+def run_telegram_sync():
+    """Run Telegram sync as a separate process"""
+    try:
+        result = subprocess.run([
+            sys.executable, 'telegram_sync_worker.py'
+        ], capture_output=True, text=True, timeout=300)  # 5 minute timeout
+        
+        logging.info(f"Sync process stdout: {result.stdout}")
+        if result.stderr:
+            logging.error(f"Sync process stderr: {result.stderr}")
+        
+        return result.returncode == 0
+    except subprocess.TimeoutExpired:
+        logging.error("Telegram sync process timed out")
+        return False
+    except Exception as e:
+        logging.error(f"Error running sync process: {e}")
+        return False
 
 @app.route('/placeholder.jpg')
 def serve_placeholder():
@@ -553,11 +574,11 @@ def serve_card_image(file_id):
 def sync_telegram_messages_route():
     """Endpoint to manually trigger Telegram message synchronization"""
     try:
-        success = sync_telegram_messages()
+        success = run_telegram_sync()
         if success:
             return jsonify({"status": "sync completed successfully"}), 200
         else:
-            return jsonify({"error": "Sync failed"}), 500
+            return jsonify({"error": "Sync failed - check logs"}), 500
     except Exception as e:
         logging.error(f"Sync error: {e}")
         return jsonify({"error": "Sync failed"}), 500
