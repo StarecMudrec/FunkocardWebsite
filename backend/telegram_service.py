@@ -5,136 +5,127 @@ from models import db, CardUploadMetadata
 import logging
 import time
 import re
+from unidecode import unidecode
 
 class TelegramService:
     def __init__(self):
         self.bot_token = os.getenv("CARDS_BOT_TOKEN")
         self.channel_username = "@funkocardsall"
     
-    def get_channel_messages_web(self, limit=100):
-        """Get messages from public channel using web scraping approach"""
+    def get_all_channel_messages(self):
+        """Get all messages from the channel using iterative approach"""
         if not self.bot_token:
             logging.error("CARDS_BOT_TOKEN not set")
             return []
         
-        # For public channels, we need to use a different approach
-        # This method uses the getUpdates method which works for public channels
-        # that the bot is subscribed to
+        all_messages = []
+        offset = 0
+        limit = 100
+        max_messages = 1000  # Safety limit
         
-        url = f"https://api.telegram.org/bot{self.bot_token}/getUpdates"
-        payload = {
-            "offset": 0,
-            "limit": limit,
-            "timeout": 10
-        }
+        logging.info("Starting to fetch all channel messages...")
         
-        try:
-            response = requests.post(url, json=payload, timeout=30)
-            if response.status_code == 200:
-                result = response.json()
-                if result.get("ok"):
-                    updates = result.get("result", [])
-                    
-                    # Filter for channel posts
-                    channel_messages = []
-                    for update in updates:
-                        if 'channel_post' in update:
-                            channel_messages.append(update['channel_post'])
-                    
-                    logging.info(f"Found {len(channel_messages)} channel messages via getUpdates")
-                    return channel_messages
-                else:
-                    logging.error(f"Telegram API error: {result.get('description')}")
-            else:
-                logging.error(f"Failed to get channel messages: {response.text}")
-        except Exception as e:
-            logging.error(f"Error getting channel messages: {e}")
-        
-        return []
-    
-    def get_channel_messages_alternative(self):
-        """Alternative method using forward_from_chat approach"""
-        if not self.bot_token:
-            logging.error("CARDS_BOT_TOKEN not set")
-            return []
-        
-        # This method requires the bot to be in the channel and have access
-        # We'll try to get recent messages
-        
-        url = f"https://api.telegram.org/bot{self.bot_token}/getChat"
-        payload = {
-            "chat_id": self.channel_username
-        }
-        
-        try:
-            response = requests.post(url, json=payload)
-            if response.status_code == 200:
-                chat_info = response.json()
-                logging.info(f"Channel info: {chat_info}")
-                
-                # If we can get chat info, try to get messages
-                # This might not work for all public channels
-                messages_url = f"https://api.telegram.org/bot{self.bot_token}/getChatHistory"
-                messages_payload = {
-                    "chat_id": self.channel_username,
-                    "limit": 50
-                }
-                
-                messages_response = requests.post(messages_url, json=messages_payload)
-                if messages_response.status_code == 200:
-                    messages_result = messages_response.json()
-                    if messages_result.get("ok"):
-                        return messages_result.get("result", [])
-            else:
-                logging.error(f"Failed to get channel info: {response.text}")
-        except Exception as e:
-            logging.error(f"Error in alternative method: {e}")
-        
-        return []
-    
-    def extract_card_id_from_message(self, message):
-        """Extract card ID from message text/caption with improved patterns"""
-        if not message:
-            return None
+        while len(all_messages) < max_messages:
+            url = f"https://api.telegram.org/bot{self.bot_token}/getUpdates"
+            payload = {
+                "offset": offset,
+                "limit": limit,
+                "timeout": 10
+            }
             
-        text = message.get("caption") or message.get("text", "")
+            try:
+                response = requests.post(url, json=payload, timeout=30)
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("ok"):
+                        updates = result.get("result", [])
+                        
+                        if not updates:
+                            break  # No more messages
+                        
+                        # Filter for channel posts and collect messages
+                        for update in updates:
+                            if 'channel_post' in update:
+                                message = update['channel_post']
+                                all_messages.append(message)
+                                
+                                # Update offset to get next batch
+                                offset = update['update_id'] + 1
+                        
+                        logging.info(f"Fetched {len(updates)} updates, total messages: {len(all_messages)}")
+                        
+                        # Small delay to avoid rate limiting
+                        time.sleep(0.1)
+                    else:
+                        logging.error(f"Telegram API error: {result.get('description')}")
+                        break
+                else:
+                    logging.error(f"Failed to get updates: {response.text}")
+                    break
+                    
+            except Exception as e:
+                logging.error(f"Error fetching messages: {e}")
+                break
         
+        logging.info(f"Total channel messages fetched: {len(all_messages)}")
+        return all_messages
+    
+    def normalize_text(self, text):
+        """Normalize text for comparison - remove accents, lowercase, etc."""
         if not text:
+            return ""
+        
+        # Convert to lowercase and remove accents
+        normalized = unidecode(text).lower()
+        
+        # Remove extra spaces and special characters
+        normalized = re.sub(r'[^\w\s]', ' ', normalized)
+        normalized = re.sub(r'\s+', ' ', normalized).strip()
+        
+        return normalized
+    
+    def find_card_in_messages(self, card_name, messages):
+        """Find a card by name in the channel messages"""
+        if not card_name or not messages:
             return None
         
-        # More robust card ID extraction patterns
-        patterns = [
-            r'(?:ID|Card ID|Card)[:\s]*#?(\d+)',  # "ID: 123", "Card ID: 123", "Card: 123"
-            r'^\s*#?(\d+)\s*$',  # Just a number at start/end
-            r'[\[\(]#?(\d+)[\]\)]',  # Number in brackets/parentheses
-            r'\b(\d{2,4})\b',  # 2-4 digit numbers (common card IDs)
-            r'Card\s+#?(\d+)',  # "Card 123"
-            r'#(\d+)',  # Hashtag format #123
-        ]
+        normalized_card_name = self.normalize_text(card_name)
+        logging.debug(f"Searching for card: '{card_name}' (normalized: '{normalized_card_name}')")
         
-        for pattern in patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                try:
-                    card_id = int(match.group(1))
-                    # Validate reasonable card ID range (adjust based on your data)
-                    if 1 <= card_id <= 1000:  # Adjust max based on your card count
-                        logging.debug(f"Found card ID {card_id} with pattern: {pattern}")
-                        return card_id
-                except ValueError:
-                    continue
+        best_match = None
+        best_score = 0
         
-        # If no pattern matches, try to find any number that could be a card ID
-        all_numbers = re.findall(r'\b(\d{2,4})\b', text)
-        for num in all_numbers:
-            try:
-                card_id = int(num)
-                if 1 <= card_id <= 1000:  # Adjust based on your card range
-                    logging.debug(f"Found potential card ID {card_id} from text numbers")
-                    return card_id
-            except ValueError:
+        for message in messages:
+            message_text = message.get("caption") or message.get("text", "")
+            if not message_text:
                 continue
+            
+            normalized_message = self.normalize_text(message_text)
+            
+            # Simple exact match first
+            if normalized_card_name in normalized_message:
+                logging.debug(f"Exact match found for '{card_name}' in message: {message_text[:100]}...")
+                return message
+            
+            # Calculate similarity score for fuzzy matching
+            card_words = set(normalized_card_name.split())
+            message_words = set(normalized_message.split())
+            
+            if card_words:
+                common_words = card_words.intersection(message_words)
+                similarity = len(common_words) / len(card_words)
+                
+                if similarity > best_score:
+                    best_score = similarity
+                    best_match = message
         
+        # If we have a reasonably good fuzzy match, use it
+        if best_match and best_score >= 0.5:  # At least 50% of words match
+            message_text = best_match.get("caption") or best_match.get("text", "")
+            logging.debug(f"Fuzzy match found for '{card_name}' (score: {best_score:.2f}) in message: {message_text[:100]}...")
+            return best_match
+        
+        logging.debug(f"No match found for card: '{card_name}'")
         return None
     
     def calculate_season(self, upload_date):
@@ -152,111 +143,136 @@ class TelegramService:
         # Ensure season is at least 1
         return max(1, season)
     
+    def get_card_upload_date(self, card_id, card_name):
+        """Get the upload date for a specific card by searching in channel messages"""
+        if not card_name:
+            logging.warning(f"No card name provided for card ID {card_id}")
+            return None
+        
+        logging.info(f"Searching for card '{card_name}' (ID: {card_id}) in channel messages...")
+        
+        # Get all channel messages
+        messages = self.get_all_channel_messages()
+        if not messages:
+            logging.warning("No messages retrieved from channel")
+            return None
+        
+        # Find the card in messages
+        matching_message = self.find_card_in_messages(card_name, messages)
+        
+        if matching_message:
+            # Extract date from the message
+            upload_date = datetime.fromtimestamp(matching_message["date"])
+            message_id = matching_message["message_id"]
+            
+            logging.info(f"Found card '{card_name}' in message {message_id} - Upload date: {upload_date}")
+            return {
+                "telegram_message_id": message_id,
+                "upload_date": upload_date,
+                "season": self.calculate_season(upload_date)
+            }
+        else:
+            logging.warning(f"Could not find card '{card_name}' in any channel messages")
+            return None
+    
     def sync_channel_messages(self):
-        """Sync actual channel messages and extract card metadata"""
+        """Sync card metadata by searching for card names in channel messages"""
         if not self.bot_token:
             logging.error("CARDS_BOT_TOKEN not set")
             return
         
-        logging.info("Starting Telegram channel message sync...")
+        logging.info("Starting Telegram channel message sync by card name search...")
         
-        # Try different methods to get messages
-        all_messages = []
-        
-        # Method 1: getUpdates (works if bot is in channel)
-        logging.info("Trying getUpdates method...")
-        messages_method1 = self.get_channel_messages_web(limit=200)
-        all_messages.extend(messages_method1)
-        
-        # Method 2: Alternative approach
-        if not all_messages:
-            logging.info("Trying alternative method...")
-            messages_method2 = self.get_channel_messages_alternative()
-            all_messages.extend(messages_method2)
-        
-        if not all_messages:
-            logging.warning("No messages could be retrieved from Telegram channel")
-            logging.warning("This might be because:")
-            logging.warning("1. The bot is not in the channel")
-            logging.warning("2. The channel is private and bot is not admin")
-            logging.warning("3. There are no recent messages")
+        # Get all cards from MySQL database
+        from app import get_db_conn
+        connection = get_db_conn()
+        if not connection:
+            logging.error("Cannot connect to MySQL database")
             return
-        
-        logging.info(f"Total messages fetched: {len(all_messages)}")
-        
-        # Process messages to extract card metadata
-        card_metadata_map = {}
-        
-        for message in all_messages:
-            card_id = self.extract_card_id_from_message(message)
-            if card_id:
-                # Convert timestamp to datetime
-                upload_date = datetime.fromtimestamp(message["date"])
-                message_id = message["message_id"]
-                
-                # Calculate season
-                season = self.calculate_season(upload_date)
-                
-                card_metadata_map[card_id] = {
-                    "telegram_message_id": message_id,
-                    "upload_date": upload_date,
-                    "season": season
-                }
-                
-                logging.debug(f"Found card {card_id} in message {message_id} - Date: {upload_date}, Season: {season}")
-        
-        logging.info(f"Found {len(card_metadata_map)} cards in channel messages")
-        
-        if not card_metadata_map:
-            logging.warning("No card IDs could be extracted from messages")
-            logging.warning("Check if message format contains card IDs")
-            return
-        
-        # Update database with actual metadata
-        updated_count = 0
-        created_count = 0
-        
-        for card_id, metadata in card_metadata_map.items():
-            existing = CardUploadMetadata.query.filter_by(card_id=card_id).first()
-            
-            if existing:
-                # Update existing record
-                existing.telegram_message_id = metadata["telegram_message_id"]
-                existing.upload_date = metadata["upload_date"]
-                existing.season = metadata["season"]
-                updated_count += 1
-                logging.debug(f"Updated metadata for card {card_id}")
-            else:
-                # Create new record
-                new_metadata = CardUploadMetadata(
-                    card_id=card_id,
-                    telegram_message_id=metadata["telegram_message_id"],
-                    upload_date=metadata["upload_date"],
-                    season=metadata["season"]
-                )
-                db.session.add(new_metadata)
-                created_count += 1
-                logging.debug(f"Created metadata for card {card_id}")
         
         try:
+            with connection.cursor() as cursor:
+                # Get all cards (id and name)
+                cursor.execute("""
+                    SELECT id, name 
+                    FROM files 
+                    WHERE name NOT IN ('срать в помогатор апельсины', 'test', 'фаланга пальца')
+                """)
+                all_cards = cursor.fetchall()
+                
+            logging.info(f"Found {len(all_cards)} cards in database to sync")
+            
+            # Get all channel messages once
+            messages = self.get_all_channel_messages()
+            if not messages:
+                logging.warning("No messages retrieved from channel, cannot sync")
+                return
+            
+            # Process each card
+            updated_count = 0
+            created_count = 0
+            not_found_count = 0
+            
+            for card in all_cards:
+                card_id = card['id']
+                card_name = card['name']
+                
+                # Skip if we already have metadata for this card
+                existing = CardUploadMetadata.query.filter_by(card_id=card_id).first()
+                if existing and existing.telegram_message_id > 0:
+                    logging.debug(f"Card {card_id} already has metadata, skipping")
+                    continue
+                
+                # Find card in messages
+                matching_message = self.find_card_in_messages(card_name, messages)
+                
+                if matching_message:
+                    # Extract metadata from message
+                    upload_date = datetime.fromtimestamp(matching_message["date"])
+                    message_id = matching_message["message_id"]
+                    season = self.calculate_season(upload_date)
+                    
+                    if existing:
+                        # Update existing record
+                        existing.telegram_message_id = message_id
+                        existing.upload_date = upload_date
+                        existing.season = season
+                        updated_count += 1
+                    else:
+                        # Create new record
+                        new_metadata = CardUploadMetadata(
+                            card_id=card_id,
+                            telegram_message_id=message_id,
+                            upload_date=upload_date,
+                            season=season
+                        )
+                        db.session.add(new_metadata)
+                        created_count += 1
+                    
+                    logging.debug(f"Synced card '{card_name}' (ID: {card_id}) - Date: {upload_date}, Season: {season}")
+                else:
+                    not_found_count += 1
+                    logging.debug(f"Card '{card_name}' (ID: {card_id}) not found in channel messages")
+            
+            # Commit all changes
             db.session.commit()
-            logging.info(f"Sync completed: {created_count} created, {updated_count} updated")
+            logging.info(f"Sync completed: {created_count} created, {updated_count} updated, {not_found_count} not found")
+            
         except Exception as e:
             db.session.rollback()
-            logging.error(f"Error saving metadata: {e}")
+            logging.error(f"Error during sync: {e}")
+        finally:
+            connection.close()
     
     def manual_date_override(self):
-        """Manual method to set dates based on known card information"""
-        logging.info("Using manual date override for known cards")
+        """Manual method to set dates for cards that couldn't be found automatically"""
+        logging.info("Using manual date override for cards not found in channel")
         
-        # This is a temporary solution - you should replace these with actual dates
-        # from your Telegram channel. Format: {card_id: (year, month, day), ...}
+        # This should only be used as a last resort
+        # You can add specific card dates here if you know them
         manual_dates = {
-            # Add your actual card dates here based on Telegram message dates
-            # Example: 
-            # 1: (2025, 1, 15),
-            # 2: (2025, 1, 16),
-            # ...
+            # Format: card_id: (year, month, day)
+            # Example: 1: (2025, 1, 15),
         }
         
         for card_id, date_info in manual_dates.items():
@@ -268,6 +284,7 @@ class TelegramService:
             if existing:
                 existing.upload_date = upload_date
                 existing.season = season
+                logging.debug(f"Updated manual date for card {card_id}")
             else:
                 new_metadata = CardUploadMetadata(
                     card_id=card_id,
@@ -276,6 +293,7 @@ class TelegramService:
                     season=season
                 )
                 db.session.add(new_metadata)
+                logging.debug(f"Created manual date for card {card_id}")
         
         try:
             db.session.commit()
