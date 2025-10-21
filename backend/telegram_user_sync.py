@@ -56,7 +56,7 @@ class TelegramUserSync:
             # Fetch messages - this should work with user account
             messages = []
             try:
-                async for message in client.iter_messages(channel, limit=500000):
+                async for message in client.iter_messages(channel, limit=500):
                     messages.append(message)
                     if len(messages) % 50 == 0:
                         logging.info(f"Fetched {len(messages)} messages...")
