@@ -669,8 +669,15 @@ def get_cards_by_category(category_id):
         return jsonify({'error': 'Database connection failed'}), 500
     
     try:
-        sort_field = request.args.get('sort', 'id')  # Default back to ID for now
+        sort_field = request.args.get('sort', 'id')  # Default to 'id'
         sort_direction = request.args.get('direction', 'desc')
+        
+        # Define valid MySQL columns to prevent SQL injection
+        valid_mysql_columns = ['id', 'name', 'rare', 'fame']
+        
+        # If sort_field is 'season', we'll handle it in Python later
+        if sort_field not in valid_mysql_columns:
+            sort_field = 'id'  # Fallback to ID
         
         # Define hidden categories to exclude - only Scarface remains hidden
         hidden_categories = ['Scarface - Tony Montana']
@@ -745,7 +752,7 @@ def get_cards_by_category(category_id):
                 transformed_cards.append(transformed_card)
             
             # Apply season sorting in Python if requested
-            if sort_field == 'season':
+            if request.args.get('sort') == 'season':
                 transformed_cards.sort(key=lambda x: x.get('season', 1), 
                                      reverse=(sort_direction == 'desc'))
             
