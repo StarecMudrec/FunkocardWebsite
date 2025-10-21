@@ -48,6 +48,8 @@ services:
       BOT_TOKEN_HASH: ${BOT_TOKEN_HASH}
       SECRET_KEY: ${SECRET_KEY}
       CARDS_BOT_TOKEN: ${CARDS_BOT_TOKEN}
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
       FLASK_APP: wsgi:app
     command: >      
       sh -c "gunicorn --bind 0.0.0.0:8000 --worker-class gevent --timeout 120 wsgi:app
