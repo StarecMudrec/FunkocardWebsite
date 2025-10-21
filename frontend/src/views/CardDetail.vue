@@ -216,11 +216,16 @@ export default {
           const cardIds = JSON.parse(savedCardOrder)
           console.log('Loading cards using saved order:', cardIds)
           
-          // Load cards in the exact order they were displayed
+          // Load ONLY BASIC card info first - don't fetch detailed info yet
           const loadPromises = cardIds.map(async (cardId) => {
             try {
-              const cardInfo = await fetchCardInfo(cardId)
-              return cardInfo
+              // Only load minimal card data initially
+              const basicCardInfo = {
+                id: cardId,
+                name: 'Loading...', // Placeholder
+                category: 'Loading...'
+              }
+              return basicCardInfo
             } catch (err) {
               console.error(`Failed to load card ${cardId}:`, err)
               return null
@@ -230,7 +235,7 @@ export default {
           const loadedCards = await Promise.all(loadPromises)
           allCards.value = loadedCards.filter(card => card !== null)
           
-          console.log('Loaded cards in saved order:', allCards.value.map(c => ({ id: c.id, name: c.name })))
+          console.log('Loaded basic cards in saved order:', allCards.value.map(c => ({ id: c.id })))
         } else {
           // Fallback: load with saved sort parameters (existing logic)
           const savedSortState = sessionStorage.getItem(`category_state_${previousCategory}`)
@@ -254,7 +259,12 @@ export default {
           console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection)
           
           const response = await fetchCardsByCategory(categoryId, sortField, sortDirection)
-          allCards.value = response.cards || []
+          // Only store basic card data initially
+          allCards.value = (response.cards || []).map(card => ({
+            id: card.id,
+            name: card.name || 'Loading...',
+            category: card.category || 'Loading...'
+          }))
         }
         
         // Find current card index in the sorted array
@@ -267,7 +277,7 @@ export default {
         // Update displayed cards immediately with basic data
         updateDisplayedCards()
         
-        // Load detailed info for current and adjacent cards (5 on each side)
+        // Load detailed info ONLY for the 5 adjacent cards
         await loadDetailedCardInfo()
         
       } catch (error) {
@@ -282,8 +292,9 @@ export default {
       const endIndex = Math.min(allCards.value.length - 1, currentCardIndex.value + 5)
       
       for (let i = startIndex; i <= endIndex; i++) {
-        if (!preloadedCards.value.has(allCards.value[i].id)) {
-          cardsToPreload.push(allCards.value[i].id)
+        const cardId = allCards.value[i].id
+        if (!preloadedCards.value.has(cardId)) {
+          cardsToPreload.push(cardId)
         }
       }
       
@@ -306,31 +317,26 @@ export default {
             // Update the card in allCards with detailed info
             const index = allCards.value.findIndex(c => c.id === cardId)
             if (index >= 0) {
-              // Preserve ALL original data and merge with detailed info
+              // Merge detailed info with existing data
               allCards.value[index] = { 
-                ...allCards.value[index], // Keep original data including upload_date
-                ...detailedCard  // Override with detailed info
+                ...allCards.value[index], // Keep any existing data
+                ...detailedCard  // Add detailed info
               }
               // Mark as preloaded
               preloadedCards.value.add(cardId)
-              console.log(`Loaded detailed info for card ${cardId}:`, {
-                name: detailedCard.name,
-                upload_date: detailedCard.upload_date,
-                season: detailedCard.season
-              })
+              console.log(`Loaded detailed info for card ${cardId}`)
             }
           } catch (err) {
             console.error(`Failed to load detailed info for card ${cardId}:`, err)
-            // Keep the basic card info if detailed loading fails
+            // If detailed loading fails, at least we have the basic card info
           }
         })
 
         await Promise.all(loadPromises)
         
-        // Update displayed cards with the new detailed data
+        // Update displayed cards with any new detailed data
         updateDisplayedCards()
         
-        console.log('Updated allCards with detailed info')
       } catch (err) {
         console.error('Error loading detailed card info:', err)
       }
