@@ -146,23 +146,23 @@ with app.app_context():
 
 
 
-def run_telegram_sync():
-    """Run Telegram sync as a separate process"""
+def run_telegram_bot_sync():
+    """Run Telegram bot sync as a separate process"""
     try:
         result = subprocess.run([
-            sys.executable, 'telegram_sync_worker.py'
+            sys.executable, 'telegram_bot_sync.py'
         ], capture_output=True, text=True, timeout=300)  # 5 minute timeout
         
-        logging.info(f"Sync process stdout: {result.stdout}")
+        logging.info(f"Bot sync process stdout: {result.stdout}")
         if result.stderr:
-            logging.error(f"Sync process stderr: {result.stderr}")
+            logging.error(f"Bot sync process stderr: {result.stderr}")
         
         return result.returncode == 0
     except subprocess.TimeoutExpired:
-        logging.error("Telegram sync process timed out")
+        logging.error("Telegram bot sync process timed out")
         return False
     except Exception as e:
-        logging.error(f"Error running sync process: {e}")
+        logging.error(f"Error running bot sync process: {e}")
         return False
 
 @app.route('/placeholder.jpg')
@@ -574,7 +574,7 @@ def serve_card_image(file_id):
 def sync_telegram_messages_route():
     """Endpoint to manually trigger Telegram message synchronization"""
     try:
-        success = run_telegram_sync()
+        success = run_telegram_bot_sync()
         if success:
             return jsonify({"status": "sync completed successfully"}), 200
         else:
