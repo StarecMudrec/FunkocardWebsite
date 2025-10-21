@@ -535,7 +535,7 @@ export default {
 
 .card-detail {
   display: grid;
-  grid-template-columns: 350px 1fr;
+  grid-template-columns: 400px 1fr;
   gap: 40px;
   background-color: var(--card-bg);
   backdrop-filter: blur(5px);
@@ -595,7 +595,7 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-width: 350px;
+  max-width: 400px;
   justify-content: center;
   /* padding-top: 30px; */
 }
