@@ -70,26 +70,40 @@ class TelegramService:
         logging.info(f"Total channel messages fetched: {len(all_messages)}")
         return all_messages
     
-    def normalize_text(self, text):
-        """Normalize text for comparison - remove accents, lowercase, etc."""
-        if not text:
+    def normalize_card_name(self, name):
+        """Normalize card name for matching - handles different formats"""
+        if not name:
             return ""
         
         # Convert to lowercase and remove accents
-        normalized = unidecode(text).lower()
+        normalized = unidecode(name).lower()
         
-        # Remove extra spaces and special characters
+        # Remove common prefixes/suffixes and special characters
         normalized = re.sub(r'[^\w\s]', ' ', normalized)
         normalized = re.sub(r'\s+', ' ', normalized).strip()
         
         return normalized
     
+    def extract_card_name_from_message(self, message_text):
+        """Extract the main card name from Telegram message text"""
+        if not message_text:
+            return None
+        
+        # Pattern to match the card name format (text before numbers)
+        # Example: "Coraline in Raincoat\n1492-1497" -> "Coraline in Raincoat"
+        match = re.match(r'^([^\d\n]+)', message_text.strip())
+        if match:
+            card_name = match.group(1).strip()
+            return self.normalize_card_name(card_name)
+        
+        return None
+    
     def find_card_in_messages(self, card_name, messages):
-        """Find a card by name in the channel messages"""
+        """Find a card by name in the channel messages using improved matching"""
         if not card_name or not messages:
             return None
         
-        normalized_card_name = self.normalize_text(card_name)
+        normalized_card_name = self.normalize_card_name(card_name)
         logging.debug(f"Searching for card: '{card_name}' (normalized: '{normalized_card_name}')")
         
         best_match = None
@@ -100,16 +114,19 @@ class TelegramService:
             if not message_text:
                 continue
             
-            normalized_message = self.normalize_text(message_text)
+            # Extract card name from message
+            message_card_name = self.extract_card_name_from_message(message_text)
+            if not message_card_name:
+                continue
             
-            # Simple exact match first
-            if normalized_card_name in normalized_message:
-                logging.debug(f"Exact match found for '{card_name}' in message: {message_text[:100]}...")
+            # Exact match
+            if normalized_card_name == message_card_name:
+                logging.debug(f"Exact match found for '{card_name}' in message")
                 return message
             
-            # Calculate similarity score for fuzzy matching
+            # Calculate word-based similarity
             card_words = set(normalized_card_name.split())
-            message_words = set(normalized_message.split())
+            message_words = set(message_card_name.split())
             
             if card_words:
                 common_words = card_words.intersection(message_words)
@@ -119,61 +136,55 @@ class TelegramService:
                     best_score = similarity
                     best_match = message
         
-        # If we have a reasonably good fuzzy match, use it
-        if best_match and best_score >= 0.5:  # At least 50% of words match
+        # Use fuzzy match if good enough
+        if best_match and best_score >= 0.7:  # 70% word match
             message_text = best_match.get("caption") or best_match.get("text", "")
-            logging.debug(f"Fuzzy match found for '{card_name}' (score: {best_score:.2f}) in message: {message_text[:100]}...")
+            extracted_name = self.extract_card_name_from_message(message_text)
+            logging.debug(f"Fuzzy match found for '{card_name}' (score: {best_score:.2f}) as '{extracted_name}'")
             return best_match
         
         logging.debug(f"No match found for card: '{card_name}'")
         return None
     
-    def calculate_season(self, upload_date):
-        """Calculate season based on upload date (1st season = Jan 2025)"""
+    def calculate_season_from_date(self, upload_date):
+        """Calculate season based on actual upload date with proper season boundaries"""
         if not upload_date:
             return 1
         
-        # Season 1: January 2025, Season 2: February 2025, etc.
-        year = upload_date.year
-        month = upload_date.month
+        # Define season boundaries (adjust these based on your actual season dates)
+        num_seasons = 120
+        start_year = 2025
+
+        season_boundaries = [datetime(start_year + (season - 1) // 12, ((season - 1) % 12) + 1, 15) for season in range(1, num_seasons + 1)]
         
-        # Calculate season: (year - 2025) * 12 + month
-        season = (year - 2025) * 12 + month
+        # Find which season this date falls into
+        for season_num, season_start in enumerate(season_boundaries, 1):
+            if upload_date >= season_start:
+                # Check if there's a next season boundary
+                if season_num < len(season_boundaries):
+                    season_end = season_boundaries[season_num]
+                    if upload_date < season_end:
+                        return season_num
+                else:
+                    # This is the latest season
+                    return season_num
         
-        # Ensure season is at least 1
-        return max(1, season)
+        # If before first season, return season 1
+        return 1
     
-    def get_card_upload_date(self, card_id, card_name):
-        """Get the upload date for a specific card by searching in channel messages"""
-        if not card_name:
-            logging.warning(f"No card name provided for card ID {card_id}")
-            return None
-        
-        logging.info(f"Searching for card '{card_name}' (ID: {card_id}) in channel messages...")
-        
-        # Get all channel messages
-        messages = self.get_all_channel_messages()
-        if not messages:
-            logging.warning("No messages retrieved from channel")
-            return None
-        
-        # Find the card in messages
-        matching_message = self.find_card_in_messages(card_name, messages)
-        
-        if matching_message:
-            # Extract date from the message
-            upload_date = datetime.fromtimestamp(matching_message["date"])
-            message_id = matching_message["message_id"]
-            
-            logging.info(f"Found card '{card_name}' in message {message_id} - Upload date: {upload_date}")
-            return {
-                "telegram_message_id": message_id,
-                "upload_date": upload_date,
-                "season": self.calculate_season(upload_date)
-            }
+    def calculate_season_from_card_id(self, card_id):
+        """Fallback season calculation based on card ID ranges"""
+        # Adjust these ranges based on your actual card ID distribution
+        if card_id >= 400:
+            return 3
+        elif card_id >= 350:
+            return 2
+        elif card_id >= 300:
+            return 1
+        elif card_id >= 200:
+            return 1
         else:
-            logging.warning(f"Could not find card '{card_name}' in any channel messages")
-            return None
+            return 1
     
     def sync_channel_messages(self):
         """Sync card metadata by searching for card names in channel messages"""
@@ -208,6 +219,9 @@ class TelegramService:
                 logging.warning("No messages retrieved from channel, cannot sync")
                 return
             
+            # Sort messages by date to process oldest first (more logical season assignment)
+            messages.sort(key=lambda x: x.get("date", 0))
+            
             # Process each card
             updated_count = 0
             created_count = 0
@@ -217,10 +231,10 @@ class TelegramService:
                 card_id = card['id']
                 card_name = card['name']
                 
-                # Skip if we already have metadata for this card
+                # Skip if we already have good metadata for this card
                 existing = CardUploadMetadata.query.filter_by(card_id=card_id).first()
-                if existing and existing.telegram_message_id > 0:
-                    logging.debug(f"Card {card_id} already has metadata, skipping")
+                if existing and existing.telegram_message_id > 0 and existing.upload_date:
+                    logging.debug(f"Card {card_id} already has good metadata, skipping")
                     continue
                 
                 # Find card in messages
@@ -230,7 +244,9 @@ class TelegramService:
                     # Extract metadata from message
                     upload_date = datetime.fromtimestamp(matching_message["date"])
                     message_id = matching_message["message_id"]
-                    season = self.calculate_season(upload_date)
+                    
+                    # Calculate season based on actual upload date
+                    season = self.calculate_season_from_date(upload_date)
                     
                     if existing:
                         # Update existing record
@@ -238,6 +254,7 @@ class TelegramService:
                         existing.upload_date = upload_date
                         existing.season = season
                         updated_count += 1
+                        logging.debug(f"Updated card '{card_name}' (ID: {card_id}) - Date: {upload_date}, Season: {season}")
                     else:
                         # Create new record
                         new_metadata = CardUploadMetadata(
@@ -248,11 +265,25 @@ class TelegramService:
                         )
                         db.session.add(new_metadata)
                         created_count += 1
-                    
-                    logging.debug(f"Synced card '{card_name}' (ID: {card_id}) - Date: {upload_date}, Season: {season}")
+                        logging.debug(f"Created metadata for card '{card_name}' (ID: {card_id}) - Date: {upload_date}, Season: {season}")
                 else:
                     not_found_count += 1
-                    logging.debug(f"Card '{card_name}' (ID: {card_id}) not found in channel messages")
+                    logging.warning(f"Card '{card_name}' (ID: {card_id}) not found in channel messages")
+                    
+                    # For cards not found, create fallback metadata
+                    if not existing:
+                        fallback_season = self.calculate_season_from_card_id(card_id)
+                        fallback_date = self.get_fallback_date(card_id, fallback_season)
+                        
+                        new_metadata = CardUploadMetadata(
+                            card_id=card_id,
+                            telegram_message_id=0,  # Indicates not found in channel
+                            upload_date=fallback_date,
+                            season=fallback_season
+                        )
+                        db.session.add(new_metadata)
+                        created_count += 1
+                        logging.debug(f"Created fallback metadata for card '{card_name}' (ID: {card_id}) - Season: {fallback_season}")
             
             # Commit all changes
             db.session.commit()
@@ -264,31 +295,50 @@ class TelegramService:
         finally:
             connection.close()
     
-    def manual_date_override(self):
-        """Manual method to set dates for cards that couldn't be found automatically"""
-        logging.info("Using manual date override for cards not found in channel")
-        
-        # This should only be used as a last resort
-        # You can add specific card dates here if you know them
-        manual_dates = {
-            # Format: card_id: (year, month, day)
-            # Example: 1: (2025, 1, 15),
+    def get_fallback_date(self, card_id, season):
+        """Get a reasonable fallback date based on season and card ID"""
+        # Base dates for each season
+
+        num_seasons=120
+        start_year=2025
+
+        season_base_dates = {
+            season: datetime(start_year + (season - 1) // 12, ((season - 1) % 12) + 1, 15)
+            for season in range(1, num_seasons + 1)
         }
         
-        for card_id, date_info in manual_dates.items():
-            year, month, day = date_info
+        base_date = season_base_dates.get(season, datetime(2025, 1, 15))
+        
+        # Add some variation based on card ID to avoid all having same date
+        days_variation = card_id % 30  # Spread over about a month
+        
+        return base_date.replace(day=min(28, 15 + (days_variation % 14)))  # Keep within month
+    
+    def manual_date_override(self):
+        """Manual method to set dates for specific cards"""
+        logging.info("Using manual date override for specific cards")
+        
+        # Add specific card dates here if you know them
+        # Format: card_id: (year, month, day, season)
+        manual_cards = {
+            # Example: 
+            # 336: (2025, 2, 10, 2),
+        }
+        
+        for card_id, date_info in manual_cards.items():
+            year, month, day, season = date_info
             upload_date = datetime(year, month, day)
-            season = self.calculate_season(upload_date)
             
             existing = CardUploadMetadata.query.filter_by(card_id=card_id).first()
             if existing:
                 existing.upload_date = upload_date
                 existing.season = season
+                existing.telegram_message_id = -1  # Mark as manually set
                 logging.debug(f"Updated manual date for card {card_id}")
             else:
                 new_metadata = CardUploadMetadata(
                     card_id=card_id,
-                    telegram_message_id=0,  # Unknown message ID
+                    telegram_message_id=-1,  # Manually set
                     upload_date=upload_date,
                     season=season
                 )
