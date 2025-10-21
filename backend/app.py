@@ -15,7 +15,7 @@ from config import Config
 from sqlalchemy import create_engine, select, and_, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlite3 import connect
-from telegram_service import telegram_service
+from telegram_client_service import sync_telegram_messages
 from datetime import datetime
 
 import pymysql
@@ -349,42 +349,50 @@ def db_status():
 def debug_telegram_sync():
     """Debug endpoint to test Telegram sync functionality"""
     try:
+        from telegram_client_service import telegram_client_service
+        import asyncio
+        
+        # Test async message fetching
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        messages = loop.run_until_complete(
+            telegram_client_service.get_channel_messages(limit=50)
+        )
+        
+        # Test card matching
         from app import get_db_conn
-        
-        # Test 1: Check if we can get channel messages
-        messages = telegram_service.get_all_channel_messages()
-        
-        # Test 2: Check a specific card
         connection = get_db_conn()
         test_results = []
         
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id, name FROM files WHERE id IN (336, 1, 100) ORDER BY id")
+            cursor.execute("SELECT id, name FROM files WHERE id IN (336, 1, 100, 200, 300) ORDER BY id")
             test_cards = cursor.fetchall()
             
             for card in test_cards:
-                match = telegram_service.find_card_in_messages(card['name'], messages[:100] if messages else [])
+                match = telegram_client_service.find_card_in_messages(card['name'], messages)
                 test_results.append({
                     'card_id': card['id'],
                     'card_name': card['name'],
-                    'normalized_name': telegram_service.normalize_card_name(card['name']),
+                    'normalized_name': telegram_client_service.normalize_card_name(card['name']),
                     'found_in_messages': match is not None,
-                    'match_message_text': (match.get('caption') or match.get('text', ''))[:100] + '...' if match else None
+                    'match_date': match.date.isoformat() if match else None,
+                    'match_message_id': match.id if match else None,
+                    'match_text_preview': (match.text or match.message or "")[:100] + '...' if match else None
                 })
         
         return jsonify({
-            'total_messages_found': len(messages) if messages else 0,
+            'total_messages_found': len(messages),
             'test_cards': test_results,
             'message_sample': [{
-                'id': msg['id'],
-                'date': datetime.fromtimestamp(msg['date']).isoformat(),
-                'text': (msg.get('caption') or msg.get('text', ''))[:200]
-            } for msg in (messages[:5] if messages else [])]
+                'id': msg.id,
+                'date': msg.date.isoformat(),
+                'text': (msg.text or msg.message or "")[:200]
+            } for msg in messages[:5]] if messages else []
         })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+    
 
 @app.route("/api/test-metadata")
 def test_metadata():
@@ -542,11 +550,14 @@ def serve_card_image(file_id):
 
 
 @app.route("/api/sync-telegram-messages")
-def sync_telegram_messages():
+def sync_telegram_messages_route():
     """Endpoint to manually trigger Telegram message synchronization"""
     try:
-        telegram_service.sync_channel_messages()
-        return jsonify({"status": "sync completed"}), 200
+        success = sync_telegram_messages()
+        if success:
+            return jsonify({"status": "sync completed successfully"}), 200
+        else:
+            return jsonify({"error": "Sync failed"}), 500
     except Exception as e:
         logging.error(f"Sync error: {e}")
         return jsonify({"error": "Sync failed"}), 500
