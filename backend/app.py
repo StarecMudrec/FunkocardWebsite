@@ -146,7 +146,7 @@ with app.app_context():
 
 
 
-def run_telegram_bot_sync():
+def run_telegram_user_sync():
     """Run Telegram bot sync as a separate process"""
     try:
         result = subprocess.run([
@@ -575,7 +575,7 @@ def serve_card_image(file_id):
 def sync_telegram_messages_route():
     """Endpoint to manually trigger Telegram message synchronization"""
     try:
-        success = run_telegram_bot_sync()  # Changed to bot sync
+        success = run_telegram_user_sync()  # Changed to bot sync
         if success:
             return jsonify({"status": "sync completed successfully"}), 200
         else:
