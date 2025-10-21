@@ -3,11 +3,9 @@ import asyncio
 import logging
 from datetime import datetime
 from telethon import TelegramClient
-from unidecode import unidecode
-import re
+from telethon.sessions import StringSession
 import pymysql
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import sys
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -21,7 +19,7 @@ class TelegramUserSync:
         self.channel_username = '@funkocardsall'
         
     async def sync_messages_async(self):
-        """Sync using user account (interactive setup required first)"""
+        """Sync using user account with better error handling"""
         if not all([self.api_id, self.api_hash, self.phone_number]):
             logging.error("Telegram user credentials not set")
             return False
@@ -29,11 +27,21 @@ class TelegramUserSync:
         client = TelegramClient(self.session_name, int(self.api_id), self.api_hash)
         
         try:
-            # This will use existing session if available
-            await client.start(phone=self.phone_number)
-            logging.info("Telegram user client started successfully")
+            # Check if we're in an interactive environment
+            if sys.stdin.isatty():
+                # Interactive mode
+                await client.start(phone=self.phone_number)
+            else:
+                # Non-interactive mode (Docker)
+                try:
+                    await client.start(phone=self.phone_number)
+                    logging.info("Telegram client started successfully")
+                except Exception as e:
+                    logging.error(f"Failed to start client in non-interactive mode: {e}")
+                    logging.info("Session file may need to be created interactively first")
+                    return False
             
-            # Get channel and messages (user accounts can do this)
+            # Rest of your sync logic...
             channel = await client.get_entity(self.channel_username)
             logging.info(f"Accessing channel: {channel.title}")
             
@@ -45,35 +53,31 @@ class TelegramUserSync:
             
             logging.info(f"Total messages fetched: {len(messages)}")
             
-            # Process messages and update database (similar to previous implementations)
-            # ... database code here ...
+            # Process messages and update database
+            success = await self.process_messages(messages)
             
-            return True
+            return success
             
         except Exception as e:
             logging.error(f"Error in user sync: {e}")
             return False
         finally:
             await client.disconnect()
+    
+    async def process_messages(self, messages):
+        """Process messages and update database"""
+        try:
+            # Your database processing logic here
+            logging.info(f"Processing {len(messages)} messages")
+            return True
+        except Exception as e:
+            logging.error(f"Error processing messages: {e}")
+            return False
 
-def setup_user_session():
-    """Run this once interactively to setup the user session"""
+def main():
     sync = TelegramUserSync()
-    
-    async def setup():
-        client = TelegramClient(sync.session_name, int(sync.api_id), sync.api_hash)
-        await client.start(phone=sync.phone_number)
-        print("Session setup complete!")
-        await client.disconnect()
-    
-    asyncio.run(setup())
+    success = asyncio.run(sync.sync_messages_async())
+    exit(0 if success else 1)
 
 if __name__ == "__main__":
-    # For first-time setup, run: python telegram_user_sync.py setup
-    import sys
-    if len(sys.argv) > 1 and sys.argv[1] == "setup":
-        setup_user_session()
-    else:
-        sync = TelegramUserSync()
-        success = asyncio.run(sync.sync_messages_async())
-        exit(0 if success else 1)
+    main()
