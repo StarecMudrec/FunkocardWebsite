@@ -211,12 +211,14 @@ export default {
         console.log('Loading cards for category ID:', categoryId, 'with sort:', sortField, sortDirection)
         
         const response = await fetchCardsByCategory(categoryId, sortField, sortDirection)
+        
+        // IMPORTANT: Store the cards exactly as they come from the API (preserving the sorted order)
         allCards.value = response.cards || []
         
         console.log('Loaded all cards:', allCards.value.length)
-        console.log('All cards:', allCards.value.map(c => ({ id: c.id, name: c.name })))
+        console.log('All cards:', allCards.value.map(c => ({ id: c.id, name: c.name, season: c.season })))
         
-        // Find current card index
+        // Find current card index in the sorted array
         currentCardIndex.value = findCurrentCardIndex()
         console.log('Current card index:', currentCardIndex.value)
         

@@ -926,7 +926,7 @@ def get_card_info(card_id):
             if row['rarity'] in hidden_categories or row['name'] in HIDDEN_CARD_NAMES:
                 return jsonify({'error': 'Card not found'}), 404
 
-            # Get upload metadata - FIX: Ensure consistent data
+            # Get upload metadata
             metadata = CardUploadMetadata.query.filter_by(card_id=int(card_id)).first()
             
             # Default values if no metadata
@@ -946,8 +946,8 @@ def get_card_info(card_id):
                 'name': row['name'],
                 'description': f"Points: {row['points']}",
                 'shop': row['shop'],
-                'upload_date': upload_date,  # Always include
-                'season': season  # Always include
+                'upload_date': upload_date,
+                'season': season  # Make sure this is included
             }), 200
             
     except ValueError:

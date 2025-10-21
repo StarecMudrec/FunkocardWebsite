@@ -466,6 +466,7 @@ export default {
       switch (field) {
         case 'season':
           sortedCards.sort((a, b) => {
+            // Use season from metadata, fallback to 1 if not available
             const seasonA = a.season || 1
             const seasonB = b.season || 1
             return direction === 'asc' ? seasonA - seasonB : seasonB - seasonA
