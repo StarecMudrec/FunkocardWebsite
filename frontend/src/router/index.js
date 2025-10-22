@@ -4,7 +4,6 @@ import Login from '@/components/Login.vue'
 import CardDetail from '@/views/CardDetail.vue'
 import AddCard from '@/views/AddCard.vue'
 import CategoryCards from '@/views/CategoryCards.vue'
-import useStore from 'vuex'
 
 const routes = [
   {
@@ -83,16 +82,27 @@ router.beforeEach((to, from, next) => {
     to.meta.navigationType = 'other'
   }
 
-  
-  const store = useStore()
-  
-  if (to.meta.requiresAuth && !store.state.isAuthenticated) {
-    next('/login')
+  // Check authentication for protected routes
+  if (to.meta.requiresAuth) {
+    // Check if user is authenticated by making an API call
+    fetch('/api/check_auth', {
+      credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.isAuthenticated) {
+        next()
+      } else {
+        next('/login')
+      }
+    })
+    .catch(error => {
+      console.error('Auth check failed:', error)
+      next('/login')
+    })
   } else {
     next()
   }
-  
-  next()
 })
 
 export default router
