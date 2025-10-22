@@ -4,6 +4,7 @@ import Login from '@/components/Login.vue'
 import CardDetail from '@/views/CardDetail.vue'
 import AddCard from '@/views/AddCard.vue'
 import CategoryCards from '@/views/CategoryCards.vue'
+import useStore from 'vuex'
 
 const routes = [
   {
