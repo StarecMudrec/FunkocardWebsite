@@ -47,6 +47,12 @@ const routes = [
     path: '/about',
     name: 'About',
     component: () => import('@/views/About.vue')
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('../views/Profile.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -74,6 +80,15 @@ router.beforeEach((to, from, next) => {
     sessionStorage.setItem('previousCategory', from.params.categoryId);
   } else {
     to.meta.navigationType = 'other'
+  }
+
+  
+  const store = useStore()
+  
+  if (to.meta.requiresAuth && !store.state.isAuthenticated) {
+    next('/login')
+  } else {
+    next()
   }
   
   next()
