@@ -9,13 +9,16 @@
               :src="userAvatar" 
               alt="User Avatar" 
               class="avatar"
+              @load="handleAvatarLoad"
               @error="handleAvatarError"
             />
+            <div v-if="avatarLoading" class="avatar-loading">Loading...</div>
           </div>
           <div class="user-details">
             <h2>{{ userData.first_name }} {{ userData.last_name }}</h2>
             <p class="username">@{{ userData.username }}</p>
             <p class="user-id">ID: {{ userData.id }}</p>
+            <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>
           </div>
         </div>
       </div>
@@ -23,6 +26,9 @@
       <div class="profile-actions">
         <button @click="logout" class="logout-btn">
           Logout
+        </button>
+        <button @click="refreshAvatar" class="refresh-btn" v-if="!avatarLoading">
+          Refresh Avatar
         </button>
       </div>
 
@@ -43,10 +49,13 @@ export default {
     const router = useRouter()
     const userData = ref({})
     const userAvatar = ref('')
+    const avatarLoading = ref(false)
+    const debugInfo = ref('')
     const defaultAvatar = '/placeholder.jpg'
 
     const fetchUserData = async () => {
       try {
+        avatarLoading.value = true
         const response = await fetch('/api/user', {
           credentials: 'include'
         })
@@ -54,29 +63,86 @@ export default {
         if (response.ok) {
           const data = await response.json()
           userData.value = data
-          console.log('User data:', data) // Debug log
+          console.log('Full user data:', data)
           
-          // Set avatar URL - use proxy endpoint
+          // Set avatar URL - try multiple approaches
           if (data.photo_url) {
-            userAvatar.value = `/proxy/avatar?url=${encodeURIComponent(data.photo_url)}`
-            console.log('Avatar URL:', userAvatar.value) // Debug log
+            debugInfo.value = `Photo URL: ${data.photo_url}`
+            
+            // Approach 1: Use proxy endpoint
+            const proxyUrl = `/proxy/avatar?url=${encodeURIComponent(data.photo_url)}&t=${Date.now()}`
+            userAvatar.value = proxyUrl
+            console.log('Trying proxy URL:', proxyUrl)
+            
+            // Test if the image loads
+            testImageLoad(proxyUrl).then(success => {
+              if (!success) {
+                // Approach 2: Try direct URL (might work if no CORS issues)
+                console.log('Proxy failed, trying direct URL')
+                userAvatar.value = data.photo_url
+                testImageLoad(data.photo_url).then(directSuccess => {
+                  if (!directSuccess) {
+                    // Approach 3: Use default
+                    console.log('Direct URL also failed, using default')
+                    userAvatar.value = defaultAvatar
+                  }
+                })
+              }
+            })
+            
           } else {
+            debugInfo.value = 'No photo_url in user data'
             userAvatar.value = defaultAvatar
           }
         } else {
+          debugInfo.value = `API response: ${response.status}`
           console.error('Failed to fetch user data:', response.status)
           router.push('/login')
         }
       } catch (error) {
+        debugInfo.value = `Fetch error: ${error.message}`
         console.error('Error fetching user data:', error)
         router.push('/login')
+      } finally {
+        avatarLoading.value = false
       }
     }
 
+    const testImageLoad = (url) => {
+      return new Promise((resolve) => {
+        const img = new Image()
+        img.onload = () => resolve(true)
+        img.onerror = () => resolve(false)
+        img.src = url
+      })
+    }
+
+    const handleAvatarLoad = () => {
+      console.log('Avatar loaded successfully')
+      avatarLoading.value = false
+      debugInfo.value = 'Avatar loaded'
+    }
+
     const handleAvatarError = (event) => {
-      console.error('Avatar failed to load, using default')
-      event.target.src = defaultAvatar
-      userAvatar.value = defaultAvatar
+      console.error('Avatar failed to load:', event)
+      avatarLoading.value = false
+      debugInfo.value = 'Avatar load failed'
+      
+      // Try fallback approaches
+      if (userData.value.photo_url && userAvatar.value !== userData.value.photo_url) {
+        console.log('Trying direct URL as fallback')
+        userAvatar.value = userData.value.photo_url
+      } else {
+        userAvatar.value = defaultAvatar
+      }
+    }
+
+    const refreshAvatar = () => {
+      if (userData.value.photo_url) {
+        avatarLoading.value = true
+        // Add cache busting parameter
+        userAvatar.value = `/proxy/avatar?url=${encodeURIComponent(userData.value.photo_url)}&t=${Date.now()}`
+      }
     }
 
     const logout = async () => {
@@ -89,7 +155,6 @@ export default {
     }
 
     onMounted(() => {
-      // Check if user is authenticated
       if (!store.state.isAuthenticated) {
         router.push('/login')
         return
@@ -100,7 +165,11 @@ export default {
     return {
       userData,
       userAvatar,
+      avatarLoading,
+      debugInfo,
       handleAvatarError,
+      handleAvatarLoad,
+      refreshAvatar,
       logout
     }
   }
@@ -252,6 +321,48 @@ export default {
 .back-link:hover::after {
   width: 100%;
   left: 50%;
+}
+
+.avatar-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.avatar-section {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.refresh-btn {
+  background: #666;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 15px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: all 0.3s ease;
+  font-family: 'Afacad', sans-serif;
+}
+
+.refresh-btn:hover {
+  background: #777;
+  transform: scale(1.05);
+}
+
+.debug-info {
+  font-size: 12px;
+  color: #888;
+  margin: 5px 0 0 0;
+  word-break: break-all;
 }
 
 @media (max-width: 480px) {

@@ -1017,23 +1017,49 @@ def serve_avatar(user_id):
     except FileNotFoundError:
         return "Avatar not found", 404
 
+
+
+@app.route("/api/debug-user-session")
+def debug_user_session():
+    """Debug endpoint to check user session data"""
+    return jsonify({
+        'session_data': dict(session),
+        'user_id': session.get('user_id'),
+        'telegram_photo_url': session.get('telegram_photo_url')
+    }), 200
+
+
 @app.route('/proxy/avatar')
 def proxy_avatar():
     """Proxies avatar images from a given URL."""
     url = request.args.get('url')
     logging.debug(f"Proxying avatar from URL: {url}")
+    
     if not url:
         return "Missing image URL", 400
+    
     try:
-        response = requests.get(url, stream=True)
+        # Add headers to mimic a real browser request
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
+        response = requests.get(url, stream=True, headers=headers, timeout=10)
         response.raise_for_status()
         
         # Create response with proper headers
         response_data = make_response(response.content)
         response_data.headers['Content-Type'] = response.headers.get('Content-Type', 'image/jpeg')
-        response_data.headers['Cache-Control'] = 'public, max-age=3600'  # Cache for 1 hour
+        response_data.headers['Cache-Control'] = 'public, max-age=3600'
+        
+        # Copy other relevant headers
+        if 'Content-Length' in response.headers:
+            response_data.headers['Content-Length'] = response.headers['Content-Length']
+            
+        logging.debug(f"Successfully proxied avatar from {url}")
         return response_data
         
     except requests.exceptions.RequestException as e:
         logging.error(f"Error proxying avatar from {url}: {e}")
-        return "Image not found or could not be downloaded.", 404
+        # Return a proper error image instead of text
+        return send_from_directory('public', 'placeholder.jpg')
