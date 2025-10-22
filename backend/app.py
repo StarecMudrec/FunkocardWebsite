@@ -1026,14 +1026,14 @@ def proxy_avatar():
         return "Missing image URL", 400
     try:
         response = requests.get(url, stream=True)
-        response.raise_for_status()  # Raise an HTTPError for bad responses
-        # Return the image data with the appropriate content type
-        return response.content, response.status_code, {'Content-Type': response.headers.get('Content-Type', 'image/jpeg')}
-        response = make_response(response.content)
-        response.headers['Content-Type'] = response.headers.get('Content-Type', 'image/jpeg')
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        return response
+        response.raise_for_status()
+        
+        # Create response with proper headers
+        response_data = make_response(response.content)
+        response_data.headers['Content-Type'] = response.headers.get('Content-Type', 'image/jpeg')
+        response_data.headers['Cache-Control'] = 'public, max-age=3600'  # Cache for 1 hour
+        return response_data
+        
     except requests.exceptions.RequestException as e:
         logging.error(f"Error proxying avatar from {url}: {e}")
         return "Image not found or could not be downloaded.", 404

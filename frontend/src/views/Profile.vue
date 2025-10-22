@@ -54,15 +54,17 @@ export default {
         if (response.ok) {
           const data = await response.json()
           userData.value = data
+          console.log('User data:', data) // Debug log
           
-          // Set avatar URL
+          // Set avatar URL - use proxy endpoint
           if (data.photo_url) {
             userAvatar.value = `/proxy/avatar?url=${encodeURIComponent(data.photo_url)}`
+            console.log('Avatar URL:', userAvatar.value) // Debug log
           } else {
             userAvatar.value = defaultAvatar
           }
         } else {
-          // If not authenticated, redirect to login
+          console.error('Failed to fetch user data:', response.status)
           router.push('/login')
         }
       } catch (error) {
@@ -71,7 +73,9 @@ export default {
       }
     }
 
-    const handleAvatarError = () => {
+    const handleAvatarError = (event) => {
+      console.error('Avatar failed to load, using default')
+      event.target.src = defaultAvatar
       userAvatar.value = defaultAvatar
     }
 
