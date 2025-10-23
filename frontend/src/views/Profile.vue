@@ -217,7 +217,7 @@ export default {
   padding: 40px;
   background-color: var(--card-bg);
   /* border-radius: 20px; */
-  border: 1px solid #333;
+  border-top: 2px solid #333;
   text-align: center;
   box-shadow: 2px 4px 5px rgba(0, 0, 0, 0.24);
   z-index: 2;
@@ -261,7 +261,7 @@ export default {
 .username-text {
   transform: translateY(-50%);
   color: white;
-  font-size: 50px;
+  font-size: 100px;
   text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
 }
 
