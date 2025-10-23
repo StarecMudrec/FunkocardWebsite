@@ -31,14 +31,14 @@
       <div class="profile-header">
         <h1>Your Profile</h1>
       </div>
-
+<!-- 
       <div class="profile-actions">
         <button @click="refreshAvatar" class="refresh-btn" v-if="!avatarLoading">
           Refresh Avatar
         </button>
       </div>
 
-      <router-link to="/" class="back-link">← Back to cards</router-link>
+      <router-link to="/" class="back-link">← Back to cards</router-link> -->
     </div>
   </div>
 </template>
