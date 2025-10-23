@@ -262,6 +262,7 @@ export default {
   transform: translateY(-50%);
   color: white;
   font-size: 50px;
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
 }
 
 .avatar-and-username {
@@ -284,6 +285,7 @@ export default {
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid var(--accent-color);
+  box-shadow: 0px 7px 10px 2px rgba(0, 0, 0, 0.1);
 }
 
 .user-details h2 {
