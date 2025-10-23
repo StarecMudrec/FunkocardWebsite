@@ -311,7 +311,7 @@ export default {
   color: var(--text-color);
   font-size: 36px;
   margin: 0;
-  transform: translateY(2%, 50%);
+  transform: translate(2%, 50%);
 }
 
 .user-id {
