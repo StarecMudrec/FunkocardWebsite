@@ -291,10 +291,11 @@ export default {
   gap: 20px;
   margin-bottom: 30px;
   /* margin-top: 50px; */
-  margin-left: calc(33vh + 110px);
+  margin-left: 33vh;
   text-align: left;
   position: relative;
-  justify-content: flex-start;
+  justify-content: center;
+  width: calc(100% - 33vh);
 }
 
 .avatar-section {
@@ -512,6 +513,9 @@ export default {
     flex-direction: column;
     text-align: center;
     gap: 15px;
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
   }
   
   .user-details h2 {
