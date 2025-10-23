@@ -269,6 +269,7 @@ export default {
   z-index: 2;
   margin-top: 50vh;
   height: 100%;
+  font-family: 'Afacad', sans-serif;
 }
 
 .profile-header h1 {
