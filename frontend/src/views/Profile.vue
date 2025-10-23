@@ -275,6 +275,7 @@ export default {
   top: 50%;
   transform: translateY(-50%);
   z-index: 3;
+  align-items: center;
 }
 
 .avatar {
