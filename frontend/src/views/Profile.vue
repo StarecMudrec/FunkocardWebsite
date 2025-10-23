@@ -329,9 +329,9 @@ export default {
   justify-content: flex-start;
   gap: 50px;
   position: absolute;
-  left: 100px;
+  left: 50%;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   z-index: 3;
   align-items: center;
 }
