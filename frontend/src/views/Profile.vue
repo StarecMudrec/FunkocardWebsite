@@ -15,19 +15,25 @@
           <h2 class="username-text">
             {{ userData.first_name }} {{ userData.last_name }}
           </h2>
+          <p class="username">@{{ userData.username }}</p>
           <!-- <button @click="logout" class="logout-btn">
             <svg width="54px" height="54px" viewBox="0 0 24.00 24.00" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff" transform="matrix(-1, 0, 0, 1, 0, 0)"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="0.288"></g><g id="SVGRepo_iconCarrier"> <path d="M14 4L18 4C19.1046 4 20 4.89543 20 6V18C20 19.1046 19.1046 20 18 20H14M3 12L15 12M3 12L7 8M3 12L7 16" stroke="#ffffff" stroke-width="1.9919999999999998" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
           </button> -->
       </div>
     </div>
     <div class="profile-container">
-        <div class="user-info">
-          <div class="user-details">
-            <p class="username">@{{ userData.username }}</p>
-            <!--<p class="user-id">ID: {{ userData.id }}</p>
-            <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>-->
-          </div>
+      <div class="user-info">
+        <div class="user-details">
+          <!--<p class="user-id">ID: {{ userData.id }}</p>
+          <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>-->
         </div>
+      </div>
+      
+      <div class="cards-container">
+        <div class="profile-header">
+          <h1>Your Cards:</h1>
+        </div>
+      </div>
 <!-- 
       <div class="profile-actions">
         <button @click="refreshAvatar" class="refresh-btn" v-if="!avatarLoading">
@@ -36,11 +42,6 @@
       </div>
 
       <router-link to="/" class="back-link">← Back to cards</router-link> -->
-    </div>
-    <div class="cards-container">
-      <div class="profile-header">
-        <h1>Your Cards:</h1>
-      </div>
     </div>
   </div>
 </template>
@@ -258,18 +259,19 @@ export default {
 .username-section {
   display: flex;
   position: relative;
-  gap: 20px;
+  /* gap: 20px; */
   /* z-index: 2; */
-  flex-direction: row;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 .username-text {
-  transform: translateY(-50%);
+  transform: translateY(-20%);
   color: white;
   font-size: 100px;
-  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
-  font-family: 'Didact Gothic', sans-serif;
+  text-shadow: 3px 4px 10px rgba(0, 0, 0, 0.7);
+  margin: 0;
 }
 
 .avatar-and-username {
@@ -303,9 +305,10 @@ export default {
 }
 
 .username {
-  color: #888;
-  font-size: 16px;
-  margin: 0 0 5px 0;
+  color: var(--text-color);
+  font-size: 36px;
+  margin: 0;
+  transform: translateY(-20%);
 }
 
 .user-id {
