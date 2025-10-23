@@ -245,6 +245,8 @@ export default {
   align-items: center;
   gap: 20px;
   margin-bottom: 30px;
+  margin-top: 50px;
+  margin-left: calc(33vh + 110px);
   text-align: left;
   position: relative;
   justify-content: center;
@@ -290,7 +292,7 @@ export default {
 }
 
 .avatar {
-  width: 350px;
+  width: 33vh;
   aspect-ratio: 1;
   border-radius: 50%;
   object-fit: cover;
@@ -309,7 +311,7 @@ export default {
   color: var(--text-color);
   font-size: 36px;
   margin: 0;
-  transform: translateY(50%);
+  transform: translateY(2%, 50%);
 }
 
 .user-id {
