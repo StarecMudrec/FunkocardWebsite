@@ -254,8 +254,12 @@ export default {
 }
 
 .username-section {
+  display: flex;
   position: relative;
+  gap: 20px;
   /* z-index: 2; */
+  flex-direction: row;
+  align-items: center;
 }
 
 .username-text {
@@ -312,16 +316,13 @@ export default {
 }
 
 .logout-btn {
-  background: linear-gradient(45deg, var(--accent-color), var(--hover-color));
-  color: white;
-  border: none;
   padding: 12px 30px;
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: 'Afacad', sans-serif;
+  transform: translateY(calc(-50% - 40px));
+  background: none;
+  border: none;
+  color: white;
 }
 
 .logout-btn:hover {
