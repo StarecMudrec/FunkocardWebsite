@@ -24,6 +24,20 @@
     <div class="profile-container">
       <div class="user-info">
         <div class="user-details">
+          <!-- Stats Section -->
+          <div class="stats-section" v-if="userStats.length > 0">
+            <h3 class="stats-title">User Statistics:</h3>
+            <div class="stats-list">
+              <div 
+                v-for="(stat, index) in userStats" 
+                :key="index" 
+                class="stat-item"
+              >
+                {{ stat }}
+              </div>
+            </div>
+          </div>
+          
           <!--<p class="user-id">ID: {{ userData.id }}</p>
           <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>-->
         </div>
@@ -58,6 +72,7 @@ export default {
     const router = useRouter()
     const userData = ref({})
     const userAvatar = ref('')
+    const userStats = ref([])
     const avatarLoading = ref(false)
     const debugInfo = ref('')
     const defaultAvatar = '/placeholder.jpg'
@@ -65,12 +80,14 @@ export default {
     const fetchUserData = async () => {
       try {
         avatarLoading.value = true
-        const response = await fetch('/api/user', {
+        
+        // Fetch basic user data
+        const userResponse = await fetch('/api/user', {
           credentials: 'include'
         })
         
-        if (response.ok) {
-          const data = await response.json()
+        if (userResponse.ok) {
+          const data = await userResponse.json()
           userData.value = data
           console.log('Full user data:', data)
           
@@ -103,9 +120,13 @@ export default {
             debugInfo.value = 'No photo_url in user data'
             userAvatar.value = defaultAvatar
           }
+          
+          // Fetch user stats
+          await fetchUserStats()
+          
         } else {
-          debugInfo.value = `API response: ${response.status}`
-          console.error('Failed to fetch user data:', response.status)
+          debugInfo.value = `API response: ${userResponse.status}`
+          console.error('Failed to fetch user data:', userResponse.status)
           router.push('/login')
         }
       } catch (error) {
@@ -114,6 +135,27 @@ export default {
         router.push('/login')
       } finally {
         avatarLoading.value = false
+      }
+    }
+
+    const fetchUserStats = async () => {
+      try {
+        const statsResponse = await fetch('/api/user/stats', {
+          credentials: 'include'
+        })
+        
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json()
+          console.log('User stats:', statsData)
+          
+          if (statsData.stats && Array.isArray(statsData.stats)) {
+            userStats.value = statsData.stats
+          }
+        } else {
+          console.error('Failed to fetch user stats:', statsResponse.status)
+        }
+      } catch (error) {
+        console.error('Error fetching user stats:', error)
       }
     }
 
@@ -174,6 +216,7 @@ export default {
     return {
       userData,
       userAvatar,
+      userStats,
       avatarLoading,
       debugInfo,
       handleAvatarError,
@@ -320,6 +363,42 @@ export default {
   margin: 0;
 }
 
+/* Stats Section Styles */
+.stats-section {
+  margin-top: 30px;
+  text-align: left;
+}
+
+.stats-title {
+  color: var(--accent-color);
+  font-size: 24px;
+  margin-bottom: 15px;
+  font-weight: 500;
+  border-bottom: 1px solid #333;
+  padding-bottom: 8px;
+}
+
+.stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-item {
+  color: var(--text-color);
+  font-size: 16px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent-color);
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
+}
+
 .profile-actions {
   margin: 30px 0;
 }
@@ -432,6 +511,14 @@ export default {
   
   .user-details h2 {
     font-size: 20px;
+  }
+  
+  .stats-title {
+    font-size: 20px;
+  }
+  
+  .stat-item {
+    font-size: 14px;
   }
 }
 </style>
