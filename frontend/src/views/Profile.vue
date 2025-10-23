@@ -17,8 +17,8 @@
           <div class="user-details">
             <h2>{{ userData.first_name }} {{ userData.last_name }}</h2>
             <p class="username">@{{ userData.username }}</p>
-            <p class="user-id">ID: {{ userData.id }}</p>
-            <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>
+            <!--<p class="user-id">ID: {{ userData.id }}</p>
+            <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>-->
           </div>
         </div>
       </div>
@@ -207,14 +207,16 @@ export default {
   transform: translate(-50%, -50%);
   width: 100%;
   box-sizing: border-box;
-  max-width: 500px;
+  /* max-width: 500px; */
   padding: 40px;
   background-color: var(--card-bg);
-  border-radius: 20px;
+  /* border-radius: 20px; */
   border: 1px solid #333;
   text-align: center;
   box-shadow: 2px 4px 5px rgba(0, 0, 0, 0.24);
   z-index: 2;
+  margin-top: 50vh;
+  height: 100%;
 }
 
 .profile-header h1 {
