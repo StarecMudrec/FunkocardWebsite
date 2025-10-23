@@ -1,6 +1,6 @@
 <template>
   <div class="profile-background">
-    <div  class="avatmar-and-username">
+    <div  class="avatar-and-username">
       <div class="avatar-section">
         <img 
           :src="userAvatar" 
@@ -248,20 +248,33 @@ export default {
 .avatar-section {
   flex-shrink: 0;
   position: relative;
-  z-index: 2;
+  /* z-index: 2; */
 }
 
 .username-section {
   position: relative;
-  z-index: 2;
+  /* z-index: 2; */
+}
+
+.avatar-and-username {
+  display: flex;
+  flex-direction: row;
+  align-content: center;
+  justify-content: flex-start;
+  gap: 50px;
+  position: absolute;
+  left: 100px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
 }
 
 .avatar {
-  width: 80px;
-  height: 80px;
+  width: 300px;
+  height: 300px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--accent-color);
+  border: 3px solid var(--accent-color);
 }
 
 .user-details h2 {
