@@ -284,11 +284,11 @@ export default {
 }
 
 .avatar {
-  width: 300px;
-  height: 300px;
+  width: 350px;
+  aspect-ratio: 1;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--accent-color);
+  border: 5px solid #333;
   box-shadow: 0px 7px 10px 2px rgba(0, 0, 0, 0.1);
 }
 
