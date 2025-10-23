@@ -1,7 +1,6 @@
 <template>
   <div class="profile-background">
     <div class="profile-container">
-      <div class="profile-header">
         <div class="user-info">
           <div class="avatar-section">
             <img 
@@ -20,6 +19,7 @@
             <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>-->
           </div>
         </div>
+      <div class="profile-header">
         <h1>Your Profile</h1>
       </div>
 
