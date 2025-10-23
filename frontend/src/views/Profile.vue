@@ -369,6 +369,7 @@ export default {
 .stats-section {
   margin-top: 30px;
   text-align: left;
+  text-shadow: 3px 4px 2px rgba(0, 0, 0, 0.1);
 }
 
 .stats-title {
