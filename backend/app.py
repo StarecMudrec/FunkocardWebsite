@@ -1029,6 +1029,206 @@ def debug_user_session():
     }), 200
 
 
+@app.route("/api/user/stats")
+def get_user_stats():
+    """Get comprehensive user statistics"""
+    is_auth, user_id = is_authenticated(request, session)
+    if not is_auth:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        with connection.cursor() as cursor:
+            # Get user basic info
+            cursor.execute("""
+                SELECT 
+                    nickname,
+                    fame_season,
+                    fame_all,
+                    cards,
+                    pic,
+                    user_id
+                FROM users 
+                WHERE user_id = %s
+            """, (user_id,))
+            
+            user_data = cursor.fetchone()
+            
+            if not user_data:
+                return jsonify({'error': 'User not found'}), 404
+            
+            # Get user balance from botnet table
+            cursor.execute("""
+                SELECT balance, botnet_amount
+                FROM botnet 
+                WHERE user_id = %s
+            """, (user_id,))
+            
+            botnet_data = cursor.fetchone()
+            
+            # Calculate days since registration
+            cursor.execute("""
+                SELECT state_start 
+                FROM states 
+                WHERE user_id = %s
+            """, (user_id,))
+            
+            state_data = cursor.fetchone()
+            
+            # Parse cards to count collection
+            cards_text = user_data['cards'] or ""
+            card_count = 0
+            if cards_text and cards_text != "?":
+                # Assuming cards are stored as comma-separated values
+                card_list = [card.strip() for card in cards_text.split(',') if card.strip()]
+                card_count = len(card_list)
+            
+            # Calculate days since registration
+            days_with_us = 0
+            if state_data and state_data['state_start']:
+                try:
+                    start_date = datetime.strptime(str(state_data['state_start']), '%Y-%m-%d %H:%M:%S')
+                    days_with_us = (datetime.now() - start_date).days
+                except ValueError:
+                    # Try alternative date format if needed
+                    try:
+                        start_date = datetime.strptime(str(state_data['state_start']), '%Y-%m-%d')
+                        days_with_us = (datetime.now() - start_date).days
+                    except ValueError:
+                        days_with_us = 0
+            
+            # Prepare response data
+            stats = {
+                'season_points': user_data['fame_season'] or 0,
+                'all_time_points': user_data['fame_all'] or 0,
+                'balance': botnet_data['balance'] if botnet_data else 0,
+                'points_balance': user_data['fame_all'] or 0,  # Using fame_all as points balance
+                'attempts_remaining': botnet_data['botnet_amount'] if botnet_data else 0,
+                'cards_in_collection': card_count,
+                'days_with_us': days_with_us,
+                'nickname': user_data['nickname'],
+                'profile_pic': user_data['pic']
+            }
+            
+            # Format the response in the requested structure
+            formatted_stats = {
+                'stats': [
+                    f"💠Points в этом сезоне: {stats['season_points']}",
+                    f"💠Points за все время: {stats['all_time_points']}",
+                    "",
+                    f"💸Баланс: {stats['balance']}",
+                    f"💠Points баланс: {stats['points_balance']}",
+                    "",
+                    f"📂Осталось попыток: {stats['attempts_remaining']}",
+                    f"📂Карт в коллекции: {stats['cards_in_collection']}",
+                    "",
+                    f"👀Вы с нами уже {stats['days_with_us']} дня(-ей)"
+                ],
+                'raw_data': stats
+            }
+            
+            return jsonify(formatted_stats), 200
+            
+    except Exception as e:
+        logging.error(f"Error fetching user stats: {str(e)}")
+        return jsonify({'error': 'Failed to fetch user statistics'}), 500
+    finally:
+        connection.close()
+
+
+@app.route("/api/user/profile")
+def get_user_profile():
+    """Get user profile with detailed information"""
+    is_auth, user_id = is_authenticated(request, session)
+    if not is_auth:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        with connection.cursor() as cursor:
+            # Get comprehensive user data
+            cursor.execute("""
+                SELECT 
+                    u.nickname,
+                    u.fame_season,
+                    u.fame_all,
+                    u.cards,
+                    u.pic,
+                    u.user_id,
+                    u.icons,
+                    b.balance,
+                    b.botnet_amount,
+                    b.comp_points,
+                    s.state_start
+                FROM users u
+                LEFT JOIN botnet b ON u.user_id = b.user_id
+                LEFT JOIN states s ON u.user_id = s.user_id
+                WHERE u.user_id = %s
+            """, (user_id,))
+            
+            user_data = cursor.fetchone()
+            
+            if not user_data:
+                return jsonify({'error': 'User not found'}), 404
+            
+            # Calculate additional statistics
+            cards_text = user_data['cards'] or ""
+            card_count = 0
+            unique_cards = set()
+            
+            if cards_text and cards_text != "?":
+                card_list = [card.strip() for card in cards_text.split(',') if card.strip()]
+                card_count = len(card_list)
+                unique_cards = set(card_list)
+            
+            # Calculate days since registration
+            days_with_us = 0
+            if user_data['state_start']:
+                try:
+                    start_date = datetime.strptime(str(user_data['state_start']), '%Y-%m-%d %H:%M:%S')
+                    days_with_us = (datetime.now() - start_date).days
+                except ValueError:
+                    try:
+                        start_date = datetime.strptime(str(user_data['state_start']), '%Y-%m-%d')
+                        days_with_us = (datetime.now() - start_date).days
+                    except ValueError:
+                        days_with_us = 0
+            
+            # Prepare detailed profile
+            profile = {
+                'user_id': user_data['user_id'],
+                'nickname': user_data['nickname'],
+                'profile_picture': user_data['pic'],
+                'icons': user_data['icons'],
+                'statistics': {
+                    'season_points': user_data['fame_season'] or 0,
+                    'all_time_points': user_data['fame_all'] or 0,
+                    'balance': user_data['balance'] or 0,
+                    'points_balance': user_data['fame_all'] or 0,
+                    'attempts_remaining': user_data['botnet_amount'] or 0,
+                    'competition_points': user_data['comp_points'] or 0,
+                    'total_cards': card_count,
+                    'unique_cards': len(unique_cards),
+                    'days_registered': days_with_us
+                },
+                'registration_date': user_data['state_start']
+            }
+            
+            return jsonify(profile), 200
+            
+    except Exception as e:
+        logging.error(f"Error fetching user profile: {str(e)}")
+        return jsonify({'error': 'Failed to fetch user profile'}), 500
+    finally:
+        connection.close()
+
+
 @app.route('/proxy/avatar')
 def proxy_avatar():
     """Proxies avatar images from a given URL."""
