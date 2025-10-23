@@ -28,9 +28,6 @@
             <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>-->
           </div>
         </div>
-      <div class="profile-header">
-        <h1>Your Profile</h1>
-      </div>
 <!-- 
       <div class="profile-actions">
         <button @click="refreshAvatar" class="refresh-btn" v-if="!avatarLoading">
@@ -39,6 +36,11 @@
       </div>
 
       <router-link to="/" class="back-link">← Back to cards</router-link> -->
+    </div>
+    <div class="cards-container">
+      <div class="profile-header">
+        <h1>Your Cards:</h1>
+      </div>
     </div>
   </div>
 </template>

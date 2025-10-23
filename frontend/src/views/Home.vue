@@ -20,7 +20,7 @@
     
     <!-- Основной контент -->
     <div id="content-section" class="content">
-      <h1 class="categories-title">Categories : </h1>
+      <h1 class="categories-title">Categories:</h1>
       
       <!-- Search and Sort Container -->
       <div class="search-sort-container">
