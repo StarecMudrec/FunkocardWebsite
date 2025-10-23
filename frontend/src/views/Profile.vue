@@ -1,19 +1,21 @@
 <template>
   <div class="profile-background">
+    <div class="avatar-section">
+      <img 
+        :src="userAvatar" 
+        alt="User Avatar" 
+        class="avatar"
+        @load="handleAvatarLoad"
+        @error="handleAvatarError"
+      />
+      <div v-if="avatarLoading" class="avatar-loading">Loading...</div>
+    </div>
+    <div class ="username-section">
+      <h2>{{ userData.first_name }} {{ userData.last_name }}</h2>
+    </div>
     <div class="profile-container">
         <div class="user-info">
-          <div class="avatar-section">
-            <img 
-              :src="userAvatar" 
-              alt="User Avatar" 
-              class="avatar"
-              @load="handleAvatarLoad"
-              @error="handleAvatarError"
-            />
-            <div v-if="avatarLoading" class="avatar-loading">Loading...</div>
-          </div>
           <div class="user-details">
-            <h2>{{ userData.first_name }} {{ userData.last_name }}</h2>
             <p class="username">@{{ userData.username }}</p>
             <!--<p class="user-id">ID: {{ userData.id }}</p>
             <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>-->
@@ -237,6 +239,8 @@ export default {
   gap: 20px;
   margin-bottom: 30px;
   text-align: left;
+  position: relative;
+  justify-content: center;
 }
 
 .avatar-section {
