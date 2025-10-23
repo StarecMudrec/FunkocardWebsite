@@ -1118,13 +1118,10 @@ def get_user_stats():
                 'stats': [
                     f"💠Points в этом сезоне: {stats['season_points']}",
                     f"💠Points за все время: {stats['all_time_points']}",
-                    "",
                     f"💸Баланс: {stats['balance']}",
                     f"💠Points баланс: {stats['points_balance']}",
-                    "",
                     f"📂Осталось попыток: {stats['attempts_remaining']}",
                     f"📂Карт в коллекции: {stats['cards_in_collection']}",
-                    "",
                     f"👀Вы с нами уже {stats['days_with_us']} дня(-ей)"
                 ],
                 'raw_data': stats
