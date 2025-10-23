@@ -1,17 +1,19 @@
 <template>
   <div class="profile-background">
-    <div class="avatar-section">
-      <img 
-        :src="userAvatar" 
-        alt="User Avatar" 
-        class="avatar"
-        @load="handleAvatarLoad"
-        @error="handleAvatarError"
-      />
-      <div v-if="avatarLoading" class="avatar-loading">Loading...</div>
-    </div>
-    <div class ="username-section">
-      <h2>{{ userData.first_name }} {{ userData.last_name }}</h2>
+    <div  class="avatmar-and-username">
+      <div class="avatar-section">
+        <img 
+          :src="userAvatar" 
+          alt="User Avatar" 
+          class="avatar"
+          @load="handleAvatarLoad"
+          @error="handleAvatarError"
+        />
+        <div v-if="avatarLoading" class="avatar-loading">Loading...</div>
+      </div>
+      <div class ="username-section">
+        <h2>{{ userData.first_name }} {{ userData.last_name }}</h2>
+      </div>
     </div>
     <div class="profile-container">
         <div class="user-info">
@@ -245,6 +247,13 @@ export default {
 
 .avatar-section {
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.username-section {
+  position: relative;
+  z-index: 2;
 }
 
 .avatar {
