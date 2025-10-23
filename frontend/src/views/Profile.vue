@@ -269,7 +269,7 @@ export default {
   color: white;
   font-size: 100px;
   text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
-  font-family: 'Finlandica', sans-serif;
+  font-family: 'Didact Gothic', sans-serif;
 }
 
 .avatar-and-username {
