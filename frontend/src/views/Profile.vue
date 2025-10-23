@@ -12,7 +12,9 @@
         <div v-if="avatarLoading" class="avatar-loading">Loading...</div>
       </div>
       <div class ="username-section">
-        <h2>{{ userData.first_name }} {{ userData.last_name }}</h2>
+        <h2 class="username-text">
+          {{ userData.first_name }} {{ userData.last_name }}
+        </h2>
       </div>
     </div>
     <div class="profile-container">
@@ -254,6 +256,12 @@ export default {
 .username-section {
   position: relative;
   /* z-index: 2; */
+}
+
+.username-text {
+  transform: translateY(-50%);
+  color: white;
+  font-size: 50px;
 }
 
 .avatar-and-username {
