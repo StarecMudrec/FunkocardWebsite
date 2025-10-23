@@ -1122,7 +1122,7 @@ def get_user_stats():
                     f"💠Points balance: {stats['points_balance']}",
                     f"📂Remaining attempts: {stats['attempts_remaining']}",
                     f"📂Cards in collection: {stats['cards_in_collection']}",
-                    f"👀You are with us for {stats['days_with_us']} дня(-ей)"
+                    f"👀You are with us for {stats['days_with_us']} day(s)"
                 ],
                 'raw_data': stats
             }

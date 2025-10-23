@@ -261,6 +261,7 @@ export default {
   box-sizing: border-box;
   /* max-width: 500px; */
   padding: 40px;
+  padding-top: 0;
   background-color: var(--card-bg);
   /* border-radius: 20px; */
   border-top: 2px solid #333;
@@ -289,11 +290,11 @@ export default {
   align-items: center;
   gap: 20px;
   margin-bottom: 30px;
-  margin-top: 50px;
+  /* margin-top: 50px; */
   margin-left: calc(33vh + 110px);
   text-align: left;
   position: relative;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .avatar-section {
@@ -372,7 +373,7 @@ export default {
 
 .stats-title {
   color: var(--accent-color);
-  font-size: 24px;
+  font-size: 34px;
   margin-bottom: 15px;
   font-weight: 500;
   border-bottom: 1px solid #333;
@@ -383,11 +384,13 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 30vh;
+  flex-wrap: wrap;
 }
 
 .stat-item {
   color: var(--text-color);
-  font-size: 16px;
+  font-size: 26px;
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
