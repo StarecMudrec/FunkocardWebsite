@@ -12,9 +12,14 @@
         <div v-if="avatarLoading" class="avatar-loading">Loading...</div>
       </div>
       <div class ="username-section">
-        <h2 class="username-text">
-          {{ userData.first_name }} {{ userData.last_name }}
-        </h2>
+        <div class="username-and-logout">
+          <h2 class="username-text">
+            {{ userData.first_name }} {{ userData.last_name }}
+          </h2>
+          <button @click="logout" class="logout-btn">
+            Э
+          </button>
+        </div>
       </div>
     </div>
     <div class="profile-container">
@@ -30,9 +35,6 @@
       </div>
 
       <div class="profile-actions">
-        <button @click="logout" class="logout-btn">
-          Logout
-        </button>
         <button @click="refreshAvatar" class="refresh-btn" v-if="!avatarLoading">
           Refresh Avatar
         </button>
