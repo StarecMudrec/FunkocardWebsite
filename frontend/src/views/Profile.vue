@@ -326,7 +326,7 @@ export default {
 }
 
 .logout-btn:hover {
-  transform: scale(1.05);
+  transform: translateY(calc(-50% - 40px)) scale(1.05);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
