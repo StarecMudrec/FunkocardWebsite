@@ -319,14 +319,14 @@ export default {
   padding: 12px 30px;
   cursor: pointer;
   transition: all 0.3s ease;
-  transform: translateY(calc(-50% - 40px));
+  transform: translateY(calc(-50% - 20px));
   background: none;
   border: none;
   color: white;
 }
 
 .logout-btn:hover {
-  transform: translateY(calc(-50% - 40px)) scale(1.05);
+  transform: translateY(calc(-50% - 20px)) scale(1.05);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
