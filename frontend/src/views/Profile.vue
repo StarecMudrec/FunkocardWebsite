@@ -256,8 +256,9 @@ export default {
   /* z-index: 2; */
 }
 
-.username-section {
-  display: flex;
+.username-section { 
+  display: grid;
+  grid-template-rows: 1fr 1fr;
   position: relative;
   /* gap: 20px; */
   /* z-index: 2; */
@@ -267,7 +268,7 @@ export default {
 }
 
 .username-text {
-  transform: translateY(-20%);
+  /* transform: translateY(-50%); */
   color: white;
   font-size: 100px;
   text-shadow: 3px 4px 10px rgba(0, 0, 0, 0.7);
@@ -308,7 +309,7 @@ export default {
   color: var(--text-color);
   font-size: 36px;
   margin: 0;
-  transform: translateY(-20%);
+  transform: translateY(50%);
 }
 
 .user-id {
