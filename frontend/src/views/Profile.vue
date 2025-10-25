@@ -376,9 +376,9 @@ export default {
 
 .username-container {
   max-width: 1000px;
-  max-height: 150px;
+  /* max-height: 150px; */
   width: auto;
-  height: auto;
+  height: 175px;
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
@@ -421,7 +421,7 @@ export default {
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -175px);
   z-index: 3;
   align-items: flex-end;
   width: auto;
