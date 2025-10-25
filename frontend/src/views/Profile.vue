@@ -292,6 +292,7 @@ export default {
   margin-bottom: 30px;
   /* margin-top: 50px; */
   /* margin-left: 33vh; */
+  margin-left: 50px;
   text-align: left;
   position: relative;
   justify-content: center;
@@ -313,7 +314,7 @@ export default {
   flex-direction: column;
   align-items: end;
   justify-content: center;
-  justify-items: center;
+  justify-items: start;
 }
 
 .username-text {
