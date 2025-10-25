@@ -9,7 +9,10 @@
           @load="handleAvatarLoad"
           @error="handleAvatarError"
         />
-        <div v-if="avatarLoading" class="avatar-loading">Loading...</div>
+        <div v-if="avatarLoading" class="avatar-loading">
+          <div class="spinner"></div>
+          <span>Loading avatar...</span>
+        </div>
       </div>
       <div class="username-section">
         <div class="username-container">
@@ -178,7 +181,7 @@ export default {
         console.error('Error fetching user data:', error)
         router.push('/login')
       } finally {
-        avatarLoading.value = false
+        // Note: avatarLoading is set to false in handleAvatarLoad or handleAvatarError
       }
     }
 
@@ -383,7 +386,6 @@ export default {
   align-items: flex-end;
   justify-content: flex-start;
   overflow: visible;
-  padding-bottom: 10px;
 }
 
 .username-text {
@@ -555,11 +557,32 @@ export default {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
   color: white;
-  padding: 5px 10px;
-  border-radius: 10px;
-  font-size: 12px;
+  padding: 15px 20px;
+  border-radius: 15px;
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
+  min-width: 150px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 3px solid white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .avatar-section {
@@ -650,6 +673,18 @@ export default {
   
   .avatar {
     width: 200px;
+  }
+  
+  .avatar-loading {
+    padding: 10px 15px;
+    font-size: 14px;
+    min-width: 120px;
+  }
+  
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
   }
 }
 </style>
