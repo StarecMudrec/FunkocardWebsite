@@ -675,7 +675,7 @@ export default {
   box-sizing: border-box;
   margin-left: 50%;
   transform: translateX(-50%);
-  border-radius: 27px;
+  border-radius: 37px;
   padding: 40px;
   padding-top: 0;
   background-color: var(--card-bg);
