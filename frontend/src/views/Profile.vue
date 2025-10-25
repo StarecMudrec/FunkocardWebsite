@@ -346,7 +346,7 @@ export default {
   align-items: center;
   gap: 20px;
   margin-bottom: 30px;
-  margin-left: 50px;
+  margin-left: 30px;
   text-align: left;
   position: relative;
   justify-content: center;
@@ -417,7 +417,7 @@ export default {
   flex-direction: row;
   align-content: flex-end;
   justify-content: flex-start;
-  gap: 100px;
+  gap: 70px;
   position: absolute;
   left: 50%;
   top: 50%;
