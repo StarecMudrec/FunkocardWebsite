@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 
@@ -155,10 +155,15 @@ export default {
 
     const adjustUsernameFontSize = () => {
       nextTick(() => {
-        if (!usernameRef.value) return
+        if (!usernameRef.value) {
+          console.log('Username ref not found')
+          return
+        }
         
         const element = usernameRef.value
+        console.log('Adjusting font size for:', element.textContent)
         
+        // Reset styles
         element.style.fontSize = ''
         element.style.whiteSpace = 'nowrap'
         element.style.lineHeight = '1'
@@ -175,6 +180,7 @@ export default {
           maxHeight: 150
         })
         
+        console.log('Optimal font size:', optimalSize, 'Needs wrap:', needsWrap)
         element.style.fontSize = `${optimalSize}px`
         
         if (needsWrap) {
@@ -236,6 +242,11 @@ export default {
           
           // Fetch user stats
           await fetchUserStats()
+          
+          // Adjust font size after user data is loaded
+          setTimeout(() => {
+            adjustUsernameFontSize()
+          }, 200)
           
         } else {
           debugInfo.value = `API response: ${userResponse.status}`
@@ -318,17 +329,29 @@ export default {
       }
     }
 
+    // Watch for user data changes to adjust font size
+    watch(() => userData.value.first_name, () => {
+      if (userData.value.first_name) {
+        setTimeout(() => {
+          adjustUsernameFontSize()
+        }, 100)
+      }
+    })
+
+    watch(() => userData.value.last_name, () => {
+      if (userData.value.last_name) {
+        setTimeout(() => {
+          adjustUsernameFontSize()
+        }, 100)
+      }
+    })
+
     onMounted(() => {
       if (!store.state.isAuthenticated) {
         router.push('/login')
         return
       }
       fetchUserData()
-      
-      // Adjust font size after data is loaded and DOM is updated
-      setTimeout(() => {
-        adjustUsernameFontSize()
-      }, 100)
     })
 
     return {
@@ -378,11 +401,9 @@ export default {
   transform: translate(-50%, -50%);
   width: 100%;
   box-sizing: border-box;
-  /* max-width: 500px; */
   padding: 40px;
   padding-top: 0;
   background-color: var(--card-bg);
-  /* border-radius: 20px; */
   border-top: 2px solid #333;
   text-align: center;
   box-shadow: 2px 4px 5px rgba(0, 0, 0, 0.24);
@@ -409,27 +430,21 @@ export default {
   align-items: center;
   gap: 20px;
   margin-bottom: 30px;
-  /* margin-top: 50px; */
-  /* margin-left: 33vh; */
   margin-left: 50px;
   text-align: left;
   position: relative;
   justify-content: center;
-  /*width: calc(100% - 33vh);*/
 }
 
 .avatar-section {
   flex-shrink: 0;
   position: relative;
-  /* z-index: 2; */
 }
 
 .username-section { 
   display: grid;
   grid-template-rows: 1fr 1fr;
   position: relative;
-  /* gap: 20px; */
-  /* z-index: 2; */
   flex-direction: column;
   align-items: end;
   justify-content: center;
@@ -438,10 +453,10 @@ export default {
   max-height: 150px;
   width: auto;
   height: auto;
+  overflow: visible;
 }
 
 .username-text {
-  /* transform: translateY(-50%); */
   color: white;
   font-size: 100px;
   text-shadow: 3px 4px 10px rgba(0, 0, 0, 0.7);
@@ -456,6 +471,8 @@ export default {
   display: inline-block;
   vertical-align: bottom;
   transform-origin: left bottom;
+  line-height: 1;
+  overflow: visible;
 }
 
 .username-text.wrapped {
@@ -478,7 +495,6 @@ export default {
   transform: translate(-50%, -50%);
   z-index: 3;
   align-items: center;
-  /* margin-left: -175px; */
 }
 
 .avatar {
