@@ -1,5 +1,6 @@
 <template>
   <div class="profile-background">
+    <div class="background-container"></div>
     <!-- Scroll arrow button -->
     <div class="cover-arrow" @click="scrollToContent">
       <div class="cover-arrow__inner">
@@ -579,26 +580,29 @@ export default {
 
 <style scoped>
 .profile-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   font-family: 'Afacad', sans-serif;
 }
 
 .profile-background::before {
-  content: '';
-  position: absolute;
+  display: none; /* This disables the old background */
+}
+
+/* Replace the ::before pseudo-element with the fixed background container */
+.background-container {
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background-image: url('/background.jpg');
-  background-size: cover;
-  background-position: center 95%;
   filter: blur(10px);
-  z-index: 1;
+  background-size: cover;
+  background-position: center 95%; /* Adjust this if needed to match Home.vue positioning */
+  z-index: -1;
 }
 
 /* Scroll Arrow Styles (from Home.vue) */
