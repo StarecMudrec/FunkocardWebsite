@@ -676,7 +676,8 @@ export default {
   margin-left: 50%;
   transform: translateX(-50%);
   border-radius: 37px;
-  padding: 40px;
+  padding: 100px;
+  padding-bottom: 40px;
   padding-top: 0;
   background-color: var(--card-bg);
   border: 2px solid #333;
