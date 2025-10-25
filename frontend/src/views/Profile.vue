@@ -58,6 +58,69 @@
           </div>
         </div>
 
+        <!-- Search and Sort Container -->
+        <div class="search-sort-container">
+          <!-- Search Bar -->
+          <div class="search-container">
+            <div class="search-input-wrapper">
+              <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="30" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+              </svg>
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search categories..."
+                class="search-input"
+                @input="handleSearch"
+              />
+              <button
+                v-if="searchQuery"
+                @click="clearSearch"
+                class="clear-search-button"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 6 6 18"></path>
+                  <path d="m6 6 12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sort Controls -->
+          <div class="sort-controls">
+            <div class="sort-icon" @click.stop="toggleSortDropdown">
+              <svg width="52" height="44" viewBox="0 0 52 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g filter="url(#filter0_d_110_20)">
+                  <path d="M45.3209 18.0467H21.1236M45.3209 3.0233L6.60522 3.0233M45.3209 33.0701H35.642" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <defs>
+                  <filter id="filter0_d_110_20" x="0.105225" y="0.523315" width="51.7157" height="43.0468" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                    <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                    <feOffset dy="4"/>
+                    <feGaussianBlur stdDeviation="2"/>
+                    <feComposite in2="hardAlpha" operator="out"/>
+                    <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+                    <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_110_20"/>
+                    <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_110_20" result="shape"/>
+                  </filter>
+                </defs>
+              </svg>
+            </div>
+            <transition name="sort-dropdown">
+              <div class="sort-dropdown" v-if="showSortDropdown" v-click-outside="closeSortDropdown">
+                <div class="sort-option" @click="sortBy('cards', 'asc')">Cards Amount (Low to High)</div>
+                <div class="sort-option" @click="sortBy('cards', 'desc')">Cards Amount (High to Low)</div>
+                <div class="sort-option" @click="sortBy('rarity', 'asc')">Rarity (Vinyl Figure💫 to Force🤷‍♂️)</div>
+                <div class="sort-option" @click="sortBy('rarity', 'desc')">Rarity (Force🤷‍♂️ to Vinyl Figure💫)</div>
+                <div class="sort-option" @click="sortBy('name', 'asc')">Name (A-Z)</div>
+                <div class="sort-option" @click="sortBy('name', 'desc')">Name (Z-A)</div>
+              </div>
+            </transition>
+          </div>
+        </div>
+
         <!-- Categories Grid -->
         <div id="categories-container" class="categories-grid">
           <div v-if="loading" class="loading">Loading categories...</div>
@@ -128,8 +191,26 @@ const debounce = (func, wait) => {
   return debounced
 }
 
+// Add this directive definition
+const clickOutside = {
+  beforeMount(el, binding) {
+    el.clickOutsideEvent = function(event) {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value();
+      }
+    };
+    document.addEventListener('click', el.clickOutsideEvent);
+  },
+  unmounted(el) {
+    document.removeEventListener('click', el.clickOutsideEvent);
+  },
+};
+
 export default {
   name: 'Profile',
+  directives: {
+    'click-outside': clickOutside
+  },
   setup() {
     const store = useStore()
     const router = useRouter()
@@ -445,6 +526,71 @@ export default {
       debouncedSearch.value?.cancel();
     }
 
+    // Sort methods
+    const toggleSortDropdown = () => {
+      showSortDropdown.value = !showSortDropdown.value;
+    }
+
+    const closeSortDropdown = () => {
+      showSortDropdown.value = false;
+    }
+
+    const sortBy = (field, direction) => {
+      currentSort.value = { field, direction };
+      showSortDropdown.value = false;
+      
+      let sortedCategoriesList = [...sortedCategories.value];
+      
+      switch (field) {
+        case 'cards':
+          sortedCategoriesList.sort((a, b) => {
+            const countA = a.count || 0;
+            const countB = b.count || 0;
+            return direction === 'asc' ? countA - countB : countB - countA;
+          });
+          break;
+        
+        case 'rarity':
+          sortedCategoriesList.sort((a, b) => {
+            // For "All Cards" and "Shop" categories, keep them at the top
+            const isASpecial = a.name.toLowerCase().includes('all') || a.name.toLowerCase().includes('shop');
+            const isBSpecial = b.name.toLowerCase().includes('all') || b.name.toLowerCase().includes('shop');
+            
+            if (isASpecial && !isBSpecial) return -1;
+            if (!isASpecial && isBSpecial) return 1;
+            if (isASpecial && isBSpecial) {
+              // Both are special categories, sort them by name
+              return a.name.localeCompare(b.name);
+            }
+            
+            // Both are rarity categories, sort by rarity order
+            const rarityA = rarityOrder[a.name] || 999;
+            const rarityB = rarityOrder[b.name] || 999;
+            return direction === 'asc' ? rarityA - rarityB : rarityB - rarityA;
+          });
+          break;
+        
+        case 'name':
+          sortedCategoriesList.sort((a, b) => {
+            const nameA = a.name?.toLowerCase() || '';
+            const nameB = b.name?.toLowerCase() || '';
+            if (direction === 'asc') {
+              return nameA.localeCompare(nameB);
+            } else {
+              return nameB.localeCompare(nameA);
+            }
+          });
+          break;
+        
+        default:
+          // Default sorting (original order)
+          sortedCategoriesList = [...sortedCategories.value];
+          break;
+      }
+      
+      filteredCategories.value = sortedCategoriesList;
+    }
+
     // Scroll method
     const scrollToContent = () => {
       const contentSection = document.querySelector('.content');
@@ -572,6 +718,9 @@ export default {
       getCategoryBackgroundStyle,
       handleSearch,
       clearSearch,
+      toggleSortDropdown,
+      closeSortDropdown,
+      sortBy,
       scrollToContent
     }
   }
@@ -704,6 +853,157 @@ export default {
   border-bottom-style: solid;
   border-bottom-color: #333;
   padding-bottom: 12px;
+}
+
+/* Search and Sort Container (from Home.vue) */
+.search-sort-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 30px auto 0;
+}
+
+/* Search Container */
+.search-container {
+  flex: 1;
+  max-width: 950px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1.7%;
+  color: var(--text-color);
+  opacity: 0.7;
+  z-index: 2;
+}
+
+.search-input {
+  width: 100%;
+  padding: 15px 45px 15px 55px;
+  background: var(--card-bg);
+  border: 2px solid #333;
+  border-radius: 32px;
+  color: var(--text-color);
+  font-size: 1.2rem;
+  font-family: 'Afacad', sans-serif;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #555555;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.search-input::placeholder {
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
+.clear-search-button {
+  position: absolute;
+  right: 17px;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-search-button:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  scale: 1.1;
+}
+
+/* Sort Controls */
+.sort-controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sort-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  width: 50px;
+  height: 50px;
+}
+
+.sort-icon:hover {
+  transform: scale(1.05);
+}
+
+.sort-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.sort-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: -100%;
+  margin-top: 10px;
+  background-color: #1e1e1eeb;
+  color: var(--text-color);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 10px 0;
+  z-index: 100;
+  min-width: 190px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.sort-option {
+  padding: 8px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.sort-option:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sort-dropdown-enter-active,
+.sort-dropdown-leave-active {
+  transition: all 0.3s ease;
+}
+
+.sort-dropdown-enter-from,
+.sort-dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .user-info {
@@ -1174,6 +1474,39 @@ export default {
     height: 108px;
   }
 
+  .search-sort-container {
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+  }
+
+  .search-container {
+    max-width: 100%;
+  }
+
+  .search-input {
+    padding: 12px 40px 12px 45px;
+    font-size: 1rem;
+  }
+
+  .search-icon {
+    left: 15px;
+  }
+
+  .sort-controls {
+    align-self: flex-end;
+  }
+
+  .sort-icon {
+    width: 50px;
+    height: 42px;
+  }
+
+  .sort-dropdown {
+    right: 0;
+    left: auto;
+  }
+
   .profile-container {
     padding: 30px 20px;
     max-width: 350px;
@@ -1249,6 +1582,15 @@ export default {
 @media (max-width: 480px) {
   .categories-grid {
     grid-template-columns: 1fr;
+  }
+
+  .search-input {
+    padding: 10px 35px 10px 40px;
+    font-size: 0.9rem;
+  }
+
+  .search-icon {
+    left: 12px;
   }
 }
 </style>
