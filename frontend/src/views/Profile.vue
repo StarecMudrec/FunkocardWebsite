@@ -313,7 +313,7 @@ export default {
   flex-direction: column;
   align-items: end;
   justify-content: center;
-  justify-items: start;
+  justify-items: center;
 }
 
 .username-text {
