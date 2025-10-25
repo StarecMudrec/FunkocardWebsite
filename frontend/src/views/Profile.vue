@@ -688,8 +688,8 @@ export default {
   color: var(--accent-color);
   font-weight: 500;
   margin-bottom: 30px;
-  margin-top: calc(50vh + 20px);
-  font-size: 38px;
+  margin-top: calc(50vh + 100px);
+  font-size: 100px; 
   border-bottom-width: 1px;
   border-bottom-style: solid;
   border-bottom-color: #333;
