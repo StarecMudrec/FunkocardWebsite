@@ -688,7 +688,7 @@ export default {
   color: var(--accent-color);
   font-weight: 500;
   margin-bottom: 30px;
-  margin-top: 20px;
+  margin-top: calc(50vh + 20px);
   font-size: 38px;
   border-bottom-width: 1px;
   border-bottom-style: solid;
