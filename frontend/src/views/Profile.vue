@@ -578,18 +578,18 @@ export default {
 </script>
 
 <style scoped>
+/* Fixed background container */
 .profile-background {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
-  height: 100%;
+  min-height: 100vh;
   font-family: 'Afacad', sans-serif;
 }
 
+/* Fixed background layer */
 .profile-background::before {
   content: '';
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -597,8 +597,17 @@ export default {
   background-image: url('/background.jpg');
   background-size: cover;
   background-position: center 95%;
+  background-attachment: fixed;
   filter: blur(10px);
   z-index: 1;
+}
+
+/* Content wrapper - everything that scrolls */
+.profile-background::after {
+  content: '';
+  position: relative;
+  display: block;
+  z-index: 2;
 }
 
 /* Scroll Arrow Styles (from Home.vue) */
