@@ -15,6 +15,26 @@
           <h2 class="username-text">
             {{ userData.first_name }} {{ userData.last_name }}
           </h2>
+          <div class="user-info">
+            <div class="user-details">
+              <!-- Stats Section -->
+              <div class="stats-section" v-if="userStats.length > 0">
+                <h3 class="stats-title">User Statistics:</h3>
+                <div class="stats-list">
+                  <div 
+                    v-for="(stat, index) in userStats" 
+                    :key="index" 
+                    class="stat-item"
+                  >
+                    {{ stat }}
+                  </div>
+                </div>
+              </div>
+              
+              <!--<p class="user-id">ID: {{ userData.id }}</p>
+              <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>-->
+            </div>
+          </div>
           <!-- <p class="username">@{{ userData.username }}</p> -->
           <!-- <button @click="logout" class="logout-btn">
             <svg width="54px" height="54px" viewBox="0 0 24.00 24.00" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff" transform="matrix(-1, 0, 0, 1, 0, 0)"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="0.288"></g><g id="SVGRepo_iconCarrier"> <path d="M14 4L18 4C19.1046 4 20 4.89543 20 6V18C20 19.1046 19.1046 20 18 20H14M3 12L15 12M3 12L7 8M3 12L7 16" stroke="#ffffff" stroke-width="1.9919999999999998" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
@@ -22,26 +42,6 @@
       </div>
     </div>
     <div class="profile-container">
-      <div class="user-info">
-        <div class="user-details">
-          <!-- Stats Section -->
-          <div class="stats-section" v-if="userStats.length > 0">
-            <h3 class="stats-title">User Statistics:</h3>
-            <div class="stats-list">
-              <div 
-                v-for="(stat, index) in userStats" 
-                :key="index" 
-                class="stat-item"
-              >
-                {{ stat }}
-              </div>
-            </div>
-          </div>
-          
-          <!--<p class="user-id">ID: {{ userData.id }}</p>
-          <p class="debug-info" v-if="debugInfo">Debug: {{ debugInfo }}</p>-->
-        </div>
-      </div>
       
       <div class="cards-container">
         <div class="profile-header">
@@ -295,7 +295,7 @@ export default {
   text-align: left;
   position: relative;
   justify-content: center;
-  width: calc(100% - 33vh);
+  /*width: calc(100% - 33vh);*/
 }
 
 .avatar-section {
