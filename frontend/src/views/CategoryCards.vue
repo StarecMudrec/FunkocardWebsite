@@ -201,6 +201,7 @@ export default {
       showScrollTop: false,
       scrollThreshold: 300,
       scrollPosition: 0,
+      userCardsView: false,
       scrollSaveTimeout: null
     }
   },
@@ -340,7 +341,28 @@ export default {
     async loadCategoryCards() {
       this.loading = true
       try {
-        const response = await fetchCardsByCategory(this.categoryId)
+        // Check if we're viewing user's cards from profile
+        const viewingUserCards = sessionStorage.getItem('viewingUserCards') === 'true'
+        const userCategory = sessionStorage.getItem('userCategory')
+        
+        let response
+        if (viewingUserCards && this.categoryId === userCategory) {
+          // Use user-specific endpoint
+          response = await fetch(`/api/user/cards/by-category/${this.categoryId}?sort=${this.currentSort.field}&direction=${this.currentSort.direction}`)
+          if (!response.ok) {
+            throw new Error('Failed to fetch user cards')
+          }
+          response = await response.json()
+          this.userCardsView = true // Set flag for user cards view
+        } else {
+          // Use regular endpoint
+          response = await fetchCardsByCategory(this.categoryId, this.currentSort.field, this.currentSort.direction)
+          this.userCardsView = false
+          // Clear user cards flags if not in user cards view
+          sessionStorage.removeItem('viewingUserCards')
+          sessionStorage.removeItem('userCategory')
+        }
+        
         this.cards = response.cards
         
         // Apply saved search and sort - but only if we're returning from card detail
@@ -355,10 +377,13 @@ export default {
           this.clearSavedState()
         }
         
-        this.categoryName = this.getCategoryName(this.categoryId)
+        // Update category name to indicate user cards if applicable
+        let baseCategoryName = this.getCategoryName(this.categoryId)
+        this.categoryName = this.userCardsView ? `Your ${baseCategoryName}` : baseCategoryName
         
         console.log('Loaded category cards:', this.cards)
         console.log('Navigation type:', navigationType)
+        console.log('User cards view:', this.userCardsView)
         
       } catch (err) {
         this.error = err

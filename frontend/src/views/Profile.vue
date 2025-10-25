@@ -49,7 +49,7 @@
       </div>
     </div>
 
-    <!-- Categories Section (similar to Home.vue) -->
+    <!-- Categories Section -->
     <div id="content-section" class="content">
       <div class="profile-container">
         <div class="cards-container">
@@ -123,10 +123,10 @@
 
         <!-- Categories Grid -->
         <div id="categories-container" class="categories-grid">
-          <div v-if="loading" class="loading">Loading categories...</div>
+          <div v-if="loading" class="loading">Loading your card categories...</div>
           <div v-else-if="error" class="error-message">Error loading data: {{ error.message || error }}. Please try again later.</div>
           <div v-else-if="filteredCategories.length === 0" class="no-categories-message">
-            {{ searchQuery ? 'No categories match your search' : 'No categories found' }}
+            {{ searchQuery ? 'No categories match your search' : 'No categories with your cards found' }}
           </div>
           
           <!-- Category Cards -->
@@ -136,7 +136,7 @@
               :key="category.id"
               class="category-card"
               :class="getCategoryBackgroundClass(category, index)"
-              @click="navigateToCategory(category)"
+              @click="navigateToUserCategory(category)"
             >
               <!-- Video background for Limited category -->
               <video 
@@ -156,6 +156,7 @@
               <div class="category-card__content">
                 <div class="category-card__header">
                   <h3 class="category-card__title">{{ category.name }}</h3>
+                  <span class="category-card__count">{{ category.userCardCount || 0 }}/{{ category.totalCount || 0 }}</span>
                 </div>
               </div>
             </div>
@@ -219,12 +220,13 @@ export default {
     const userData = ref({})
     const userAvatar = ref('')
     const userStats = ref([])
+    const userCardIds = ref([]) // Store user's card IDs
     const avatarLoading = ref(false)
     const debugInfo = ref('')
     const defaultAvatar = '/placeholder.jpg'
     const usernameRef = ref(null)
 
-    // Categories data (from Home.vue)
+    // Categories data
     const rarityOrder = {
       'Vinyl Figure💫': 1,
       'Legendary🧡': 2,
@@ -241,13 +243,14 @@ export default {
     const allCategoriesNewestCards = ref({})
     const searchQuery = ref('')
     const filteredCategories = ref([])
+    const userCategories = ref([]) // Categories with user's cards
     const debouncedSearch = ref(null)
     const showSortDropdown = ref(false)
     const currentSort = ref({ field: 'default', direction: 'asc' })
     const loading = ref(false)
     const error = ref(null)
 
-    // Computed categories (from Home.vue)
+    // Computed categories
     const categories = computed(() => store.state.categories || [])
     
     const rarityCategories = computed(() => {
@@ -339,6 +342,61 @@ export default {
       })
     }
 
+    // Fetch user's card IDs
+    const fetchUserCardIds = async () => {
+      try {
+        const response = await fetch('/api/user/cards', {
+          credentials: 'include'
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          userCardIds.value = data.cardIds || []
+          console.log('User card IDs:', userCardIds.value)
+        } else {
+          console.error('Failed to fetch user cards:', response.status)
+          userCardIds.value = []
+        }
+      } catch (error) {
+        console.error('Error fetching user cards:', error)
+        userCardIds.value = []
+      }
+    }
+
+    // Fetch categories with user's card counts
+    const fetchUserCategories = async () => {
+      try {
+        const response = await fetch('/api/user/categories', {
+          credentials: 'include'
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          userCategories.value = data.categories || []
+          console.log('User categories with counts:', userCategories.value)
+          
+          // Update filtered categories
+          filteredCategories.value = [...userCategories.value]
+        } else {
+          console.error('Failed to fetch user categories:', response.status)
+          // Fallback to all categories with zero counts
+          userCategories.value = sortedCategories.value.map(cat => ({
+            ...cat,
+            userCardCount: 0
+          }))
+          filteredCategories.value = [...userCategories.value]
+        }
+      } catch (error) {
+        console.error('Error fetching user categories:', error)
+        // Fallback to all categories with zero counts
+        userCategories.value = sortedCategories.value.map(cat => ({
+          ...cat,
+          userCardCount: 0
+        }))
+        filteredCategories.value = [...userCategories.value]
+      }
+    }
+
     // User data methods
     const fetchUserData = async () => {
       try {
@@ -375,8 +433,9 @@ export default {
             userAvatar.value = defaultAvatar
           }
           
-          // Fetch user stats
+          // Fetch user stats and cards
           await fetchUserStats()
+          await fetchUserCardIds()
           
         } else {
           debugInfo.value = `API response: ${userResponse.status}`
@@ -413,7 +472,7 @@ export default {
       }
     }
 
-    // Categories methods (from Home.vue)
+    // Categories methods
     const fetchRarityNewestCards = async () => {
       try {
         const response = await fetch('/api/rarity_newest_cards');
@@ -442,8 +501,9 @@ export default {
       }
     }
     
-    const navigateToCategory = (category) => {
-      console.log('Navigating to category:', category);
+    // Navigate to user's cards in this category
+    const navigateToUserCategory = (category) => {
+      console.log('Navigating to user category:', category);
       
       // Clear any existing category state when navigating to a new category
       Object.keys(sessionStorage).forEach(key => {
@@ -451,6 +511,10 @@ export default {
           sessionStorage.removeItem(key);
         }
       });
+      
+      // Store that we're viewing user's cards
+      sessionStorage.setItem('viewingUserCards', 'true');
+      sessionStorage.setItem('userCategory', category.id);
       
       router.push(`/category/${category.id}`);
     }
@@ -507,14 +571,14 @@ export default {
     
     const performSearch = () => {
       if (!searchQuery.value.trim()) {
-        filteredCategories.value = [...sortedCategories.value];
+        filteredCategories.value = [...userCategories.value];
         return;
       }
       
       const query = searchQuery.value.toLowerCase().trim();
       
       requestAnimationFrame(() => {
-        filteredCategories.value = sortedCategories.value.filter(category => 
+        filteredCategories.value = userCategories.value.filter(category => 
           category.name?.toLowerCase().includes(query)
         );
       });
@@ -522,7 +586,7 @@ export default {
     
     const clearSearch = () => {
       searchQuery.value = '';
-      filteredCategories.value = [...sortedCategories.value];
+      filteredCategories.value = [...userCategories.value];
       debouncedSearch.value?.cancel();
     }
 
@@ -539,13 +603,13 @@ export default {
       currentSort.value = { field, direction };
       showSortDropdown.value = false;
       
-      let sortedCategoriesList = [...sortedCategories.value];
+      let sortedCategoriesList = [...userCategories.value];
       
       switch (field) {
         case 'cards':
           sortedCategoriesList.sort((a, b) => {
-            const countA = a.count || 0;
-            const countB = b.count || 0;
+            const countA = a.userCardCount || 0;
+            const countB = b.userCardCount || 0;
             return direction === 'asc' ? countA - countB : countB - countA;
           });
           break;
@@ -584,7 +648,7 @@ export default {
         
         default:
           // Default sorting (original order)
-          sortedCategoriesList = [...sortedCategories.value];
+          sortedCategoriesList = [...userCategories.value];
           break;
       }
       
@@ -630,22 +694,6 @@ export default {
       }
     }
 
-    const refreshAvatar = () => {
-      if (userData.value.photo_url) {
-        avatarLoading.value = true
-        userAvatar.value = `/proxy/avatar?url=${encodeURIComponent(userData.value.photo_url)}&t=${Date.now()}`
-      }
-    }
-
-    const logout = async () => {
-      try {
-        await store.dispatch('logout')
-        router.push('/')
-      } catch (error) {
-        console.error('Logout error:', error)
-      }
-    }
-
     // Initialize debounced search
     debouncedSearch.value = debounce(performSearch, 300)
 
@@ -676,13 +724,10 @@ export default {
         await store.dispatch('fetchCategories')
         await fetchRarityNewestCards()
         await fetchAllCategoriesNewestCards()
+        await fetchUserCategories() // Fetch user-specific categories
         
-        // Initialize filtered categories with all sorted categories
-        filteredCategories.value = [...sortedCategories.value]
+        console.log('User categories:', userCategories.value)
         
-        console.log('Categories after fetch:', categories.value)
-        console.log('Sorted categories:', sortedCategories.value)
-        console.log('Rarity categories:', rarityCategories.value)
       } catch (error) {
         console.error('Failed to fetch categories:', error)
         error.value = error
@@ -710,9 +755,7 @@ export default {
       // Methods
       handleAvatarError,
       handleAvatarLoad,
-      refreshAvatar,
-      logout,
-      navigateToCategory,
+      navigateToUserCategory,
       getCategoryBackgroundClass,
       getLimitedVideoSource,
       getCategoryBackgroundStyle,
@@ -728,6 +771,20 @@ export default {
 </script>
 
 <style scoped>
+.category-card__count {
+  background: rgba(30, 30, 30, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1.2rem;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+  backdrop-filter: blur(5px);
+  margin-top: 10px;
+}
+
 .shtuchka-container {
   height: 40px
 }

@@ -1226,6 +1226,322 @@ def get_user_profile():
         connection.close()
 
 
+@app.route("/api/user/cards")
+def get_user_cards():
+    """Get the user's card IDs"""
+    is_auth, user_id = is_authenticated(request, session)
+    if not is_auth:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        with connection.cursor() as cursor:
+            # Get user's cards from users table
+            cursor.execute("SELECT cards FROM users WHERE user_id = %s", (user_id,))
+            user_data = cursor.fetchone()
+            
+            if not user_data or not user_data['cards']:
+                return jsonify({'cardIds': []}), 200
+            
+            # Parse comma-separated card IDs
+            cards_text = user_data['cards']
+            if cards_text and cards_text != "?":
+                card_ids = [card_id.strip() for card_id in cards_text.split(',') if card_id.strip()]
+                # Convert to integers and filter valid IDs
+                valid_card_ids = []
+                for card_id in card_ids:
+                    try:
+                        valid_card_ids.append(int(card_id))
+                    except ValueError:
+                        continue
+                
+                return jsonify({'cardIds': valid_card_ids}), 200
+            else:
+                return jsonify({'cardIds': []}), 200
+                
+    except Exception as e:
+        logging.error(f"Error fetching user cards: {str(e)}")
+        return jsonify({'error': 'Failed to fetch user cards'}), 500
+    finally:
+        connection.close()
+
+
+@app.route("/api/user/categories")
+def get_user_categories():
+    """Get categories with user's card counts"""
+    is_auth, user_id = is_authenticated(request, session)
+    if not is_auth:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        # First get user's card IDs
+        cursor = connection.cursor()
+        cursor.execute("SELECT cards FROM users WHERE user_id = %s", (user_id,))
+        user_data = cursor.fetchone()
+        
+        user_card_ids = []
+        if user_data and user_data['cards'] and user_data['cards'] != "?":
+            cards_text = user_data['cards']
+            card_ids = [card_id.strip() for card_id in cards_text.split(',') if card_id.strip()]
+            for card_id in card_ids:
+                try:
+                    user_card_ids.append(int(card_id))
+                except ValueError:
+                    continue
+        
+        # Define hidden categories
+        hidden_categories = ['Scarface - Tony Montana']
+        
+        # Get all categories with counts
+        categories = []
+        
+        # All Cards category
+        cursor.execute("""
+            SELECT COUNT(*) as total 
+            FROM files 
+            WHERE rare NOT IN (%s)
+            AND name NOT IN (%s, %s, %s)
+        """, hidden_categories + HIDDEN_CARD_NAMES)
+        total_cards = cursor.fetchone()['total']
+        
+        # Count user's cards in all categories
+        user_all_count = 0
+        if user_card_ids:
+            placeholders = ', '.join(['%s'] * len(user_card_ids))
+            cursor.execute(f"""
+                SELECT COUNT(*) as count 
+                FROM files 
+                WHERE id IN ({placeholders})
+                AND rare NOT IN (%s)
+                AND name NOT IN (%s, %s, %s)
+            """, user_card_ids + hidden_categories + HIDDEN_CARD_NAMES)
+            user_all_count = cursor.fetchone()['count']
+        
+        categories.append({
+            'id': 'all',
+            'name': 'All Cards',
+            'type': 'general',
+            'totalCount': total_cards,
+            'userCardCount': user_all_count
+        })
+        
+        # Shop category
+        cursor.execute("""
+            SELECT COUNT(*) as shop_count 
+            FROM files 
+            WHERE shop != '-' AND shop IS NOT NULL 
+            AND rare NOT IN (%s)
+            AND name NOT IN (%s, %s, %s)
+        """, hidden_categories + HIDDEN_CARD_NAMES)
+        shop_count = cursor.fetchone()['shop_count']
+        
+        # Count user's cards in shop
+        user_shop_count = 0
+        if user_card_ids:
+            placeholders = ', '.join(['%s'] * len(user_card_ids))
+            cursor.execute(f"""
+                SELECT COUNT(*) as count 
+                FROM files 
+                WHERE id IN ({placeholders})
+                AND shop != '-' AND shop IS NOT NULL
+                AND rare NOT IN (%s)
+                AND name NOT IN (%s, %s, %s)
+            """, user_card_ids + hidden_categories + HIDDEN_CARD_NAMES)
+            user_shop_count = cursor.fetchone()['count']
+        
+        categories.append({
+            'id': 'shop',
+            'name': 'Available at Shop',
+            'type': 'shop',
+            'totalCount': shop_count,
+            'userCardCount': user_shop_count
+        })
+        
+        # Rarity categories
+        cursor.execute("""
+            SELECT rare, COUNT(*) as count 
+            FROM files 
+            WHERE rare NOT IN (%s)
+            AND name NOT IN (%s, %s, %s)
+            GROUP BY rare 
+            ORDER BY count DESC
+        """, hidden_categories + HIDDEN_CARD_NAMES)
+        rarities_data = cursor.fetchall()
+        
+        for rarity_data in rarities_data:
+            rarity_name = rarity_data['rare']
+            
+            # Count user's cards in this rarity
+            user_rarity_count = 0
+            if user_card_ids:
+                placeholders = ', '.join(['%s'] * len(user_card_ids))
+                cursor.execute(f"""
+                    SELECT COUNT(*) as count 
+                    FROM files 
+                    WHERE id IN ({placeholders})
+                    AND rare = %s
+                    AND name NOT IN (%s, %s, %s)
+                """, user_card_ids + [rarity_name] + HIDDEN_CARD_NAMES)
+                user_rarity_count = cursor.fetchone()['count']
+            
+            categories.append({
+                'id': f"rarity_{rarity_name}",
+                'name': rarity_name,
+                'type': 'rarity',
+                'totalCount': rarity_data['count'],
+                'userCardCount': user_rarity_count
+            })
+        
+        return jsonify({'categories': categories}), 200
+        
+    except Exception as e:
+        logging.error(f"Error fetching user categories: {str(e)}")
+        return jsonify({'error': 'Failed to fetch user categories'}), 500
+    finally:
+        connection.close()
+
+
+@app.route("/api/user/cards/by-category/<category_id>")
+def get_user_cards_by_category(category_id):
+    """Get user's cards filtered by category"""
+    is_auth, user_id = is_authenticated(request, session)
+    if not is_auth:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    connection = get_db_conn()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        # First get user's card IDs
+        cursor = connection.cursor()
+        cursor.execute("SELECT cards FROM users WHERE user_id = %s", (user_id,))
+        user_data = cursor.fetchone()
+        
+        user_card_ids = []
+        if user_data and user_data['cards'] and user_data['cards'] != "?":
+            cards_text = user_data['cards']
+            card_ids = [card_id.strip() for card_id in cards_text.split(',') if card_id.strip()]
+            for card_id in card_ids:
+                try:
+                    user_card_ids.append(int(card_id))
+                except ValueError:
+                    continue
+        
+        # If user has no cards, return empty
+        if not user_card_ids:
+            return jsonify({'cards': [], 'total_count': 0, 'category_id': category_id, 'user_cards': True})
+        
+        sort_field = request.args.get('sort', 'id')
+        sort_direction = request.args.get('direction', 'desc')
+        
+        # Define valid MySQL columns to prevent SQL injection
+        valid_mysql_columns = ['id', 'name', 'rare', 'fame']
+        
+        if sort_field not in valid_mysql_columns:
+            sort_field = 'id'
+        
+        # Define hidden categories to exclude
+        hidden_categories = ['Scarface - Tony Montana']
+        
+        placeholders = ', '.join(['%s'] * len(user_card_ids))
+        
+        with connection.cursor() as cursor:
+            # Handle different category types, but only return user's cards
+            if category_id == 'all':
+                query = f"""
+                    SELECT id, tg_id as photo, name, rare as rarity, fame as points 
+                    FROM files 
+                    WHERE id IN ({placeholders})
+                    AND rare NOT IN (%s)
+                    AND name NOT IN (%s, %s, %s)
+                    ORDER BY {sort_field} {sort_direction}
+                """
+                cursor.execute(query, user_card_ids + hidden_categories + HIDDEN_CARD_NAMES)
+                
+            elif category_id == 'shop':
+                query = f"""
+                    SELECT id, tg_id as photo, name, rare as rarity, fame as points 
+                    FROM files 
+                    WHERE id IN ({placeholders})
+                    AND shop != '-' AND shop IS NOT NULL
+                    AND rare NOT IN (%s)
+                    AND name NOT IN (%s, %s, %s)
+                    ORDER BY {sort_field} {sort_direction}
+                """
+                cursor.execute(query, user_card_ids + hidden_categories + HIDDEN_CARD_NAMES)
+                
+            elif category_id.startswith('rarity_'):
+                rarity_name = category_id.replace('rarity_', '')
+                import urllib.parse
+                rarity_name = urllib.parse.unquote(rarity_name)
+                
+                query = f"""
+                    SELECT id, tg_id as photo, name, rare as rarity, fame as points 
+                    FROM files 
+                    WHERE id IN ({placeholders})
+                    AND rare = %s
+                    AND name NOT IN (%s, %s, %s)
+                    ORDER BY {sort_field} {sort_direction}
+                """
+                cursor.execute(query, user_card_ids + [rarity_name] + HIDDEN_CARD_NAMES)
+                
+            else:
+                return jsonify({'error': 'Invalid category ID'}), 400
+            
+            cards = [dict(row) for row in cursor.fetchall()]
+            
+            # Transform to match frontend expectations and add upload metadata
+            transformed_cards = []
+            for card in cards:
+                metadata = CardUploadMetadata.query.filter_by(card_id=card['id']).first()
+                
+                upload_date = None
+                season = 1
+                
+                if metadata:
+                    upload_date = metadata.upload_date.isoformat() if metadata.upload_date else None
+                    season = metadata.season if metadata.season else 1
+                
+                transformed_card = {
+                    'id': card['id'],
+                    'uuid': card['id'],
+                    'img': card['photo'],
+                    'name': card['name'],
+                    'rarity': card['rarity'],
+                    'category': card['rarity'],
+                    'points': card['points'],
+                    'upload_date': upload_date,
+                    'season': season
+                }
+                transformed_cards.append(transformed_card)
+            
+            # Apply season sorting in Python if requested
+            if request.args.get('sort') == 'season':
+                transformed_cards.sort(key=lambda x: x.get('season', 1), 
+                                     reverse=(sort_direction == 'desc'))
+            
+            return jsonify({
+                'cards': transformed_cards,
+                'total_count': len(transformed_cards),
+                'category_id': category_id,
+                'user_cards': True  # Flag to indicate these are user's cards
+            }), 200
+            
+    except Exception as e:
+        logging.error(f"Error fetching user cards by category: {str(e)}")
+        return jsonify({'error': 'Failed to fetch user cards'}), 500
+    finally:
+        connection.close()
+
+
 @app.route('/proxy/avatar')
 def proxy_avatar():
     """Proxies avatar images from a given URL."""
