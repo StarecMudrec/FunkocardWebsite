@@ -313,6 +313,7 @@ export default {
   flex-direction: column;
   align-items: end;
   justify-content: center;
+  justify-items: start;
 }
 
 .username-text {
@@ -321,6 +322,7 @@ export default {
   font-size: 100px;
   text-shadow: 3px 4px 10px rgba(0, 0, 0, 0.7);
   margin: 0;
+  white-space: nowrap;
 }
 
 .avatar-and-username {
