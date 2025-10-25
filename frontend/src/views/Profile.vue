@@ -364,6 +364,7 @@ export default {
   justify-content: center;
   max-width: 1000px;
   min-height: 150px;
+  min-width: 740px;
   width: auto;
   height: auto;
   overflow: visible;
