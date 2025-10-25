@@ -423,7 +423,7 @@ export default {
   top: 50%;
   transform: translate(-50%, -175px);
   z-index: 3;
-  align-items: center;
+  align-items: flex-start;
   width: auto;
   max-width: 90%;
 }
