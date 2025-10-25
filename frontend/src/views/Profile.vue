@@ -595,13 +595,9 @@ export default {
     const scrollToContent = () => {
       const contentSection = document.querySelector('.content');
       if (contentSection) {
-        const currentScrollY = window.scrollY || window.pageYOffset;
-        const viewportHeight = window.innerHeight;
-        const targetScrollY = currentScrollY + (viewportHeight * 0.4);
-        
-        window.scrollTo({ 
-          top: targetScrollY,
-          behavior: 'smooth'
+        contentSection.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start'
         });
       }
     }
