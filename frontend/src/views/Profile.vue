@@ -670,12 +670,16 @@ export default {
 
 .profile-container {
   position: relative;
-  width: 100%;
+  width: calc(100% - 80px);
+  max-width: 1600px;
   box-sizing: border-box;
+  margin-left: 50%;
+  transform: translateX(-50%);
+  border-radius: 27px;
   padding: 40px;
   padding-top: 0;
   background-color: var(--card-bg);
-  border-top: 2px solid #333;
+  border: 2px solid #333;
   text-align: center;
   box-shadow: 2px 4px 5px rgba(0, 0, 0, 0.24);
   margin-top: 50vh;
@@ -688,7 +692,7 @@ export default {
   color: var(--accent-color);
   font-weight: 500;
   margin-bottom: 30px;
-  margin-top: calc(50vh + 100px);
+  margin-top: calc(50vh + -30px);
   font-size: 100px; 
   border-bottom-width: 1px;
   border-bottom-style: solid;
