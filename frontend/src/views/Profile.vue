@@ -579,15 +579,17 @@ export default {
 
 <style scoped>
 .profile-background {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   font-family: 'Afacad', sans-serif;
 }
 
 .profile-background::before {
   content: '';
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
@@ -595,7 +597,6 @@ export default {
   background-image: url('/background.jpg');
   background-size: cover;
   background-position: center 95%;
-  background-attachment: fixed;
   filter: blur(10px);
   z-index: 1;
 }
