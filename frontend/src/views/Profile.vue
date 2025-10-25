@@ -12,7 +12,7 @@
         <div v-if="avatarLoading" class="avatar-loading">Loading...</div>
       </div>
       <div class ="username-section">
-          <h2 class="username-text">
+          <h2 ref="usernameRef" class="username-text">
             {{ userData.first_name }} {{ userData.last_name }}
           </h2>
           <div class="user-info">
@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 
@@ -76,6 +76,119 @@ export default {
     const avatarLoading = ref(false)
     const debugInfo = ref('')
     const defaultAvatar = '/placeholder.jpg'
+    const usernameRef = ref(null)
+
+    // Font size adjustment functions (similar to CardDetailContainer)
+    const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
+      scrollWidth > clientWidth || scrollHeight > clientHeight
+
+    const resizeText = ({ 
+      element, 
+      minSize = 32, 
+      maxSize = 100, 
+      step = 1,
+      maxWidth = 1000,
+      maxHeight = 150
+    }) => {
+      const tempParent = document.createElement('div')
+      tempParent.style.width = `${maxWidth}px`
+      tempParent.style.height = `${maxHeight}px`
+      tempParent.style.visibility = 'hidden'
+      tempParent.style.position = 'absolute'
+      tempParent.style.top = '0'
+      tempParent.style.left = '0'
+      tempParent.style.overflow = 'hidden'
+      
+      const tempElement = element.cloneNode(true)
+      tempElement.style.whiteSpace = 'nowrap'
+      tempElement.style.width = 'auto'
+      tempElement.style.height = 'auto'
+      tempElement.style.lineHeight = '1'
+      
+      tempParent.appendChild(tempElement)
+      document.body.appendChild(tempParent)
+      
+      let i = minSize
+      let overflow = false
+      let needsWrap = false
+      
+      while (!overflow && i < maxSize) {
+        tempElement.style.fontSize = `${i}px`
+        void tempElement.offsetWidth
+        
+        overflow = isOverflown({
+          clientWidth: maxWidth,
+          clientHeight: maxHeight,
+          scrollWidth: tempElement.scrollWidth,
+          scrollHeight: tempElement.scrollHeight
+        })
+        
+        if (!overflow) i += step
+      }
+      
+      let optimalSize = overflow ? i - step : i
+      
+      if (optimalSize <= minSize && overflow) {
+        tempElement.style.whiteSpace = 'normal'
+        tempElement.style.lineHeight = '1.1'
+        tempElement.style.width = '100%'
+        
+        i = minSize
+        overflow = false
+        
+        while (!overflow && i < maxSize) {
+          tempElement.style.fontSize = `${i}px`
+          void tempElement.offsetWidth
+          overflow = tempElement.scrollHeight > maxHeight
+          
+          if (!overflow) i += step
+        }
+        
+        optimalSize = overflow ? i - step : i
+        needsWrap = true
+      }
+      
+      document.body.removeChild(tempParent)
+      
+      return { optimalSize, needsWrap }
+    }
+
+    const adjustUsernameFontSize = () => {
+      nextTick(() => {
+        if (!usernameRef.value) return
+        
+        const element = usernameRef.value
+        
+        element.style.fontSize = ''
+        element.style.whiteSpace = 'nowrap'
+        element.style.lineHeight = '1'
+        element.style.width = 'auto'
+        element.style.height = 'auto'
+        element.classList.remove('wrapped')
+        
+        const { optimalSize, needsWrap } = resizeText({
+          element: element,
+          minSize: 32,
+          maxSize: 100,
+          step: 1,
+          maxWidth: 1000,
+          maxHeight: 150
+        })
+        
+        element.style.fontSize = `${optimalSize}px`
+        
+        if (needsWrap) {
+          element.classList.add('wrapped')
+          element.style.whiteSpace = 'normal'
+          element.style.lineHeight = '1.1'
+          element.style.width = '100%'
+        } else {
+          element.style.whiteSpace = 'nowrap'
+          element.style.lineHeight = '1'
+          element.style.width = 'auto'
+        }
+      })
+    }
 
     const fetchUserData = async () => {
       try {
@@ -205,12 +318,21 @@ export default {
       }
     }
 
+    // Watch for user data changes to adjust font size
+    watch(() => userData.value.first_name + userData.value.last_name, () => {
+      setTimeout(adjustUsernameFontSize, 100)
+    })
+
     onMounted(() => {
       if (!store.state.isAuthenticated) {
         router.push('/login')
         return
       }
       fetchUserData()
+      
+      // Adjust font size after data is loaded
+      setTimeout(adjustUsernameFontSize, 100)
+      setTimeout(adjustUsernameFontSize, 500)
     })
 
     return {
@@ -219,6 +341,7 @@ export default {
       userStats,
       avatarLoading,
       debugInfo,
+      usernameRef,
       handleAvatarError,
       handleAvatarLoad,
       refreshAvatar,
@@ -315,6 +438,8 @@ export default {
   align-items: end;
   justify-content: center;
   justify-items: start;
+  max-width: 1000px;
+  width: 100%;
 }
 
 .username-text {
@@ -324,6 +449,23 @@ export default {
   text-shadow: 3px 4px 10px rgba(0, 0, 0, 0.7);
   margin: 0;
   white-space: nowrap;
+  line-height: 1;
+  transition: font-size 0.3s ease, line-height 0.3s ease, white-space 0.3s ease;
+  word-break: break-word;
+  max-width: 1000px;
+  max-height: 150px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: bottom;
+  transform-origin: left bottom;
+}
+
+.username-text.wrapped {
+  white-space: normal;
+  line-height: 1.1;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .avatar-and-username {
@@ -339,6 +481,8 @@ export default {
   z-index: 3;
   align-items: center;
   /* margin-left: -175px; */
+  max-width: 1000px;
+  width: 100%;
 }
 
 .avatar {
@@ -532,6 +676,25 @@ export default {
   
   .stat-item {
     font-size: 14px;
+  }
+  
+  .avatar-and-username {
+    flex-direction: column;
+    gap: 30px;
+    max-width: 100%;
+  }
+  
+  .username-section {
+    max-width: 100%;
+  }
+  
+  .username-text {
+    max-width: 100%;
+    font-size: 48px; /* Fallback for mobile */
+  }
+  
+  .avatar {
+    width: 200px;
   }
 }
 </style>
