@@ -849,9 +849,9 @@ export default {
   margin-bottom: 30px;
   margin-top: calc(50vh);
   font-size: 100px; 
-  border-bottom-width: 1px;
+  /* border-bottom-width: 1px;
   border-bottom-style: solid;
-  border-bottom-color: #333;
+  border-bottom-color: #333; */
   padding-bottom: 12px;
 }
 
