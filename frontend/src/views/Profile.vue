@@ -291,7 +291,7 @@ export default {
   gap: 20px;
   margin-bottom: 30px;
   /* margin-top: 50px; */
-  margin-left: 33vh;
+  /* margin-left: 33vh; */
   text-align: left;
   position: relative;
   justify-content: center;
