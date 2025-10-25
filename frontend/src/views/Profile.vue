@@ -311,7 +311,7 @@ export default {
   /* gap: 20px; */
   /* z-index: 2; */
   flex-direction: column;
-  align-items: flex-start;
+  align-items: end;
   justify-content: center;
 }
 
