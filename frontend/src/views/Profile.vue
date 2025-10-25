@@ -99,6 +99,7 @@
           </transition-group>
         </div>
       </div>
+      <div class="shtuchka-container"></div>
     </div>
   </div>
 </template>
@@ -578,6 +579,10 @@ export default {
 </script>
 
 <style scoped>
+.shtuchka-container {
+  height: 40px
+}
+
 .profile-background {
   position: absolute;
   top: 0;
