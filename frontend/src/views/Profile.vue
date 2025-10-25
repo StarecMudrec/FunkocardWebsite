@@ -328,17 +328,18 @@ export default {
   flex-direction: row;
   align-content: center;
   justify-content: flex-start;
-  gap: 50px;
+  gap: 100px;
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   z-index: 3;
   align-items: center;
+  margin-left: -175px;
 }
 
 .avatar {
-  width: 33vh;
+  width: 350px;
   aspect-ratio: 1;
   border-radius: 50%;
   object-fit: cover;
