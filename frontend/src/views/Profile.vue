@@ -383,6 +383,7 @@ export default {
   align-items: flex-end;
   justify-content: flex-start;
   overflow: visible;
+  padding-bottom: 10px;
 }
 
 .username-text {
