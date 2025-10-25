@@ -604,7 +604,7 @@ export default {
 /* Scroll Arrow Styles (from Home.vue) */
 .cover-arrow {
   position: absolute;
-  bottom: 30px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   cursor: pointer;
@@ -617,8 +617,8 @@ export default {
 }
 
 .cover-arrow__inner {
-  width: 100%;
-  height: 100%;
+  width: 80%;
+  height: 80%;
   display: flex;
   justify-content: center;
   align-items: center;
