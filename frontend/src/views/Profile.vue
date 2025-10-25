@@ -335,7 +335,7 @@ export default {
   transform: translate(-50%, -50%);
   z-index: 3;
   align-items: center;
-  margin-left: -175px;
+  /* margin-left: -175px; */
 }
 
 .avatar {
