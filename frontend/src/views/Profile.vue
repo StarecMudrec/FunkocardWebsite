@@ -355,13 +355,15 @@ export default {
 .avatar-section {
   flex-shrink: 0;
   position: relative;
+  display: flex;
+  align-items: flex-end;
 }
 
 .username-section { 
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
+  justify-content: flex-end;
   max-width: 1000px;
   min-height: 150px;
   min-width: 740px;
@@ -369,6 +371,7 @@ export default {
   height: auto;
   overflow: visible;
   position: relative;
+  margin-bottom: -175px; /* Half of avatar height to align bottom with avatar middle */
 }
 
 .username-container {
@@ -377,7 +380,7 @@ export default {
   width: auto;
   height: auto;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: flex-start;
   overflow: visible;
 }
@@ -398,6 +401,7 @@ export default {
   line-height: 1;
   overflow: visible;
   text-align: left;
+  vertical-align: bottom;
 }
 
 .username-text.wrapped {
@@ -411,7 +415,7 @@ export default {
 .avatar-and-username {
   display: flex;
   flex-direction: row;
-  align-content: center;
+  align-content: flex-end;
   justify-content: flex-start;
   gap: 100px;
   position: absolute;
@@ -419,7 +423,7 @@ export default {
   top: 50%;
   transform: translate(-50%, -50%);
   z-index: 3;
-  align-items: center;
+  align-items: flex-end;
   width: auto;
   max-width: 90%;
 }
@@ -621,6 +625,8 @@ export default {
   .username-section {
     max-width: 100%;
     min-height: 120px;
+    margin-bottom: -100px; /* Adjust for smaller avatar on mobile */
+    min-width: auto;
   }
   
   .username-container {
@@ -638,6 +644,7 @@ export default {
     flex-direction: column;
     gap: 30px;
     text-align: center;
+    align-items: center;
   }
   
   .avatar {
