@@ -16,7 +16,7 @@ class TelegramUserSync:
     def __init__(self):
         self.api_id = os.getenv("TELEGRAM_API_ID")
         self.api_hash = os.getenv("TELEGRAM_API_HASH")
-        self.session_file = 'user_session.session'  # Pre-configured session
+        self.session_file = 'user_session.session'
         self.channel_username = '@funkocardsall'
         
     async def sync_messages_async(self):
@@ -25,7 +25,6 @@ class TelegramUserSync:
             logging.error("Missing Telegram credentials")
             return False
         
-        # Check if session file exists
         if not os.path.exists(self.session_file):
             logging.error(f"Session file {self.session_file} not found. Please create it first.")
             return False
@@ -37,15 +36,12 @@ class TelegramUserSync:
         )
         
         try:
-            # Start with existing session - no interactive auth needed
             await client.start()
             logging.info("Telegram user client started successfully")
             
-            # Verify connection
             me = await client.get_me()
             logging.info(f"User connected as: {me.first_name} (@{me.username})")
             
-            # Access channel
             try:
                 channel = await client.get_entity(self.channel_username)
                 logging.info(f"Accessing channel: {channel.title}")
@@ -53,17 +49,16 @@ class TelegramUserSync:
                 logging.error(f"Cannot access channel {self.channel_username}: {e}")
                 return False
             
-            # Fetch messages - this should work with user account
+            # Fetch MORE messages to ensure we find the right ones
             messages = []
             try:
-                async for message in client.iter_messages(channel, limit=500):
+                async for message in client.iter_messages(channel, limit=2000):  # Increased limit
                     messages.append(message)
-                    if len(messages) % 50 == 0:
+                    if len(messages) % 100 == 0:
                         logging.info(f"Fetched {len(messages)} messages...")
                 
                 logging.info(f"Total messages fetched: {len(messages)}")
                 
-                # Process messages with database updates
                 success = await self.process_messages_with_db(messages)
                 return success
                 
@@ -112,8 +107,8 @@ class TelegramUserSync:
                 card_id = card['id']
                 card_name = card['name']
                 
-                # Find matching message using improved search
-                matching_message = await self.find_card_in_messages_advanced(card_name, messages)
+                # Use STRICT matching to find the exact card
+                matching_message = await self.find_card_exact_match(card_name, messages)
                 
                 if matching_message:
                     upload_date = matching_message.date
@@ -158,9 +153,9 @@ class TelegramUserSync:
                         )
                     
                     matched_count += 1
-                    logging.info(f"Matched card '{card_name}' (ID: {card_id}) with message from {upload_date}")
+                    logging.info(f"✅ Matched card '{card_name}' (ID: {card_id}) with message from {upload_date}")
                     
-                    if matched_count % 20 == 0:
+                    if matched_count % 10 == 0:
                         postgres_session.commit()
                         logging.info(f"Committed {matched_count} matches...")
                 else:
@@ -191,7 +186,7 @@ class TelegramUserSync:
                             {"card_id": card_id}
                         )
                     
-                    logging.info(f"No match found for card '{card_name}' (ID: {card_id}) - set to NULL")
+                    logging.info(f"❌ No exact match found for card '{card_name}' (ID: {card_id}) - set to NULL")
             
             postgres_session.commit()
             logging.info(f"Sync completed: {matched_count}/{len(all_cards)} cards matched")
@@ -204,89 +199,119 @@ class TelegramUserSync:
             connection.close()
             postgres_session.close()
     
-    async def find_card_in_messages_advanced(self, card_name, messages):
-        """Advanced card matching that searches for the card name in messages"""
+    async def find_card_exact_match(self, card_name, messages):
+        """STRICT exact matching for card names"""
         if not card_name:
             return None
         
-        # Normalize the card name for better matching
-        normalized_card_name = self.normalize_card_name(card_name)
+        # Create multiple search patterns for the exact card name
+        search_patterns = self.create_exact_search_patterns(card_name)
         
-        # Try different matching strategies
         matching_messages = []
         
         for message in messages:
             if not message.text:
                 continue
                 
-            message_text = message.text.lower()
-            normalized_message = self.normalize_card_name(message_text)
+            message_text = message.text
             
-            # Strategy 1: Exact match of normalized names
-            if normalized_card_name in normalized_message:
-                matching_messages.append(message)
-                continue
-                
-            # Strategy 2: Word-by-word matching (more flexible)
-            card_words = set(normalized_card_name.split())
-            message_words = set(normalized_message.split())
-            
-            # If most words match, consider it a match
-            common_words = card_words.intersection(message_words)
-            if len(common_words) >= max(1, len(card_words) * 0.7):  # At least 70% match or 1 word
-                matching_messages.append(message)
-                continue
-                
-            # Strategy 3: Check if card name appears as a substring in message
-            # Remove common words that might cause false positives
-            clean_card_name = self.remove_common_words(normalized_card_name)
-            if clean_card_name and clean_card_name in normalized_message:
-                matching_messages.append(message)
+            # Check each search pattern for exact match
+            for pattern in search_patterns:
+                if self.is_exact_match(pattern, message_text, card_name):
+                    matching_messages.append(message)
+                    break  # Found a match, no need to check other patterns
         
-        # Return the most recent matching message (highest message ID usually means most recent)
+        # Return the most recent matching message
         if matching_messages:
-            # Sort by message date (newest first) and return the most recent
             matching_messages.sort(key=lambda msg: msg.date, reverse=True)
             return matching_messages[0]
         
         return None
     
-    def normalize_card_name(self, text):
-        """Normalize text for better matching"""
+    def create_exact_search_patterns(self, card_name):
+        """Create multiple exact search patterns for a card name"""
+        patterns = []
+        
+        # Pattern 1: Exact card name as it appears in database
+        patterns.append(card_name)
+        
+        # Pattern 2: Normalized version (no special chars, lowercase)
+        normalized = self.normalize_for_exact_match(card_name)
+        patterns.append(normalized)
+        
+        # Pattern 3: Remove any text in parentheses for matching
+        without_parentheses = re.sub(r'\([^)]*\)', '', card_name).strip()
+        if without_parentheses and without_parentheses != card_name:
+            patterns.append(without_parentheses)
+            patterns.append(self.normalize_for_exact_match(without_parentheses))
+        
+        # Remove duplicates and empty patterns
+        patterns = [p for p in patterns if p and len(p) > 2]
+        patterns = list(dict.fromkeys(patterns))  # Remove duplicates while preserving order
+        
+        logging.debug(f"Search patterns for '{card_name}': {patterns}")
+        return patterns
+    
+    def normalize_for_exact_match(self, text):
+        """Normalize text for exact matching - less aggressive than before"""
         if not text:
             return ""
         
-        # Convert to lowercase and remove accents
-        normalized = unidecode(text.lower())
+        # Convert to lowercase
+        normalized = text.lower()
         
-        # Remove content in parentheses and brackets
-        normalized = re.sub(r'\([^)]*\)', '', normalized)
-        normalized = re.sub(r'\[[^\]]*\]', '', normalized)
-        
-        # Remove special characters but keep spaces
-        normalized = re.sub(r'[^\w\s]', ' ', normalized)
-        
-        # Replace multiple spaces with single space
+        # Remove extra spaces but keep punctuation (cards might have punctuation in names)
         normalized = re.sub(r'\s+', ' ', normalized).strip()
         
         return normalized
     
-    def remove_common_words(self, text):
-        """Remove common words that might cause false positives"""
-        if not text:
-            return ""
+    def is_exact_match(self, search_pattern, message_text, original_card_name):
+        """Check if the search pattern exactly matches in the message text"""
+        if not search_pattern or not message_text:
+            return False
         
-        common_words = {
-            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 
-            'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-            'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-            'should', 'may', 'might', 'must', 'can', 'card', 'cards', 'new', 'rare'
-        }
+        # Convert both to lowercase for case-insensitive comparison
+        pattern_lower = search_pattern.lower()
+        message_lower = message_text.lower()
         
-        words = text.split()
-        filtered_words = [word for word in words if word not in common_words and len(word) > 2]
+        # Strategy 1: Exact string contains (most common case)
+        if pattern_lower in message_lower:
+            # Additional verification: check if it's not just a partial match
+            words_in_pattern = set(pattern_lower.split())
+            words_in_message = set(message_lower.split())
+            
+            # If the pattern has multiple words, require at least 2/3 of them to match
+            if len(words_in_pattern) > 1:
+                common_words = words_in_pattern.intersection(words_in_message)
+                if len(common_words) >= max(2, len(words_in_pattern) * 0.6):
+                    return True
+            else:
+                # Single word pattern - be more strict
+                # Check if it's surrounded by word boundaries or punctuation
+                import re
+                word_boundary_pattern = r'\b' + re.escape(pattern_lower) + r'\b'
+                if re.search(word_boundary_pattern, message_lower):
+                    return True
         
-        return ' '.join(filtered_words)
+        # Strategy 2: Check for the card name as a standalone line or after common prefixes
+        common_prefixes = ['card:', 'card -', 'new card:', 'card name:', 'name:']
+        for prefix in common_prefixes:
+            if f"{prefix} {pattern_lower}" in message_lower:
+                return True
+            if f"{prefix}{pattern_lower}" in message_lower:
+                return True
+        
+        # Strategy 3: Check if message starts with card name (common in card announcements)
+        if message_lower.startswith(pattern_lower):
+            return True
+        
+        # Strategy 4: Check for quoted card name (often used in announcements)
+        if f"\"{pattern_lower}\"" in message_lower:
+            return True
+        if f"'{pattern_lower}'" in message_lower:
+            return True
+        
+        return False
     
     def calculate_season_from_date(self, upload_date):
         """Calculate season based on upload date"""
@@ -294,7 +319,6 @@ class TelegramUserSync:
             return None
             
         try:
-            # Your existing season logic
             year = upload_date.year
             month = upload_date.month
             
@@ -307,7 +331,7 @@ class TelegramUserSync:
             return None
 
 def main():
-    logging.info("Starting Telegram user sync...")
+    logging.info("Starting Telegram user sync with EXACT matching...")
     sync = TelegramUserSync()
     
     try:
