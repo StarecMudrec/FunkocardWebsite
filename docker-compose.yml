@@ -54,8 +54,9 @@ services:
       FLASK_APP: wsgi:app
     command: >      
       sh -c "
-            flask db migrate  -m "Make CardUploadMetadata fields nullable"
-            flask db upgrade
+            flask --app wsgi db init &&
+            flask --app wsgi db migrate  &&
+            flask --app wsgi db upgrade &&
             gunicorn --bind 0.0.0.0:8000 --worker-class gevent --timeout 120 wsgi:app"
     # flask --app wsgi db init &&
     # flask --app wsgi db migrate  &&
