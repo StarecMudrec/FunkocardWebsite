@@ -9,12 +9,13 @@ class AllowedUser(db.Model):
     username = db.Column(db.String, nullable=False)
 
 
+# In models.py, update the CardUploadMetadata model
 class CardUploadMetadata(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     card_id = db.Column(db.Integer, nullable=False, unique=True)  # Maps to MySQL files.id
-    telegram_message_id = db.Column(db.Integer, nullable=False)
-    upload_date = db.Column(db.DateTime, nullable=False)
-    season = db.Column(db.Integer, nullable=False)
+    telegram_message_id = db.Column(db.Integer, nullable=True)  # Changed to nullable
+    upload_date = db.Column(db.DateTime, nullable=True)  # Changed to nullable
+    season = db.Column(db.Integer, nullable=True)  # Changed to nullable
 
     def present(self):
         return {
