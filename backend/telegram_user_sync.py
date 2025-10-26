@@ -77,6 +77,75 @@ class TelegramUserSync:
         finally:
             await client.disconnect()
     
+    async def sync_new_cards_only(self):
+        """Sync only cards that don't have metadata or have NULL dates"""
+        try:
+            connection = pymysql.connect(
+                host='localhost',
+                user='bot',
+                password='xMdAUTiD',
+                database='database',
+                charset='utf8mb4',
+                cursorclass=pymysql.cursors.DictCursor,
+                port=3306
+            )
+            
+            postgres_engine = create_engine("postgresql+psycopg2://postgres:postgres@localhost:5433/cards")
+            PostgresSession = sessionmaker(bind=postgres_engine)
+            postgres_session = PostgresSession()
+            
+            with connection.cursor() as cursor:
+                # Get only cards that need metadata (NULL or missing)
+                cursor.execute("""
+                    SELECT f.id, f.name, f.tg_id
+                    FROM files f
+                    WHERE f.name NOT IN ('срать в помогатор апельсины', 'test', 'фаланга пальца')
+                    AND NOT EXISTS (
+                        SELECT 1 FROM card_upload_metadata cum 
+                        WHERE cum.card_id = f.id AND cum.upload_date IS NOT NULL
+                    )
+                    ORDER BY f.id DESC
+                """)
+                cards_needing_metadata = cursor.fetchall()
+            
+            logging.info(f"Found {len(cards_needing_metadata)} cards needing metadata")
+            
+            if not cards_needing_metadata:
+                logging.info("All cards already have metadata")
+                return True
+            
+            # Fetch messages and process only cards needing metadata
+            client = TelegramClient(
+                session=self.session_file,
+                api_id=int(self.api_id),
+                api_hash=self.api_hash
+            )
+            
+            await client.start()
+            
+            try:
+                channel = await client.get_entity(self.channel_username)
+                messages = []
+                
+                # Fetch enough messages to cover new cards
+                async for message in client.iter_messages(channel, limit=1000):
+                    messages.append(message)
+                
+                logging.info(f"Fetched {len(messages)} messages for incremental sync")
+                
+                success = await self.process_messages_with_db(messages)
+                return success
+                
+            finally:
+                await client.disconnect()
+                
+        except Exception as e:
+            logging.error(f"Error in incremental sync: {e}")
+            return False
+        finally:
+            connection.close()
+            postgres_session.close()
+
     async def process_messages_with_db(self, messages):
         """Process messages and update database with metadata - ENHANCED VERSION"""
         try:

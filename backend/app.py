@@ -127,6 +127,61 @@ def populate_all_cards_metadata():
             connection.close()
 
 
+import threading
+import time
+from apscheduler.schedulers.background import BackgroundScheduler
+
+# Add this after your existing imports and before route definitions
+
+def schedule_telegram_sync():
+    """Schedule automatic Telegram sync every 24 hours"""
+    scheduler = BackgroundScheduler()
+    
+    def run_scheduled_sync():
+        logging.info("Running scheduled Telegram sync...")
+        try:
+            success = run_telegram_user_sync()
+            if success:
+                logging.info("Scheduled Telegram sync completed successfully")
+            else:
+                logging.error("Scheduled Telegram sync failed")
+        except Exception as e:
+            logging.error(f"Error in scheduled sync: {e}")
+    
+    # Schedule to run every 24 hours
+    scheduler.add_job(run_scheduled_sync, 'interval', hours=24)
+    scheduler.start()
+    logging.info("Telegram sync scheduler started - will run every 24 hours")
+    
+    return scheduler
+
+# Add this to your existing manual sync endpoint for immediate triggers
+@app.route("/api/trigger-sync-now")
+def trigger_sync_now():
+    """Immediately trigger Telegram sync"""
+    try:
+        logging.info("Immediate Telegram sync triggered via API")
+        success = run_telegram_user_sync()
+        
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'Telegram sync completed successfully'
+            }), 200
+        else:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Telegram sync failed - check logs'
+            }), 500
+            
+    except Exception as e:
+        logging.error(f"Immediate sync error: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Sync failed: {str(e)}'
+        }), 500
+
+
 # Create the database tables
 with app.app_context():
     try:
@@ -140,6 +195,10 @@ with app.app_context():
             populate_all_cards_metadata()
         else:
             logging.info(f"Found {existing_count} existing metadata entries")
+            
+        # Start the scheduled sync
+        schedule_telegram_sync()
+        logging.info("Automatic Telegram sync scheduler started")
             
     except Exception as e:
         logging.error(f"Error during database initialization: {e}")
@@ -337,27 +396,44 @@ def home():
 # In app.py, add this endpoint
 @app.route("/api/manual-sync-telegram")
 def manual_sync_telegram():
-    """Manually trigger Telegram sync with enhanced matching"""
+    """Manually trigger Telegram sync with options"""
+    sync_type = request.args.get('type', 'full')  # 'full' or 'incremental'
+    
     try:
-        logging.info("Manual Telegram sync triggered")
-        success = run_telegram_user_sync()
+        logging.info(f"Manual Telegram sync triggered: {sync_type}")
+        
+        if sync_type == 'incremental':
+            # Use the new incremental sync for better performance
+            from telegram_user_sync import TelegramUserSync
+            import asyncio
+            
+            sync = TelegramUserSync()
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            success = loop.run_until_complete(sync.sync_new_cards_only())
+        else:
+            # Full sync
+            success = run_telegram_user_sync()
         
         if success:
             return jsonify({
                 'status': 'success',
-                'message': 'Telegram sync completed successfully'
+                'message': f'{sync_type.capitalize()} Telegram sync completed successfully',
+                'type': sync_type
             }), 200
         else:
             return jsonify({
                 'status': 'error', 
-                'message': 'Telegram sync failed - check logs'
+                'message': f'{sync_type.capitalize()} Telegram sync failed - check logs',
+                'type': sync_type
             }), 500
             
     except Exception as e:
         logging.error(f"Manual sync error: {e}")
         return jsonify({
             'status': 'error',
-            'message': f'Sync failed: {str(e)}'
+            'message': f'Sync failed: {str(e)}',
+            'type': sync_type
         }), 500
 
 
