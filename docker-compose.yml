@@ -53,9 +53,10 @@ services:
       TELEGRAM_PHONE_NUMBER: ${TELEGRAM_PHONE_NUMBER}
       FLASK_APP: wsgi:app
     command: >      
-      sh -c "gunicorn --bind 0.0.0.0:8000 --worker-class gevent --timeout 120 wsgi:app
+      sh -c "
             flask db migrate 
-            flask db upgrade"
+            flask db upgrade
+            gunicorn --bind 0.0.0.0:8000 --worker-class gevent --timeout 120 wsgi:app"
     # flask --app wsgi db init &&
     # flask --app wsgi db migrate  &&
     # flask --app wsgi db upgrade &&
