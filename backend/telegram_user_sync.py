@@ -8,6 +8,11 @@ import re
 import pymysql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import requests
+import base64
+import hashlib
+from PIL import Image
+import io
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -73,7 +78,7 @@ class TelegramUserSync:
             await client.disconnect()
     
     async def process_messages_with_db(self, messages):
-        """Process messages and update database with metadata"""
+        """Process messages and update database with metadata - ENHANCED VERSION"""
         try:
             connection = pymysql.connect(
                 host='localhost',
@@ -91,7 +96,7 @@ class TelegramUserSync:
             
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    SELECT id, name 
+                    SELECT id, name, tg_id
                     FROM files 
                     WHERE name NOT IN ('срать в помогатор апельсины', 'test', 'фаланга пальца')
                     ORDER BY id
@@ -106,9 +111,12 @@ class TelegramUserSync:
             for card in all_cards:
                 card_id = card['id']
                 card_name = card['name']
+                card_tg_id = card['tg_id']  # This is the Telegram file_id
                 
-                # Use STRICT matching to find the exact card
-                matching_message = await self.find_card_exact_match(card_name, messages)
+                # Try multiple matching strategies
+                matching_message = await self.find_card_by_multiple_strategies(
+                    card_name, card_tg_id, messages, connection
+                )
                 
                 if matching_message:
                     upload_date = matching_message.date
@@ -186,7 +194,7 @@ class TelegramUserSync:
                             {"card_id": card_id}
                         )
                     
-                    logging.info(f"❌ No exact match found for card '{card_name}' (ID: {card_id}) - set to NULL")
+                    logging.info(f"❌ No match found for card '{card_name}' (ID: {card_id}) - set to NULL")
             
             postgres_session.commit()
             logging.info(f"Sync completed: {matched_count}/{len(all_cards)} cards matched")
@@ -198,6 +206,29 @@ class TelegramUserSync:
         finally:
             connection.close()
             postgres_session.close()
+    
+    async def find_card_by_multiple_strategies(self, card_name, card_tg_id, messages, connection):
+        """Try multiple strategies to find the card in Telegram messages"""
+        # Strategy 1: Exact name matching (your existing method)
+        exact_match = await self.find_card_exact_match(card_name, messages)
+        if exact_match:
+            logging.debug(f"Found '{card_name}' via exact name match")
+            return exact_match
+        
+        # Strategy 2: Check if we can get file info and match by media
+        if card_tg_id and card_tg_id != 'None':
+            file_match = await self.find_card_by_file_id(card_tg_id, messages, connection)
+            if file_match:
+                logging.debug(f"Found '{card_name}' via file ID match")
+                return file_match
+        
+        # Strategy 3: Fuzzy name matching for difficult cases
+        fuzzy_match = await self.find_card_fuzzy_match(card_name, messages)
+        if fuzzy_match:
+            logging.debug(f"Found '{card_name}' via fuzzy name match")
+            return fuzzy_match
+        
+        return None
     
     async def find_card_exact_match(self, card_name, messages):
         """STRICT exact matching for card names"""
@@ -313,6 +344,144 @@ class TelegramUserSync:
         
         return False
     
+    async def find_card_by_file_id(self, card_tg_id, messages, connection):
+        """Try to find card by matching Telegram file IDs"""
+        try:
+            # Get file info from Telegram API
+            TOKEN = os.getenv("CARDS_BOT_TOKEN")
+            if not TOKEN:
+                logging.warning("CARDS_BOT_TOKEN not available for file matching")
+                return None
+            
+            api_url = f"https://api.telegram.org/bot{TOKEN}/getFile?file_id={card_tg_id}"
+            response = requests.get(api_url)
+            
+            if response.status_code != 200:
+                return None
+            
+            file_info = response.json()
+            if not file_info.get("ok"):
+                return None
+            
+            file_path = file_info.get("result", {}).get("file_path")
+            if not file_path:
+                return None
+            
+            # Download the file to get its hash/signature
+            file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
+            file_response = requests.get(file_url)
+            
+            if file_response.status_code != 200:
+                return None
+            
+            # Calculate file hash for comparison
+            file_content = file_response.content
+            file_hash = hashlib.md5(file_content).hexdigest()
+            file_size = len(file_content)
+            
+            logging.debug(f"Card file: {file_path}, Hash: {file_hash}, Size: {file_size}")
+            
+            # Now search through messages for matching media
+            for message in messages:
+                if message.media:
+                    try:
+                        # Get media info from message
+                        media_file = await self.get_media_file_info(message, TOKEN)
+                        if media_file and media_file.get('hash') == file_hash:
+                            logging.info(f"✅ Media hash match found for card {card_tg_id}")
+                            return message
+                    except Exception as e:
+                        logging.debug(f"Error checking media in message {message.id}: {e}")
+                        continue
+            
+            return None
+            
+        except Exception as e:
+            logging.error(f"Error in file ID matching for {card_tg_id}: {e}")
+            return None
+    
+    async def get_media_file_info(self, message, token):
+        """Extract file info from message media"""
+        try:
+            if hasattr(message.media, 'document'):
+                # Document (could be image/video)
+                document = message.media.document
+                file_size = document.size
+                # For hash, we'd need to download, but that's expensive
+                # Instead, use file_unique_id as a signature
+                return {
+                    'size': file_size,
+                    'unique_id': getattr(document, 'file_unique_id', None)
+                }
+            elif hasattr(message.media, 'photo'):
+                # Photo
+                photo = message.media.photo
+                file_size = photo.sizes[-1].size if photo.sizes else 0
+                return {
+                    'size': file_size,
+                    'unique_id': getattr(photo, 'file_unique_id', None)
+                }
+        except Exception as e:
+            logging.debug(f"Error extracting media info: {e}")
+        
+        return None
+    
+    async def find_card_fuzzy_match(self, card_name, messages):
+        """Fuzzy matching for card names that don't match exactly"""
+        try:
+            from fuzzywuzzy import fuzz
+        except ImportError:
+            logging.warning("fuzzywuzzy not installed, skipping fuzzy matching")
+            return None
+        
+        best_match = None
+        best_score = 0
+        
+        normalized_card_name = self.normalize_for_fuzzy_match(card_name)
+        
+        for message in messages:
+            if not message.text:
+                continue
+                
+            message_text = message.text
+            normalized_message = self.normalize_for_fuzzy_match(message_text)
+            
+            # Calculate similarity score
+            score = fuzz.partial_ratio(normalized_card_name, normalized_message)
+            
+            # Also check if card name appears as a standalone word
+            words_in_message = set(normalized_message.split())
+            words_in_card = set(normalized_card_name.split())
+            
+            common_words = words_in_card.intersection(words_in_message)
+            if len(common_words) >= max(2, len(words_in_card) * 0.5):
+                score = max(score, 80)  # Boost score for significant word overlap
+            
+            if score > best_score and score > 70:  # Threshold for fuzzy matching
+                best_score = score
+                best_match = message
+        
+        if best_match:
+            logging.info(f"Fuzzy match: '{card_name}' with score {best_score}")
+        
+        return best_match
+    
+    def normalize_for_fuzzy_match(self, text):
+        """Normalize text for fuzzy matching"""
+        if not text:
+            return ""
+        
+        # Convert to lowercase
+        normalized = text.lower()
+        
+        # Remove special characters but keep spaces
+        normalized = re.sub(r'[^\w\s]', '', normalized)
+        
+        # Remove extra spaces
+        normalized = re.sub(r'\s+', ' ', normalized).strip()
+        
+        return normalized
+    
     def calculate_season_from_date(self, upload_date):
         """Calculate season based on upload date"""
         if not upload_date:
@@ -331,18 +500,18 @@ class TelegramUserSync:
             return None
 
 def main():
-    logging.info("Starting Telegram user sync with EXACT matching...")
+    logging.info("Starting enhanced Telegram user sync with multiple matching strategies...")
     sync = TelegramUserSync()
     
     try:
         success = asyncio.run(sync.sync_messages_async())
         if success:
-            logging.info("Sync completed successfully")
+            logging.info("Enhanced sync completed successfully")
         else:
-            logging.error("Sync failed")
+            logging.error("Enhanced sync failed")
         exit(0 if success else 1)
     except Exception as e:
-        logging.error(f"Sync failed: {e}")
+        logging.error(f"Enhanced sync failed: {e}")
         exit(1)
 
 if __name__ == "__main__":

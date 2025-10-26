@@ -333,6 +333,34 @@ def home():
 
 #API ROUTES
 
+
+# In app.py, add this endpoint
+@app.route("/api/manual-sync-telegram")
+def manual_sync_telegram():
+    """Manually trigger Telegram sync with enhanced matching"""
+    try:
+        logging.info("Manual Telegram sync triggered")
+        success = run_telegram_user_sync()
+        
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'Telegram sync completed successfully'
+            }), 200
+        else:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Telegram sync failed - check logs'
+            }), 500
+            
+    except Exception as e:
+        logging.error(f"Manual sync error: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Sync failed: {str(e)}'
+        }), 500
+
+
 @app.route("/api/db-status")
 def db_status():
     connection = get_db_conn()

@@ -10,3 +10,6 @@ requests
 pymysql
 unidecode
 telethon
+fuzzywuzzy
+python-levenshtein  
+Pillow  
