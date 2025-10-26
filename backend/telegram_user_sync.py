@@ -112,8 +112,8 @@ class TelegramUserSync:
                 card_id = card['id']
                 card_name = card['name']
                 
-                # Find matching message using improved logic
-                matching_message = self.find_card_in_messages(card_name, messages)
+                # Find matching message using improved search
+                matching_message = await self.find_card_in_messages_advanced(card_name, messages)
                 
                 if matching_message:
                     upload_date = matching_message.date
@@ -176,7 +176,7 @@ class TelegramUserSync:
                                 UPDATE card_upload_metadata 
                                 SET telegram_message_id = NULL, 
                                     upload_date = NULL, 
-                                    season = NULL 
+                                    season = NULL
                                 WHERE card_id = :card_id
                             """),
                             {"card_id": card_id}
@@ -204,75 +204,89 @@ class TelegramUserSync:
             connection.close()
             postgres_session.close()
     
-    def normalize_card_name(self, name):
-        """Normalize card name for matching"""
-        if not name:
-            return ""
-        # Remove content in parentheses and brackets
-        name = re.sub(r'\([^)]*\)', '', name)
-        name = re.sub(r'\[[^\]]*\]', '', name)
-        # Convert to ASCII and lowercase
-        normalized = unidecode(name).lower()
-        # Remove punctuation and extra spaces
-        normalized = re.sub(r'[^\w\s]', ' ', normalized)
-        normalized = re.sub(r'\s+', ' ', normalized).strip()
-        return normalized
-    
-    def extract_card_name_from_message(self, message_text):
-        """Extract card name from message text using patterns"""
-        if not message_text:
+    async def find_card_in_messages_advanced(self, card_name, messages):
+        """Advanced card matching that searches for the card name in messages"""
+        if not card_name:
             return None
-            
-        # Common patterns for card names in messages
-        patterns = [
-            # Pattern: "Card Name" or 'Card Name'
-            r'["\']([^"\']+)["\']',
-            # Pattern: **Card Name** (bold)
-            r'\*\*([^*]+)\*\*',
-            # Pattern: Card Name (at start of line or after newline)
-            r'(?:^|\n)([^\n:]+?)(?:\n|$)',
-        ]
         
-        for pattern in patterns:
-            matches = re.findall(pattern, message_text, re.IGNORECASE | re.MULTILINE)
-            for match in matches:
-                candidate = match.strip()
-                if len(candidate) > 3 and len(candidate) < 100:  # Reasonable card name length
-                    return candidate
-        return None
-    
-    def find_card_in_messages(self, card_name, messages):
-        """Find the LAST message that contains this specific card"""
+        # Normalize the card name for better matching
         normalized_card_name = self.normalize_card_name(card_name)
+        
+        # Try different matching strategies
         matching_messages = []
         
         for message in messages:
-            message_text = message.text or ""
+            if not message.text:
+                continue
+                
+            message_text = message.text.lower()
+            normalized_message = self.normalize_card_name(message_text)
             
-            # Try to extract card name from message
-            extracted_name = self.extract_card_name_from_message(message_text)
-            if extracted_name:
-                # Compare normalized names
-                normalized_extracted = self.normalize_card_name(extracted_name)
-                if normalized_extracted == normalized_card_name:
-                    matching_messages.append(message)
-                    continue
+            # Strategy 1: Exact match of normalized names
+            if normalized_card_name in normalized_message:
+                matching_messages.append(message)
+                continue
+                
+            # Strategy 2: Word-by-word matching (more flexible)
+            card_words = set(normalized_card_name.split())
+            message_words = set(normalized_message.split())
             
-            # Fallback: check if the exact normalized card name appears in message
-            # but only as a whole word to avoid partial matches
-            message_words = self.normalize_card_name(message_text)
-            # Use word boundaries to avoid partial matches
-            if re.search(r'\b' + re.escape(normalized_card_name) + r'\b', message_words):
+            # If most words match, consider it a match
+            common_words = card_words.intersection(message_words)
+            if len(common_words) >= max(1, len(card_words) * 0.7):  # At least 70% match or 1 word
+                matching_messages.append(message)
+                continue
+                
+            # Strategy 3: Check if card name appears as a substring in message
+            # Remove common words that might cause false positives
+            clean_card_name = self.remove_common_words(normalized_card_name)
+            if clean_card_name and clean_card_name in normalized_message:
                 matching_messages.append(message)
         
-        # Return the most recent message (highest ID = most recent)
+        # Return the most recent matching message (highest message ID usually means most recent)
         if matching_messages:
-            # Sort by message ID descending (highest ID = most recent)
-            matching_messages.sort(key=lambda msg: msg.id, reverse=True)
-            logging.debug(f"Found {len(matching_messages)} matches for '{card_name}', using most recent")
+            # Sort by message date (newest first) and return the most recent
+            matching_messages.sort(key=lambda msg: msg.date, reverse=True)
             return matching_messages[0]
         
         return None
+    
+    def normalize_card_name(self, text):
+        """Normalize text for better matching"""
+        if not text:
+            return ""
+        
+        # Convert to lowercase and remove accents
+        normalized = unidecode(text.lower())
+        
+        # Remove content in parentheses and brackets
+        normalized = re.sub(r'\([^)]*\)', '', normalized)
+        normalized = re.sub(r'\[[^\]]*\]', '', normalized)
+        
+        # Remove special characters but keep spaces
+        normalized = re.sub(r'[^\w\s]', ' ', normalized)
+        
+        # Replace multiple spaces with single space
+        normalized = re.sub(r'\s+', ' ', normalized).strip()
+        
+        return normalized
+    
+    def remove_common_words(self, text):
+        """Remove common words that might cause false positives"""
+        if not text:
+            return ""
+        
+        common_words = {
+            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 
+            'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+            'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+            'should', 'may', 'might', 'must', 'can', 'card', 'cards', 'new', 'rare'
+        }
+        
+        words = text.split()
+        filtered_words = [word for word in words if word not in common_words and len(word) > 2]
+        
+        return ' '.join(filtered_words)
     
     def calculate_season_from_date(self, upload_date):
         """Calculate season based on upload date"""
@@ -280,15 +294,16 @@ class TelegramUserSync:
             return None
             
         try:
+            # Your existing season logic
             year = upload_date.year
             month = upload_date.month
             
-            # Simple season calculation - adjust as needed
             if year == 2025:
-                return month  # Each month is a season in 2025
+                return month
             else:
                 return (year - 2025) * 12 + month
-        except:
+        except Exception as e:
+            logging.error(f"Error calculating season for date {upload_date}: {e}")
             return None
 
 def main():
@@ -297,6 +312,10 @@ def main():
     
     try:
         success = asyncio.run(sync.sync_messages_async())
+        if success:
+            logging.info("Sync completed successfully")
+        else:
+            logging.error("Sync failed")
         exit(0 if success else 1)
     except Exception as e:
         logging.error(f"Sync failed: {e}")
