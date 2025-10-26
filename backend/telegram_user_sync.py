@@ -112,7 +112,7 @@ class TelegramUserSync:
                 card_id = card['id']
                 card_name = card['name']
                 
-                # Find matching message using your existing logic
+                # Find matching message using improved logic
                 matching_message = self.find_card_in_messages(card_name, messages)
                 
                 if matching_message:
@@ -158,9 +158,40 @@ class TelegramUserSync:
                         )
                     
                     matched_count += 1
+                    logging.info(f"Matched card '{card_name}' (ID: {card_id}) with message from {upload_date}")
+                    
                     if matched_count % 20 == 0:
                         postgres_session.commit()
                         logging.info(f"Committed {matched_count} matches...")
+                else:
+                    # No match found - set to NULL
+                    existing = postgres_session.execute(
+                        text("SELECT * FROM card_upload_metadata WHERE card_id = :card_id"),
+                        {"card_id": card_id}
+                    ).fetchone()
+                    
+                    if existing:
+                        postgres_session.execute(
+                            text("""
+                                UPDATE card_upload_metadata 
+                                SET telegram_message_id = NULL, 
+                                    upload_date = NULL, 
+                                    season = NULL 
+                                WHERE card_id = :card_id
+                            """),
+                            {"card_id": card_id}
+                        )
+                    else:
+                        postgres_session.execute(
+                            text("""
+                                INSERT INTO card_upload_metadata 
+                                (card_id, telegram_message_id, upload_date, season) 
+                                VALUES (:card_id, NULL, NULL, NULL)
+                            """),
+                            {"card_id": card_id}
+                        )
+                    
+                    logging.info(f"No match found for card '{card_name}' (ID: {card_id}) - set to NULL")
             
             postgres_session.commit()
             logging.info(f"Sync completed: {matched_count}/{len(all_cards)} cards matched")
@@ -174,40 +205,91 @@ class TelegramUserSync:
             postgres_session.close()
     
     def normalize_card_name(self, name):
-        """Your existing normalization logic"""
+        """Normalize card name for matching"""
         if not name:
             return ""
+        # Remove content in parentheses and brackets
         name = re.sub(r'\([^)]*\)', '', name)
         name = re.sub(r'\[[^\]]*\]', '', name)
+        # Convert to ASCII and lowercase
         normalized = unidecode(name).lower()
+        # Remove punctuation and extra spaces
         normalized = re.sub(r'[^\w\s]', ' ', normalized)
         normalized = re.sub(r'\s+', ' ', normalized).strip()
         return normalized
     
+    def extract_card_name_from_message(self, message_text):
+        """Extract card name from message text using patterns"""
+        if not message_text:
+            return None
+            
+        # Common patterns for card names in messages
+        patterns = [
+            # Pattern: "Card Name" or 'Card Name'
+            r'["\']([^"\']+)["\']',
+            # Pattern: **Card Name** (bold)
+            r'\*\*([^*]+)\*\*',
+            # Pattern: Card Name (at start of line or after newline)
+            r'(?:^|\n)([^\n:]+?)(?:\n|$)',
+        ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, message_text, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                candidate = match.strip()
+                if len(candidate) > 3 and len(candidate) < 100:  # Reasonable card name length
+                    return candidate
+        return None
+    
     def find_card_in_messages(self, card_name, messages):
-        """Your existing matching logic"""
+        """Find the LAST message that contains this specific card"""
         normalized_card_name = self.normalize_card_name(card_name)
+        matching_messages = []
         
         for message in messages:
             message_text = message.text or ""
-            # Extract card name from message (your existing logic)
-            # ... implement your matching logic here
             
-            # Simplified example:
-            if normalized_card_name in message_text.lower():
-                return message
+            # Try to extract card name from message
+            extracted_name = self.extract_card_name_from_message(message_text)
+            if extracted_name:
+                # Compare normalized names
+                normalized_extracted = self.normalize_card_name(extracted_name)
+                if normalized_extracted == normalized_card_name:
+                    matching_messages.append(message)
+                    continue
+            
+            # Fallback: check if the exact normalized card name appears in message
+            # but only as a whole word to avoid partial matches
+            message_words = self.normalize_card_name(message_text)
+            # Use word boundaries to avoid partial matches
+            if re.search(r'\b' + re.escape(normalized_card_name) + r'\b', message_words):
+                matching_messages.append(message)
+        
+        # Return the most recent message (highest ID = most recent)
+        if matching_messages:
+            # Sort by message ID descending (highest ID = most recent)
+            matching_messages.sort(key=lambda msg: msg.id, reverse=True)
+            logging.debug(f"Found {len(matching_messages)} matches for '{card_name}', using most recent")
+            return matching_messages[0]
+        
         return None
     
     def calculate_season_from_date(self, upload_date):
-        """Your existing season calculation"""
+        """Calculate season based on upload date"""
         if not upload_date:
-            return 1
-        year = upload_date.year
-        month = upload_date.month
-        if year == 2025:
-            return month
-        else:
-            return (year - 2025) * 12 + month
+            return None
+            
+        try:
+            year = upload_date.year
+            month = upload_date.month
+            
+            # Simple season calculation - adjust as needed
+            if year == 2025:
+                return month  # Each month is a season in 2025
+            else:
+                return (year - 2025) * 12 + month
+        except:
+            return None
 
 def main():
     logging.info("Starting Telegram user sync...")
