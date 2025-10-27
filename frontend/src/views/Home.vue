@@ -620,6 +620,10 @@
     /* flex-direction: column; */
     gap: 15px;
   }
+
+  .sort-dropdown {
+    left: 0;
+  }
   
   .search-container {
     width: 100%;
