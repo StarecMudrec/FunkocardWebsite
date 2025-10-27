@@ -622,7 +622,7 @@
   }
 
   .sort-dropdown {
-    left: 0;
+    left: auto;
   }
   
   .search-container {
