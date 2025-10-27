@@ -632,7 +632,7 @@
     padding: 0 15px;
     margin: 20px auto 0;
     gap: 15px;
-    flex-direction: column;
+    /* flex-direction: column; */
   }
 
   .sort-dropdown {
