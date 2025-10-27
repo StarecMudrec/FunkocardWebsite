@@ -140,9 +140,7 @@
   flex-direction: column;
   font-family: 'Afacad', sans-serif;
   width: 100%;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
-  height: 100%;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
 }
 
 .hero-section {
@@ -150,12 +148,10 @@
   height: 100vh;
   width: 100%;
   overflow: hidden;
-  height: 100vh;
-  height: calc(var(--vh, 1vh) * 100);
 }
 
 .background-container {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
@@ -165,7 +161,6 @@
   background-size: cover;
   background-position: center 57%;
   z-index: -1;
-  pointer-events: none;
 }
 
 .logo-text {
@@ -189,23 +184,19 @@
 }
 
 .separator-line {
-  position: absolute;
-  top: 100vh;
-  left: 0;
   width: 100%;
   height: 4px;
   margin: 0;
   border: none;
+  background: transparent;
 }
 
 .content {
   position: relative;
   width: 100%;
   min-height: 52vh;
-  left: 0;
-  top: 4px;
   flex: 1;
-  z-index: 1;
+  background: var(--background-color);
 }
 
 .categories-title {
@@ -602,20 +593,12 @@
   .page-container {
     width: 100%;
     min-width: 100%;
-    overflow-y: auto;
-  }
-  
-  .hero-section {
-    /* Use dynamic viewport height for mobile */
-    height: 100dvh;
-    height: calc(var(--vh, 1vh) * 100);
   }
   
   .content {
     width: 100%;
     padding: 0;
     margin: 0;
-    position: relative;
   }
   
   .categories-grid {
@@ -631,7 +614,6 @@
     max-width: 100%;
     padding: 0 15px;
     margin: 20px auto 0;
-    /* flex-direction: column; */
     gap: 15px;
   }
 
@@ -765,13 +747,6 @@ export default {
   },
   methods: {
     ...mapActions(['fetchCategories']),
-      
-    setViewportHeight() {
-      // First we get the viewport height and we multiple it by 1% to get a value for a vh unit
-      let vh = window.innerHeight * 0.01;
-      // Then we set the value in the --vh custom property to the root of the document
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-    },
     
     async fetchRarityNewestCards() {
       try {
@@ -961,9 +936,6 @@ export default {
     }
   },
   async mounted() {
-    this.setViewportHeight();
-    window.addEventListener('resize', this.setViewportHeight);
-
     // Initialize debounced search
     this.debouncedSearch = debounce(this.performSearch, 300);
     
@@ -983,9 +955,5 @@ export default {
       // Continue even if one of the API calls fails
     }
   },
-  beforeUnmount() {
-    // Clean up the resize event listener
-    window.removeEventListener('resize', this.setViewportHeight);
-  }
 }
 </script>
