@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- Hero section with background and scroll arrow -->
     <div class="hero-section">
-      <div class="background-container"></div>
+      <!-- <div class="background-container"></div> -->
       <div class="logo-text">
         <h1 class="funko-text">FUNKO CARDS</h1>
       </div>
@@ -145,6 +145,9 @@
 
 .page-container::before {
   position: fixed;
+  background-image: url('/background.jpg');
+  background-size: cover;
+  background-position: center 95%;
 }
 
 .hero-section {
