@@ -227,6 +227,8 @@
   width: 100%;
   max-width: 1100px;
   margin: 30px auto 0;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 /* Search Container */
