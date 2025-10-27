@@ -132,6 +132,11 @@
 @import url('https://fonts.googleapis.com/css2?family=BIZ+UDPMincho&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&family=Noto+Serif:ital,wght@0,400;0,500;1,400&display=swap');
 
+/* Add viewport-fill-color for iOS and prevent address bar issues */
+:root {
+  --vh: 1vh;
+}
+
 .profile-background {
   position: absolute;
   top: 0;
@@ -139,6 +144,9 @@
   width: 100%;
   height: 100%;
   font-family: 'Afacad', sans-serif;
+  /* Prevent address bar resize issues */
+  min-height: -webkit-fill-available;
+  min-height: fill-available;
 }
 
 .profile-background::before {
@@ -153,14 +161,20 @@
   background-position: center 95%;
   filter: blur(10px);
   z-index: 1;
+  /* Ensure background covers entire viewport */
+  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
 }
 
 .hero-section {
   position: relative;
   height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   width: 100%;
   overflow: hidden;
   z-index: 2;
+  /* Prevent address bar resize on mobile */
+  min-height: -webkit-fill-available;
 }
 
 .logo-text {
@@ -170,6 +184,8 @@
   transform: translate(-50%, -50%);
   text-align: center;
   z-index: 3;
+  /* Ensure it stays centered regardless of address bar */
+  top: calc(50% - env(safe-area-inset-top, 0px)/2);
 }
 
 .funko-text {
@@ -181,6 +197,64 @@
   text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.7);
   letter-spacing: 3px;
   line-height: 1;
+}
+
+/* Enhanced scroll arrow positioning for mobile */
+.cover-arrow {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+  z-index: 10;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Account for safe area on iOS */
+  bottom: max(30px, env(safe-area-inset-bottom, 30px));
+}
+
+.cover-arrow__inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: bounce 2s infinite;
+}
+
+.arrow-icon {
+  width: 144px;
+  height: 144px;
+  shape-rendering: geometricPrecision;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+.cover-arrow:hover .arrow-icon {
+  transform: scale(0.85);
+  opacity: 0.9;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+}
+
+.cover-arrow:hover .cover-arrow__inner {
+  animation-play-state: paused;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
 }
 
 .separator-line {
@@ -211,7 +285,7 @@
   margin-top: 220px; 
 }
 
-/* Search and Sort Container */
+/* Rest of your existing CSS remains the same... */
 .search-sort-container {
   display: flex;
   align-items: center;
@@ -224,7 +298,6 @@
   padding-right: 20px;
 }
 
-/* Search Container */
 .search-container {
   flex: 1;
   max-width: 950px;
@@ -292,7 +365,6 @@
   scale: 1.1;
 }
 
-/* Sort Controls */
 .sort-controls {
   position: relative;
   display: flex;
@@ -384,12 +456,10 @@
   margin-top: 50px;
 }
 
-/* Transition group wrapper */
 .categories-grid-transition {
   display: contents;
 }
 
-/* Search animation styles */
 .search-animation-enter-active,
 .search-animation-leave-active {
   transition: all 0.5s ease;
@@ -424,7 +494,6 @@
   border: 3px solid #dadada;
 }
 
-/* Background element for better control */
 .category-card__background {
   position: absolute;
   top: 0;
@@ -437,7 +506,6 @@
   transition: all 0.3s ease;
 }
 
-/* Video background for Limited category */
 .category-card__video {
   position: absolute;
   top: 0;
@@ -447,17 +515,15 @@
   object-fit: cover;
   z-index: 0;
   transition: all 0.3s ease;
-  filter: blur(2px); /* Apply same blur as rarity cards */
+  filter: blur(2px);
 }
 
-/* Apply specific backgrounds and blur effects */
 .category-card.all-cards .category-card__background,
 .category-card.shop .category-card__background,
 .category-card.rarity .category-card__background {
-  filter: blur(2px); /* Consistent blur for all category types */
+  filter: blur(2px);
 }
 
-/* Gradient overlay for better text readability */
 .category-card::before {
   content: '';
   position: absolute;
@@ -534,66 +600,18 @@
   grid-column: 1 / -1;
 }
 
-.cover-arrow {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  cursor: pointer;
-  z-index: 10;
-  width: 80px;
-  height: 80px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.cover-arrow__inner {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  animation: bounce 2s infinite;
-}
-
-.arrow-icon {
-  width: 144px;
-  height: 144px;
-  shape-rendering: geometricPrecision;
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
-  pointer-events: none;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
-}
-
-.cover-arrow:hover .arrow-icon {
-  transform: scale(0.85);
-  opacity: 0.9;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
-}
-
-.cover-arrow:hover .cover-arrow__inner {
-  animation-play-state: paused;
-}
-
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-10px);
-  }
-  60% {
-    transform: translateY(-5px);
-  }
-}
-
-
+/* Enhanced mobile responsiveness */
 @media (max-width: 700px) {
   .profile-background {
     width: 100%;
     min-width: 100%;
+    height: 100%;
+    min-height: -webkit-fill-available;
+  }
+  
+  .hero-section {
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
   }
   
   .content {
@@ -606,7 +624,7 @@
     width: 100%;
     padding: 20px 10px;
     margin: 0;
-    grid-template-columns: 1fr; /* Single column on mobile */
+    grid-template-columns: 1fr;
     gap: 20px;
   }
   
@@ -616,10 +634,13 @@
     padding: 0 15px;
     margin: 20px auto 0;
     gap: 15px;
+    flex-direction: column;
   }
 
   .sort-dropdown {
     left: auto;
+    right: 0;
+    left: 0;
   }
   
   .search-container {
@@ -630,6 +651,7 @@
   .search-input {
     width: 100%;
     box-sizing: border-box;
+    font-size: 16px; /* Prevent zoom on iOS */
   }
   
   .categories-title {
@@ -641,12 +663,35 @@
   .funko-text {
     font-size: 3.5rem;
   }
+  
+  .cover-arrow {
+    bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    width: 70px;
+    height: 70px;
+  }
+  
+  .arrow-icon {
+    width: 120px;
+    height: 120px;
+  }
 }
 
 .hero-section,
 .content {
   max-width: 100vw;
   box-sizing: border-box;
+}
+
+/* Prevent address bar resize animation */
+@media (max-height: 700px) {
+  .hero-section {
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+  }
+  
+  .cover-arrow {
+    bottom: max(15px, env(safe-area-inset-bottom, 15px));
+  }
 }
 </style>
 
