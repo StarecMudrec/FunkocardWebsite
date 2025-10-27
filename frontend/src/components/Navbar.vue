@@ -79,14 +79,14 @@ export default {
   width: 100%;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 700px) {
   .menu {
     gap: 20px;
     margin-bottom: 30px;
   }
   
   .nav-btn {
-    font-size: 16px;
+    font-size: 22px;
   }
 }
 </style>
