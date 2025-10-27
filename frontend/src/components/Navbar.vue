@@ -83,6 +83,7 @@ export default {
   .menu {
     gap: 20px;
     margin-bottom: 30px;
+    position: fixed;
   }
   
   .nav-btn {
