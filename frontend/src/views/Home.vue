@@ -1,8 +1,7 @@
 <template>
-  <div class="page-container">
+  <div class="profile-background">
     <!-- Hero section with background and scroll arrow -->
     <div class="hero-section">
-      <!-- <div class="background-container"></div> -->
       <div class="logo-text">
         <h1 class="funko-text">FUNKO CARDS</h1>
       </div>
@@ -133,21 +132,27 @@
 @import url('https://fonts.googleapis.com/css2?family=BIZ+UDPMincho&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&family=Noto+Serif:ital,wght@0,400;0,500;1,400&display=swap');
 
-.page-container {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  font-family: 'Afacad', sans-serif;
+.profile-background {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  overflow-x: hidden;
+  height: 100%;
+  font-family: 'Afacad', sans-serif;
 }
 
-.page-container::before {
+.profile-background::before {
+  content: '';
   position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background-image: url('/background.jpg');
   background-size: cover;
   background-position: center 95%;
+  filter: blur(10px);
+  z-index: 1;
 }
 
 .hero-section {
@@ -155,19 +160,7 @@
   height: 100vh;
   width: 100%;
   overflow: hidden;
-}
-
-.background-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url('/background.jpg');
-  filter: blur(10px);
-  background-size: cover;
-  background-position: center 57%;
-  z-index: -1;
+  z-index: 2;
 }
 
 .logo-text {
@@ -176,7 +169,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
-  z-index: 1;
+  z-index: 3;
 }
 
 .funko-text {
@@ -204,6 +197,7 @@
   min-height: 52vh;
   flex: 1;
   background: var(--background-color);
+  z-index: 2;
 }
 
 .categories-title {
@@ -597,7 +591,7 @@
 
 
 @media (max-width: 700px) {
-  .page-container {
+  .profile-background {
     width: 100%;
     min-width: 100%;
   }
@@ -650,7 +644,6 @@
 }
 
 .hero-section,
-.background-container,
 .content {
   max-width: 100vw;
   box-sizing: border-box;
