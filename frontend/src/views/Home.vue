@@ -592,7 +592,7 @@
 }
 
 
-@media (max-width: 480px) {
+@media (max-width: 700px) {
   .page-container {
     width: 100%;
     min-width: 100%;
@@ -617,7 +617,7 @@
     max-width: 100%;
     padding: 0 15px;
     margin: 20px auto 0;
-    flex-direction: column;
+    /* flex-direction: column; */
     gap: 15px;
   }
   
