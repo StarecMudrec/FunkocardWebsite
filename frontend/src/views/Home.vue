@@ -132,6 +132,7 @@
 @import url('https://fonts.googleapis.com/css2?family=BIZ+UDPMincho&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&family=Noto+Serif:ital,wght@0,400;0,500;1,400&display=swap');
 
+/* Mobile-first approach */
 .profile-background {
   position: absolute;
   top: 0;
@@ -139,6 +140,8 @@
   width: 100%;
   height: 100%;
   font-family: 'Afacad', sans-serif;
+  /* Prevent horizontal scrolling */
+  overflow-x: hidden;
 }
 
 .profile-background::before {
@@ -161,6 +164,8 @@
   width: 100%;
   overflow: hidden;
   z-index: 2;
+  /* Ensure full viewport height on mobile */
+  height: 100dvh; /* Use dynamic viewport height */
 }
 
 .logo-text {
@@ -170,6 +175,8 @@
   transform: translate(-50%, -50%);
   text-align: center;
   z-index: 3;
+  /* Ensure it's not affected by address bar */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .funko-text {
@@ -546,6 +553,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  /* Account for safe areas on mobile */
+  bottom: max(30px, env(safe-area-inset-bottom));
 }
 
 .cover-arrow__inner {
@@ -589,17 +598,22 @@
   }
 }
 
-
+/* Mobile-specific fixes */
 @media (max-width: 700px) {
   .profile-background {
     width: 100%;
     min-width: 100%;
+    /* Prevent address bar issues */
+    height: 100dvh;
+    overflow-x: hidden;
   }
   
   .content {
     width: 100%;
     padding: 0;
     margin: 0;
+    /* Ensure content doesn't get pushed down */
+    min-height: auto;
   }
   
   .categories-grid {
@@ -608,6 +622,8 @@
     margin: 0;
     grid-template-columns: 1fr; /* Single column on mobile */
     gap: 20px;
+    /* Prevent layout shifts */
+    box-sizing: border-box;
   }
   
   .search-sort-container {
@@ -616,10 +632,13 @@
     padding: 0 15px;
     margin: 20px auto 0;
     gap: 15px;
+    flex-direction: column;
   }
 
   .sort-dropdown {
     left: auto;
+    right: 0;
+    min-width: 250px;
   }
   
   .search-container {
@@ -630,16 +649,58 @@
   .search-input {
     width: 100%;
     box-sizing: border-box;
+    font-size: 16px; /* Prevent zoom on iOS */
   }
   
   .categories-title {
     font-size: 3.5rem;
     margin-top: 150px;
     padding: 0 15px;
+    /* Account for safe areas */
+    padding-top: env(safe-area-inset-top);
   }
   
   .funko-text {
     font-size: 3.5rem;
+    /* Ensure it's visible on all devices */
+    padding: 0 10px;
+  }
+  
+  .hero-section {
+    /* Use dynamic viewport units for better mobile support */
+    height: 100dvh;
+    /* Prevent address bar issues */
+    overflow: hidden;
+  }
+  
+  .cover-arrow {
+    /* Ensure arrow is always visible */
+    bottom: max(20px, env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+  
+  .category-card__title {
+    font-size: 2.5rem;
+  }
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 400px) {
+  .funko-text {
+    font-size: 2.8rem;
+  }
+  
+  .categories-title {
+    font-size: 2.8rem;
+    margin-top: 120px;
+  }
+  
+  .category-card__title {
+    font-size: 2rem;
+  }
+  
+  .search-input {
+    padding: 12px 40px 12px 50px;
   }
 }
 
@@ -647,6 +708,15 @@
 .content {
   max-width: 100vw;
   box-sizing: border-box;
+  /* Prevent layout shifts */
+  overflow-x: hidden;
+}
+
+/* Fix for iOS Safari address bar behavior */
+@supports (-webkit-touch-callout: none) {
+  .hero-section {
+    height: -webkit-fill-available;
+  }
 }
 </style>
 
