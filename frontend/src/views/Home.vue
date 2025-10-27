@@ -143,6 +143,10 @@
   overflow-x: hidden;
 }
 
+.page-container::before {
+  position: fixed;
+}
+
 .hero-section {
   position: relative;
   height: 100vh;
