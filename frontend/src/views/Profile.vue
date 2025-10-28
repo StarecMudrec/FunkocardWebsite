@@ -35,7 +35,7 @@
           <div class="user-details">
             <!-- Stats Section -->
             <div class="stats-section" v-if="userStats.length > 0">
-              <h3 class="stats-title">User Statistics:</h3>
+              <h3 class="stats-title">Your Statistics:</h3>
               <div class="stats-list">
                 <div 
                   v-for="(stat, index) in userStats" 
