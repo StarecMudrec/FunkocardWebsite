@@ -267,7 +267,8 @@ export default {
 .image-wrapper {
   position: relative;
   width: 100%;
-  height: calc(var(--card-width) * 1.3);
+  /* 1024:1280 = 4:5 = 0.8 aspect ratio */
+  aspect-ratio: 4 / 5;
   overflow: hidden;
 }
 
@@ -374,9 +375,10 @@ export default {
     animation: none;
     transform: none;
   }
-  .image-wrapper {
+  /* Remove the old height calculation for mobile */
+  /* .image-wrapper {
     height: calc(var(--card-width) * 1.4);
-  }
+  } */
 }
 
 @media (max-width: 480px) {
