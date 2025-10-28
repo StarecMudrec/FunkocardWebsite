@@ -215,27 +215,63 @@ export default {
     }
 
     const setupScrollSync = () => {
-      // Wait for next tick to ensure DOM is updated
       nextTick(() => {
         if (currentCardContainer.value && currentCardContainer.value.$el) {
           const currentCardEl = currentCardContainer.value.$el
           
+          // Remove any existing listener first
+          currentCardEl.removeEventListener('scroll', handleScrollSync)
+          
           // Add scroll event listener to current card
-          currentCardEl.addEventListener('scroll', () => {
-            const targets = []
-            if (previousCardContainer.value) targets.push(previousCardContainer.value)
-            if (nextCardContainer.value) targets.push(nextCardContainer.value)
-            
-            syncScrollPositions(currentCardEl, targets)
-          })
+          currentCardEl.addEventListener('scroll', handleScrollSync)
         }
+      })
+    }
+    
+    const handleScrollSync = () => {
+      if (isSyncingScroll.value) return
+      
+      const currentEl = currentCardContainer.value?.$el
+      if (!currentEl) return
+      
+      isSyncingScroll.value = true
+      
+      const scrollTop = currentEl.scrollTop
+      const scrollHeight = currentEl.scrollHeight
+      const clientHeight = currentEl.clientHeight
+      
+      // Calculate scroll percentage only if we can scroll
+      const scrollPercentage = scrollHeight > clientHeight 
+        ? scrollTop / (scrollHeight - clientHeight)
+        : 0
+      
+      // Apply same scroll percentage to target elements
+      const targets = []
+      if (previousCardContainer.value) targets.push(previousCardContainer.value)
+      if (nextCardContainer.value) targets.push(nextCardContainer.value)
+      
+      targets.forEach(target => {
+        if (target && target.$el) {
+          const targetEl = target.$el
+          const targetScrollHeight = targetEl.scrollHeight
+          const targetClientHeight = targetEl.clientHeight
+          
+          if (targetScrollHeight > targetClientHeight) {
+            const targetScrollTop = scrollPercentage * (targetScrollHeight - targetClientHeight)
+            targetEl.scrollTop = targetScrollTop
+          }
+        }
+      })
+      
+      requestAnimationFrame(() => {
+        isSyncingScroll.value = false
       })
     }
 
     const cleanupScrollSync = () => {
       if (currentCardContainer.value && currentCardContainer.value.$el) {
         const currentCardEl = currentCardContainer.value.$el
-        currentCardEl.removeEventListener('scroll', () => {})
+        currentCardEl.removeEventListener('scroll', handleScrollSync)
       }
     }
 
