@@ -1537,6 +1537,10 @@ export default {
   .username-section {
     min-width: 0;
   }
+  
+  .stat-item {
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 768px) {
