@@ -862,7 +862,7 @@ export default {
   }
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1050px) {
   .card-detail {
     height: auto;
     display: flex;
@@ -871,6 +871,7 @@ export default {
 
   .card-detail-container {
     align-items: flex-start;
+    overflow-y: auto; /* Add this line */
   }
 }
 </style>

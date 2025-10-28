@@ -848,6 +848,14 @@ export default {
   }
 }
 
+
+@media (max-width: 1050px) {
+  .card-page {
+    padding-bottom: 0;
+  }
+}
+
+
 /* Touch device optimizations */
 @media (hover: none) and (pointer: coarse) {
   .nav-arrow {
