@@ -864,7 +864,9 @@ export default {
 
 @media (max-width: 1000px) {
   .card-detail {
-    grid-template-columns: 1fr;
+    height: auto;
+    display: flex;
+    flex-direction: column-reverse;
   }
 }
 </style>
