@@ -1624,7 +1624,7 @@ export default {
     flex-direction: column;
     text-align: center;
     gap: 15px;
-    margin-left: 0;
+    /* margin-left: 0; */
     width: 100%;
     justify-content: center;
   }
@@ -1657,6 +1657,7 @@ export default {
     gap: 30px;
     text-align: center;
     align-items: center;
+    top: 35%;
   }
   
   .avatar {
