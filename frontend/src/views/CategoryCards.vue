@@ -341,19 +341,24 @@ export default {
     async loadCategoryCards() {
       this.loading = true
       try {
-        // Check if we're viewing user's cards from profile
+        // Check if we're viewing user's cards from profile - but only if explicitly coming from profile
+        const navigationType = this.$route.meta?.navigationType
         const viewingUserCards = sessionStorage.getItem('viewingUserCards') === 'true'
         const userCategory = sessionStorage.getItem('userCategory')
         
+        // Only use user cards view if we're explicitly coming from profile OR if the flag is set and category matches
+        const shouldUseUserCards = (navigationType === 'from-profile') || 
+                                  (viewingUserCards && this.categoryId === userCategory)
+        
         let response
-        if (viewingUserCards && this.categoryId === userCategory) {
+        if (shouldUseUserCards) {
           // Use user-specific endpoint
           response = await fetch(`/api/user/cards/by-category/${this.categoryId}?sort=${this.currentSort.field}&direction=${this.currentSort.direction}`)
           if (!response.ok) {
             throw new Error('Failed to fetch user cards')
           }
           response = await response.json()
-          this.userCardsView = true // Set flag for user cards view
+          this.userCardsView = true
         } else {
           // Use regular endpoint
           response = await fetchCardsByCategory(this.categoryId, this.currentSort.field, this.currentSort.direction)
@@ -366,7 +371,6 @@ export default {
         this.cards = response.cards
         
         // Apply saved search and sort - but only if we're returning from card detail
-        const navigationType = this.$route.meta?.navigationType
         if (navigationType === 'to-category') {
           this.applySavedFilters()
         } else {
@@ -380,10 +384,6 @@ export default {
         // Update category name to indicate user cards if applicable
         let baseCategoryName = this.getCategoryName(this.categoryId)
         this.categoryName = this.userCardsView ? `Your ${baseCategoryName}` : baseCategoryName
-        
-        console.log('Loaded category cards:', this.cards)
-        console.log('Navigation type:', navigationType)
-        console.log('User cards view:', this.userCardsView)
         
       } catch (err) {
         this.error = err

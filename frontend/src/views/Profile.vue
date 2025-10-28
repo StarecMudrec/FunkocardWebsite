@@ -515,20 +515,25 @@ export default {
     
     // Navigate to user's cards in this category
     const navigateToUserCategory = (category) => {
-      console.log('Navigating to user category:', category);
+      console.log('Navigating to user category:', category)
       
       // Clear any existing category state when navigating to a new category
       Object.keys(sessionStorage).forEach(key => {
         if (key.startsWith('category_state_')) {
-          sessionStorage.removeItem(key);
+          sessionStorage.removeItem(key)
         }
-      });
+      })
       
       // Store that we're viewing user's cards
-      sessionStorage.setItem('viewingUserCards', 'true');
-      sessionStorage.setItem('userCategory', category.id);
+      sessionStorage.setItem('viewingUserCards', 'true')
+      sessionStorage.setItem('userCategory', category.id)
       
-      router.push(`/category/${category.id}`);
+      // Set navigation type to indicate coming from profile
+      if (router.currentRoute.value.meta) {
+        router.currentRoute.value.meta.navigationType = 'from-profile'
+      }
+      
+      router.push(`/category/${category.id}`)
     }
     
     const getCategoryBackgroundClass = (category, index) => {

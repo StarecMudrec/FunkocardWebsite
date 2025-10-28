@@ -854,16 +854,25 @@ export default {
     },
     
     navigateToCategory(category) {
-      console.log('Navigating to category:', category);
+      console.log('Navigating to category:', category)
       
       // Clear any existing category state when navigating to a new category
       Object.keys(sessionStorage).forEach(key => {
         if (key.startsWith('category_state_')) {
-          sessionStorage.removeItem(key);
+          sessionStorage.removeItem(key)
         }
-      });
+      })
       
-      this.$router.push(`/category/${category.id}`);
+      // Clear user cards flags when navigating from homepage
+      sessionStorage.removeItem('viewingUserCards')
+      sessionStorage.removeItem('userCategory')
+      
+      // Set navigation type to indicate coming from homepage
+      if (this.$route.meta) {
+        this.$route.meta.navigationType = 'from-homepage'
+      }
+      
+      this.$router.push(`/category/${category.id}`)
     },
     
     getCategoryBackgroundClass(category, index) {
