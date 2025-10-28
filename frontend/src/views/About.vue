@@ -267,6 +267,10 @@ p {
     aspect-ratio: 1;
     font-size: 20px;
   }
+
+  .content {
+    top: 90px;
+  }
   
   h1 {
     font-size: 2.7rem;
