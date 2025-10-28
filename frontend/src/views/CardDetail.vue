@@ -228,25 +228,28 @@ export default {
     };
 
     const setupScrollSync = () => {
-      // Wait for next tick to ensure DOM is updated
+      // Wait for next tick to ensure DOM is updated, including videos
       nextTick(() => {
-        if (currentCardContainer.value && currentCardContainer.value.$el) {
-          const currentCardEl = currentCardContainer.value.$el;
-          
-          // Remove any existing event listener first
-          currentCardEl.removeEventListener('scroll', handleScrollSync);
-          
-          // Add scroll event listener to current card
-          currentCardEl.addEventListener('scroll', handleScrollSync);
-          
-          // Ensure the container starts at the correct scroll position
-          const savedScrollPosition = sessionStorage.getItem('cardDetailScrollPosition');
-          if (savedScrollPosition && !isScrolling.value) {
-            setTimeout(() => {
-              currentCardEl.scrollTop = parseInt(savedScrollPosition);
-            }, 50);
+        setTimeout(() => {
+          if (currentCardContainer.value && currentCardContainer.value.$el) {
+            const currentCardEl = currentCardContainer.value.$el;
+            
+            // Remove any existing event listener first
+            currentCardEl.removeEventListener('scroll', handleScrollSync);
+            
+            // Add scroll event listener to current card
+            currentCardEl.addEventListener('scroll', handleScrollSync);
+            
+            // Ensure the container starts at the correct scroll position
+            const savedScrollPosition = sessionStorage.getItem('cardDetailScrollPosition');
+            if (savedScrollPosition && !isScrolling.value) {
+              // Additional delay to ensure videos are fully loaded
+              setTimeout(() => {
+                currentCardEl.scrollTop = parseInt(savedScrollPosition);
+              }, 100);
+            }
           }
-        }
+        }, 50);
       });
     };
 
@@ -563,27 +566,26 @@ export default {
       // STEP 4: Preload adjacent cards for the new position
       await loadDetailedCardInfo();
 
-      // STEP 5: Setup scroll sync for the new cards
-      setupScrollSync();
-
-      // STEP 6: RESTORE SCROLL POSITION - This is the critical fix
-      // Wait for everything to be fully rendered and settled
-      await nextTick();
-      
-      // Small delay to ensure DOM is completely updated and video cards are loaded
+      // STEP 5: Setup scroll sync for the new cards - WITH DELAY to ensure videos are loaded
       setTimeout(() => {
-        if (currentCardContainer.value?.$el && currentScrollPosition > 0) {
-          console.log('Restoring scroll position to:', currentScrollPosition);
-          currentCardContainer.value.$el.scrollTop = currentScrollPosition;
-          
-          // Double-check after a brief moment to ensure it stuck
-          setTimeout(() => {
-            if (currentCardContainer.value?.$el && currentCardContainer.value.$el.scrollTop !== currentScrollPosition) {
-              console.log('Scroll position was reset, restoring again');
-              currentCardContainer.value.$el.scrollTop = currentScrollPosition;
-            }
-          }, 50);
-        }
+        setupScrollSync();
+        
+        // STEP 6: RESTORE SCROLL POSITION - This is the critical fix
+        // Wait for everything to be fully rendered and settled, including videos
+        setTimeout(() => {
+          if (currentCardContainer.value?.$el && currentScrollPosition > 0) {
+            console.log('Restoring scroll position to:', currentScrollPosition);
+            currentCardContainer.value.$el.scrollTop = currentScrollPosition;
+            
+            // Double-check after videos have had time to load
+            setTimeout(() => {
+              if (currentCardContainer.value?.$el && currentCardContainer.value.$el.scrollTop !== currentScrollPosition) {
+                console.log('Scroll position was reset by video, restoring again');
+                currentCardContainer.value.$el.scrollTop = currentScrollPosition;
+              }
+            }, 200); // Increased delay for video loading
+          }
+        }, 150);
       }, 100);
 
       // Final cleanup
