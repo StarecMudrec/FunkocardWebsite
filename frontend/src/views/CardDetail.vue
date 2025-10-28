@@ -47,7 +47,13 @@
       </div>
 
       <!-- Multi-card container -->
-      <div class="multi-card-viewport" ref="multiCardViewport">
+      <div 
+        class="multi-card-viewport" 
+        ref="multiCardViewport"
+        @touchstart="handleTouchStart"
+        @touchmove="handleTouchMove"
+        @touchend="handleTouchEnd"
+      >
         <div class="multi-card-container" ref="multiCardContainer" :style="containerStyle">
           <!-- Previous Card -->
           <div class="card-page previous-card" ref="previousCard">
@@ -170,6 +176,13 @@ export default {
     const currentCardContainer = ref(null)
     const nextCardContainer = ref(null)
 
+    // Touch/swipe handling
+    const touchStartX = ref(0)
+    const touchStartY = ref(0)
+    const touchEndX = ref(0)
+    const isSwiping = ref(false)
+    const swipeThreshold = 50 // Minimum distance for swipe to trigger navigation
+
     // Scroll synchronization
     const isSyncingScroll = ref(false)
 
@@ -224,6 +237,60 @@ export default {
         const currentCardEl = currentCardContainer.value.$el
         currentCardEl.removeEventListener('scroll', () => {})
       }
+    }
+
+    // Touch/swipe handlers
+    const handleTouchStart = (event) => {
+      if (isScrolling.value) return
+      
+      const touch = event.touches[0]
+      touchStartX.value = touch.clientX
+      touchStartY.value = touch.clientY
+      touchEndX.value = touch.clientX
+      isSwiping.value = false
+    }
+
+    const handleTouchMove = (event) => {
+      if (isScrolling.value) return
+      
+      const touch = event.touches[0]
+      touchEndX.value = touch.clientX
+      
+      // Calculate swipe distance
+      const deltaX = touchEndX.value - touchStartX.value
+      
+      // Only consider it swiping if we've moved enough horizontally
+      if (Math.abs(deltaX) > 10) {
+        isSwiping.value = true
+        event.preventDefault() // Prevent scrolling while swiping
+      }
+    }
+
+    const handleTouchEnd = () => {
+      if (isScrolling.value || !isSwiping.value) return
+      
+      const deltaX = touchEndX.value - touchStartX.value
+      const absDeltaX = Math.abs(deltaX)
+      
+      // Only trigger navigation if swipe distance exceeds threshold
+      if (absDeltaX >= swipeThreshold) {
+        if (deltaX > 0) {
+          // Swipe right - go to previous card
+          if (!isFirstCard.value) {
+            goToPreviousCard()
+          }
+        } else {
+          // Swipe left - go to next card
+          if (!isLastCard.value) {
+            goToNextCard()
+          }
+        }
+      }
+      
+      // Reset touch state
+      isSwiping.value = false
+      touchStartX.value = 0
+      touchEndX.value = 0
     }
 
     onUnmounted(() => {
@@ -628,7 +695,10 @@ export default {
       goBackToCategory,
       handleMediaDoubleClick,
       handleSaveError,
-      handleFileChange
+      handleFileChange,
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd
     }
   }
 }
@@ -655,6 +725,7 @@ export default {
   height: 100vh;
   overflow: hidden;
   position: relative;
+  touch-action: pan-y; /* Allow vertical scrolling but prevent horizontal */
 }
 
 .multi-card-container {
@@ -938,6 +1009,9 @@ export default {
   .card-page {
     padding-bottom: 0;
     padding-top: 0;
+  }
+  .multi-card-viewport {
+    touch-action: pan-y;
   }
 }
 
