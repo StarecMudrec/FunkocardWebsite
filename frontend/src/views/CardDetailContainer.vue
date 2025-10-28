@@ -878,9 +878,22 @@ export default {
   }
 
   .card-content-wrapper {
+    max-width: 100%;
     width: 100%;
     justify-content: center;
     padding: 0px 50px;
+  }
+
+  .shop-info p {
+    font-size: 30px;
+  }
+  
+  .shop-info h3 {
+    font-size: 35px;
+  }
+
+  .back-to-category-button {
+    font-size: 27px;
   }
 }
 </style>
