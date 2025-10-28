@@ -1574,8 +1574,8 @@ export default {
   }
   
   .arrow-icon {
-    width: 108px;
-    height: 108px;
+    width: 60px;
+    height: 60px;
   }
 
   .search-sort-container {
@@ -1639,13 +1639,6 @@ export default {
   
   .stat-item {
     font-size: 14px;
-  }
-  
-  .username-section {
-    max-width: 100%;
-    min-height: 120px;
-    margin-bottom: -100px; /* Adjust for smaller avatar on mobile */
-    min-width: auto;
   }
   
   .username-container {
