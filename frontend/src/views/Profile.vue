@@ -1509,6 +1509,7 @@ export default {
     flex-direction: column;
     align-content: center;
     justify-content: flex-start;
+    align-items: center;
     gap: 0px;
   }
 
