@@ -118,6 +118,7 @@
           playsinline
           @error="mediaError = true"
           @dblclick="$emit('media-double-click')"
+          @loadeddata="handleVideoLoad"
           disablePictureInPicture
         ></video>
         
@@ -181,6 +182,14 @@ export default {
       if (!description) return ''
       return description.replace(/Points:/g, '<strong>Points:</strong>')
     }
+
+    // Add this method to handle video load
+    const handleVideoLoad = () => {
+      console.log('Video loaded for Limited card');
+      // Don't do anything with scroll here - let the scroll sync handle it
+    };
+
+    // Update the video element in the template:
 
     const formatShopInfo = (shopData) => {
       if (!shopData || shopData === '-' || shopData === 'null' || shopData === 'None') {
