@@ -1624,7 +1624,7 @@ export default {
     flex-direction: column;
     text-align: center;
     gap: 15px;
-    /* margin-left: 0; */
+    margin-left: 10px;
     width: 100%;
     justify-content: center;
   }
