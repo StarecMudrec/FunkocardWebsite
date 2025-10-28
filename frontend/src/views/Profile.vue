@@ -1533,6 +1533,10 @@ export default {
   .profile-header {
     margin-top: calc(70vh);
   }
+
+  .username-section {
+    min-width: none;
+  }
 }
 
 @media (max-width: 768px) {
