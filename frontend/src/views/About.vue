@@ -266,6 +266,7 @@ p {
     width: 80vw;
     aspect-ratio: 1;
     font-size: 20px;
+    margin-bottom: 40px;
   }
 
   .content {
