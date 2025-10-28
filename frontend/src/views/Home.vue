@@ -689,6 +689,10 @@
   .category-card__title {
     font-size: 2.5rem;
   }
+
+  .category-card {    
+    border-radius: 40px;
+  }
 }
 
 /* Additional mobile optimizations */
