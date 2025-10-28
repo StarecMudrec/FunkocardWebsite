@@ -260,7 +260,7 @@ p {
 }
 
 /* Responsive design */
-@media (max-width: 768px) {
+@media (max-width: 890px) {
   .logo {
     width: 120px;
     height: 120px;
