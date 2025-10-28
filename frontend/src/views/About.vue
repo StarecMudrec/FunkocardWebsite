@@ -56,6 +56,28 @@ export default {
   font-family: 'Afacad', sans-serif;
 }
 
+/* Hide scrollbar for all browsers */
+.profile-background::-webkit-scrollbar,
+.content::-webkit-scrollbar,
+.categories-grid::-webkit-scrollbar,
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+.profile-background,
+.content,
+.categories-grid,
+html,
+body {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+#element::-webkit-scrollbar {
+    display: none;
+}
+
 .background-blur {
   position: absolute;
   top: 0;
