@@ -263,7 +263,7 @@ p {
 /* Responsive design */
 @media (max-width: 890px) {
   .logo {
-    width: 40vh;
+    width: 70vw;
     aspect-ratio: 1;
     font-size: 20px;
   }
