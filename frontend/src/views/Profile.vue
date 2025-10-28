@@ -1568,9 +1568,7 @@ export default {
   }
   
   .cover-arrow {
-    width: 210px;
-    height: 165px;
-    bottom: 20px;
+    bottom: 0px;
   }
   
   .arrow-icon {
