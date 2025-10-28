@@ -556,7 +556,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  overflow: auto;
+  overflow: hidden;
   height: 100vh;
   width: 100vw;
   font-family: 'Afacad', sans-serif;
@@ -853,22 +853,6 @@ export default {
   .card-page {
     padding-bottom: 0;
     padding-top: 0;
-  }
-  .fixed-container {
-    height: 100vh;
-    height: -webkit-fill-available; /* For mobile browsers */
-    overflow-y: auto;
-    align-items: flex-start; /* Changed from center to flex-start */
-  }
-  
-  .card-detail-wrapper {
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 20px 0;
   }
 }
 
