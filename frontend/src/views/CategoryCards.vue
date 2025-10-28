@@ -990,6 +990,16 @@ export default {
 
 /* Responsive design */
 @media (max-width: 800px) {
-  
+  .card-item {
+    max-width: 1000px;
+  }
+
+  .cards-container {
+    grid-template-columns: 1fr;
+  }
+
+  .cards-section-container {
+    border-radius: 35px;
+  }
 }
 </style>

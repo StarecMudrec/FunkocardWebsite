@@ -257,13 +257,6 @@ export default {
   display: none;
 }
 
-/* Show on desktop */
-@media (min-width: 769px) {
-  .selection-checkbox {
-    display: block;
-  }
-}
-
 .image-wrapper {
   position: relative;
   width: 100%;
@@ -362,35 +355,9 @@ export default {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 800px) {
   .card {
-    --card-width: 48vw;
-    margin: 8px 4px;
-
-    .selection-checkbox {
-      display: block;
-    }
-  }
-  .card.selected-animation {
-    animation: none;
-    transform: none;
-  }
-  /* Remove the old height calculation for mobile */
-  /* .image-wrapper {
-    height: calc(var(--card-width) * 1.4);
-  } */
-}
-
-@media (max-width: 480px) {
-  .card {
-    --card-width: 90vw;
-    margin: 8px auto;
-
-    .selection-checkbox {
-      display: block;
-      width: 30px;
-      height: 30px;
-    }
+    border-radius: 35px;
   }
 }
 
