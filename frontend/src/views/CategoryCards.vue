@@ -1009,5 +1009,9 @@ export default {
   .category-title {
     font-size: 4.5rem;
   }
+
+  .search-icon {
+    left: 5%;
+  }
 }
 </style>
