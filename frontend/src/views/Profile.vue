@@ -1504,7 +1504,19 @@ export default {
   grid-column: 1 / -1;
 }
 
-/* Responsive adjustments */
+@media (max-width: 768px) {
+  .avatar-and-username {
+    flex-direction: column;
+    align-content: center;
+    justify-content: flex-start;
+    gap: 0px;
+  }
+
+  .username-container {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
   .stats-list {
     grid-template-columns: 1fr; /* Single column on mobile */
