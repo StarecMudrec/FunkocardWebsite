@@ -28,7 +28,7 @@
         </div>
         
         <!-- Rarity and Points section -->
-        <h3 style="margin: 60px 0px 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
+        <h3 class="rarity" style="margin: 60px 0px 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
           <strong>Rarity: </strong>
           <span v-if="!editing.category">{{ card.category }}</span>
           <select
@@ -55,7 +55,7 @@
         </h3>
         <div v-if="categoryError" class="error-message">{{ categoryError }}</div>
         
-        <p style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
+        <p class="points" style="margin: 0;margin-bottom: 10px;font-size: 24px;line-height: 1.6;color: var(--text-color);text-align: start;left: 30px;position: relative;font-weight: normal;text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);">
           <span v-if="!editing.description" v-html="formatDescription(card.description)"></span>
           <textarea
             v-else
@@ -890,6 +890,22 @@ export default {
   
   .shop-info h3 {
     font-size: 35px;
+  }
+
+  .rarity {
+    font-size: 34px;
+  }
+
+  .points {
+    font-size: 34px;
+  }
+
+  .season-section h3 {
+    font-size: 34px;
+  }
+
+  .season-section p {
+    font-size: 28px;
   }
 
   .back-to-category-button {
