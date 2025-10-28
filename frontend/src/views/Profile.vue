@@ -254,7 +254,7 @@ export default {
 
     // Add scroll tracking
     const showScrollArrow = ref(true)
-    const scrollThreshold = 80 // Adjust this value as needed
+    const scrollThreshold = 50 // Adjust this value as needed
 
     // Scroll handler
     const handleScroll = () => {
