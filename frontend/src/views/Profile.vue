@@ -1511,10 +1511,15 @@ export default {
     justify-content: flex-start;
     align-items: center;
     gap: 0px;
+    top: 30%;
   }
 
   .username-container {
     display: none;
+  }
+
+  .profile-container {
+    margin-top: 30vh;
   }
 }
 
