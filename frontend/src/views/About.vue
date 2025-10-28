@@ -165,6 +165,7 @@ p {
   justify-content: center;
   margin-right: 3vw;
   font-size: 1.4rem;
+  padding-bottom: 30px;
 }
 
 .signature-link {
