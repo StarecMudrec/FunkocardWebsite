@@ -894,17 +894,16 @@ export default {
 
   .card-header-section {
     position: relative;
-    min-height: 120px; /* Reduce minimum height */
-    height: auto; /* Allow height to adjust */
+    min-height: 100px;
+    height: auto;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Align to top */
-    margin-bottom: 20px; /* Add spacing */
+    justify-content: flex-start;
   }
 
   .title-container {
-    position: relative; /* Change from absolute to relative */
-    bottom: auto; /* Remove absolute positioning */
+    position: relative;
+    bottom: auto;
     width: 100%;
     text-align: center;
     display: flex;
@@ -914,10 +913,10 @@ export default {
   }
 
   .main-divider {
-    position: relative; /* Change positioning */
+    position: relative;
     top: auto;
     bottom: auto;
-    margin: 15px 0; /* Add margin instead of absolute positioning */
+    margin: 15px 0;
   }
 
   .shop-info p {
