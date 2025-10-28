@@ -1522,8 +1522,12 @@ export default {
     margin-top: 30vh;
   }
 
+  .stats-section {
+    margin-top: 0px;
+  }
+  
   .stats-title {
-    margin-top: -50px;
+    margin-top: -20px;
   }
 }
 
