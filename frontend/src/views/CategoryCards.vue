@@ -1005,5 +1005,9 @@ export default {
   .category-cards-page {
     padding: 10px;
   }
+
+  .category-title {
+    font-size: 4.5rem;
+  }
 }
 </style>
