@@ -73,9 +73,10 @@ export default {
   position: absolute;
   z-index: 1;
   text-align: center;
-  left: 50%;
-  top: 100vh;
-  transform: translate(-50%, -100%);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
 }
 
 .logo-container {
