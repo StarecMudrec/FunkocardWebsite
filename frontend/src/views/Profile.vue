@@ -1535,7 +1535,7 @@ export default {
   }
 
   .username-section {
-    min-width: none;
+    min-width: 0;
   }
 }
 
