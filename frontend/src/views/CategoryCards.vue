@@ -1001,5 +1001,9 @@ export default {
   .cards-section-container {
     border-radius: 35px;
   }
+  
+  .category-cards-page {
+    padding: 10px;
+  }
 }
 </style>
