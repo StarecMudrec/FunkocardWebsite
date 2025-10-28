@@ -877,6 +877,7 @@ export default {
   .card-detail-container {
     align-items: flex-start;
     overflow-y: auto; /* Add this line */
+    scrollbar-width: none;
   }
 
   .card-content-wrapper {
