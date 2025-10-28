@@ -1,7 +1,7 @@
 <template>
   <div class="profile-background">
     <!-- Scroll arrow button -->
-    <div class="cover-arrow" @click="scrollToContent">
+    <div v-if="showScrollArrow" class="cover-arrow" @click="scrollToContent">
       <div class="cover-arrow__inner">
         <svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 106 65" fill="none">
           <path xmlns="http://www.w3.org/2000/svg" d="M54.4142 39.1858C53.6332 39.9669 52.3668 39.9669 51.5858 39.1858L13.7809 1.38091C12.9998 0.59986 11.7335 0.59986 10.9525 1.38091L1.41421 10.9192C0.633164 11.7002 0.633165 12.9665 1.41421 13.7476L51.5858 63.9192C52.3668 64.7002 53.6332 64.7002 54.4142 63.9192L104.586 13.7476C105.367 12.9665 105.367 11.7002 104.586 10.9192L95.0475 1.38091C94.2665 0.599859 93.0002 0.59986 92.2191 1.38091L54.4142 39.1858Z" fill="#FFFFFF"/>
@@ -249,6 +249,16 @@ export default {
     const currentSort = ref({ field: 'default', direction: 'asc' })
     const loading = ref(false)
     const error = ref(null)
+
+    // Add scroll tracking
+    const showScrollArrow = ref(true)
+    const scrollThreshold = 200 // Adjust this value as needed
+
+    // Scroll handler
+    const handleScroll = () => {
+      const scrollY = window.scrollY || window.pageYOffset
+      showScrollArrow.value = scrollY < scrollThreshold
+    }
 
     // Computed categories
     const categories = computed(() => store.state.categories || [])
@@ -716,6 +726,9 @@ export default {
         return
       }
       
+      // Add scroll event listener
+      window.addEventListener('scroll', handleScroll)
+
       await fetchUserData()
       
       // Fetch categories data
@@ -737,6 +750,11 @@ export default {
       
       // Also adjust on window resize
       window.addEventListener('resize', adjustUsernameFontSize)
+    })
+
+    onUnmounted(() => {
+      // Clean up scroll event listener
+      window.removeEventListener('scroll', handleScroll)
     })
 
     return {
@@ -764,7 +782,8 @@ export default {
       toggleSortDropdown,
       closeSortDropdown,
       sortBy,
-      scrollToContent
+      scrollToContent,
+      showScrollArrow, // Add this to the return object
     }
   }
 }
