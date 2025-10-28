@@ -187,57 +187,75 @@ export default {
     const isSyncingScroll = ref(false)
 
     const syncScrollPositions = (sourceElement, targetElements) => {
-      if (isSyncingScroll.value) return
+      if (isSyncingScroll.value) return;
       
-      isSyncingScroll.value = true
+      isSyncingScroll.value = true;
       
-      const scrollTop = sourceElement.scrollTop
-      const scrollHeight = sourceElement.scrollHeight
-      const clientHeight = sourceElement.clientHeight
+      const scrollTop = sourceElement.scrollTop;
+      const scrollHeight = sourceElement.scrollHeight;
+      const clientHeight = sourceElement.clientHeight;
+      
+      // Don't sync if the source element doesn't have meaningful scroll height
+      if (scrollHeight <= clientHeight) {
+        isSyncingScroll.value = false;
+        return;
+      }
       
       // Calculate scroll percentage
-      const scrollPercentage = scrollTop / (scrollHeight - clientHeight)
+      const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
       
       // Apply same scroll percentage to target elements
       targetElements.forEach(target => {
         if (target && target.$el) {
-          const targetScrollHeight = target.$el.scrollHeight
-          const targetClientHeight = target.$el.clientHeight
-          const targetScrollTop = scrollPercentage * (targetScrollHeight - targetClientHeight)
-          target.$el.scrollTop = targetScrollTop
+          const targetScrollHeight = target.$el.scrollHeight;
+          const targetClientHeight = target.$el.clientHeight;
+          
+          // Only sync if target has scrollable content
+          if (targetScrollHeight > targetClientHeight) {
+            const targetScrollTop = scrollPercentage * (targetScrollHeight - targetClientHeight);
+            target.$el.scrollTop = targetScrollTop;
+          }
         }
-      })
+      });
       
       // Use requestAnimationFrame to reset the flag
       requestAnimationFrame(() => {
-        isSyncingScroll.value = false
-      })
-    }
+        isSyncingScroll.value = false;
+      });
+    };
 
     const setupScrollSync = () => {
       // Wait for next tick to ensure DOM is updated
       nextTick(() => {
         if (currentCardContainer.value && currentCardContainer.value.$el) {
-          const currentCardEl = currentCardContainer.value.$el
+          const currentCardEl = currentCardContainer.value.$el;
+          
+          // Remove any existing event listener first
+          currentCardEl.removeEventListener('scroll', handleScrollSync);
           
           // Add scroll event listener to current card
-          currentCardEl.addEventListener('scroll', () => {
-            const targets = []
-            if (previousCardContainer.value) targets.push(previousCardContainer.value)
-            if (nextCardContainer.value) targets.push(nextCardContainer.value)
-            
-            syncScrollPositions(currentCardEl, targets)
-          })
+          currentCardEl.addEventListener('scroll', handleScrollSync);
         }
-      })
-    }
+      });
+    };
+
+    const handleScrollSync = () => {
+      if (!currentCardContainer.value || !currentCardContainer.value.$el) return;
+      
+      const currentCardEl = currentCardContainer.value.$el;
+      const targets = [];
+      if (previousCardContainer.value) targets.push(previousCardContainer.value);
+      if (nextCardContainer.value) targets.push(nextCardContainer.value);
+      
+      syncScrollPositions(currentCardEl, targets);
+    };
 
     const cleanupScrollSync = () => {
       if (currentCardContainer.value && currentCardContainer.value.$el) {
-        const currentCardEl = currentCardContainer.value.$el
-        currentCardEl.removeEventListener('scroll', () => {})
+        const currentCardEl = currentCardContainer.value.$el;
+        currentCardEl.removeEventListener('scroll', handleScrollSync);
       }
-    }
+    };
 
     // Touch/swipe handlers
     const handleTouchStart = (event) => {
@@ -483,55 +501,63 @@ export default {
     }
 
     const navigateToCard = async (targetIndex, direction) => {
-      if (isScrolling.value || targetIndex < 0 || targetIndex >= allCards.value.length) return
+      if (isScrolling.value || targetIndex < 0 || targetIndex >= allCards.value.length) return;
 
-      isScrolling.value = true
-      scrollDirection.value = direction
+      isScrolling.value = true;
+      scrollDirection.value = direction;
 
       // Clean up existing scroll sync
-      cleanupScrollSync()
+      cleanupScrollSync();
 
       // Update URL without triggering navigation
-      const newCardId = allCards.value[targetIndex].id
-      window.history.replaceState({}, '', `/card/${newCardId}`)
+      const newCardId = allCards.value[targetIndex].id;
+      window.history.replaceState({}, '', `/card/${newCardId}`);
 
       // STEP 1: Scroll to adjacent card
-      let targetTransform
+      let targetTransform;
       if (direction === 'left') {
-        targetTransform = 0 // Move to show previous card
+        targetTransform = 0; // Move to show previous card
       } else {
-        targetTransform = -200 // Move to show next card
+        targetTransform = -200; // Move to show next card
       }
 
       // Animate to the target position
-      currentTransform.value = targetTransform
+      currentTransform.value = targetTransform;
 
       // Wait for the scroll animation to complete
-      await new Promise(resolve => setTimeout(resolve, 300))
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       // STEP 2: Replace the center section card with the new card
-      currentCardIndex.value = targetIndex
+      currentCardIndex.value = targetIndex;
       
       // Update displayed cards - this replaces the center card
-      updateDisplayedCards()
+      updateDisplayedCards();
 
       // STEP 3: Teleport back to center position without animation
-      isScrolling.value = false // Disable transition for instant teleport
-      currentTransform.value = -100 // Reset to center
+      isScrolling.value = false; // Disable transition for instant teleport
+      currentTransform.value = -100; // Reset to center
       
       // Force a reflow to ensure the teleport happens immediately
-      await nextTick()
+      await nextTick();
       
-      // STEP 4: Preload adjacent cards for the new position
-      await loadDetailedCardInfo()
+      // STEP 4: Wait a bit longer for video cards to potentially load
+      const isVideoCard = allCards.value[targetIndex]?.category === 'Limited ⚠️';
+      if (isVideoCard) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      // STEP 5: Preload adjacent cards for the new position
+      await loadDetailedCardInfo();
 
-      // Setup scroll sync for the new cards
-      setupScrollSync()
+      // Setup scroll sync for the new cards with a small delay
+      setTimeout(() => {
+        setupScrollSync();
+      }, 50);
 
       // Final cleanup
-      isScrolling.value = false
-      scrollDirection.value = null
-    }
+      isScrolling.value = false;
+      scrollDirection.value = null;
+    };
 
     const goToPreviousCard = () => {
       if (isFirstCard.value || isScrolling.value) return
