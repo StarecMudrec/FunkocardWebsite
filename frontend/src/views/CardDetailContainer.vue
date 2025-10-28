@@ -106,7 +106,7 @@
         </div>
       </div>
       
-      <div class="card-image-container">
+      <div class="card-image-container" :key="`media-${card.id}-${isLimitedCard}`">
         <!-- Video for Limited cards -->
         <video 
           v-if="isLimitedCard && card.img && !mediaError" 
