@@ -52,7 +52,7 @@ export default {
   padding: 20px;
   /* max-width: 1200px;
   margin: 0 auto; */
-  overflow: hidden;
+  /* overflow: hidden; */
   font-family: 'Afacad', sans-serif;
 }
 
