@@ -947,5 +947,9 @@ export default {
   .card-detail-container {
     padding: 27px;
   }
+
+  .card-content-wrapper {
+    padding: 0px 30px;
+  }
 }
 </style>
