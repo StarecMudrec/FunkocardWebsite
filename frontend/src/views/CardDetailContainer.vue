@@ -869,7 +869,7 @@ export default {
     flex-direction: column-reverse;
     align-items: center;
     padding: 0;
-    gap: 0;
+    gap: 10px;
     border-radius: 30px;
   }
 
