@@ -893,19 +893,19 @@ export default {
   }
 
   .rarity {
-    font-size: 34px;
+    font-size: 34px !important;
   }
 
   .points {
-    font-size: 34px;
+    font-size: 34px !important;
   }
 
   .season-section h3 {
-    font-size: 34px;
+    font-size: 34px !important;
   }
 
   .season-section p {
-    font-size: 28px;
+    font-size: 28px !important;
   }
 
   .back-to-category-button {
