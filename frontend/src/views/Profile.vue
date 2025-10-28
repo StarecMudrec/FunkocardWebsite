@@ -1635,6 +1635,7 @@ export default {
   
   .stats-title {
     font-size: 50px;
+    text-align: center;
   }
   
   .stat-item {
