@@ -108,7 +108,7 @@ export default {
   border-top-right-radius: 10px;
   border-top: 2px solid #333;
   width: 100vw;
-  height: 34vh;
+  /* height: 34vh; */
 }
 
 h1 {
