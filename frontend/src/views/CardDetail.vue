@@ -852,6 +852,7 @@ export default {
 @media (max-width: 1050px) {
   .card-page {
     padding-bottom: 0;
+    padding-top: 100px;
   }
 }
 
