@@ -867,11 +867,20 @@ export default {
     height: auto;
     display: flex;
     flex-direction: column-reverse;
+    align-items: center;
+    padding: 0;
+    gap: 0;
   }
 
   .card-detail-container {
     align-items: flex-start;
     overflow-y: auto; /* Add this line */
+  }
+
+  .card-content-wrapper {
+    width: 100%;
+    justify-content: center;
+    padding: 0px 50px;
   }
 }
 </style>
