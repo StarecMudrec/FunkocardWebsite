@@ -871,6 +871,7 @@ export default {
     padding: 0;
     gap: 10px;
     border-radius: 30px;
+    margin-top: 100px;
   }
 
   .card-detail-container {
