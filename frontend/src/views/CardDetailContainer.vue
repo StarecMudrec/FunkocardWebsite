@@ -930,7 +930,7 @@ export default {
 
   .rarity {
     font-size: 34px !important;
-    margin-top: 0;
+    margin-top: 0 !important;
   }
 
   .points {
