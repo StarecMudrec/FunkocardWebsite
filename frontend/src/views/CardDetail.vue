@@ -213,7 +213,10 @@ export default {
           // Only sync if target has scrollable content
           if (targetScrollHeight > targetClientHeight) {
             const targetScrollTop = scrollPercentage * (targetScrollHeight - targetClientHeight);
-            target.$el.scrollTop = targetScrollTop;
+            // Only update if the difference is significant to avoid jitter
+            if (Math.abs(target.$el.scrollTop - targetScrollTop) > 1) {
+              target.$el.scrollTop = targetScrollTop;
+            }
           }
         }
       });
@@ -506,6 +509,9 @@ export default {
       isScrolling.value = true;
       scrollDirection.value = direction;
 
+      // Store current scroll position before navigation
+      const currentScrollPosition = currentCardContainer.value?.$el?.scrollTop || 0;
+
       // Clean up existing scroll sync
       cleanupScrollSync();
 
@@ -540,19 +546,25 @@ export default {
       // Force a reflow to ensure the teleport happens immediately
       await nextTick();
       
-      // STEP 4: Wait a bit longer for video cards to potentially load
-      const isVideoCard = allCards.value[targetIndex]?.category === 'Limited ⚠️';
-      if (isVideoCard) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-      // STEP 5: Preload adjacent cards for the new position
+      // STEP 4: Preload adjacent cards for the new position
       await loadDetailedCardInfo();
 
-      // Setup scroll sync for the new cards with a small delay
-      setTimeout(() => {
-        setupScrollSync();
-      }, 50);
+      // STEP 5: Setup scroll sync for the new cards
+      setupScrollSync();
+
+      // STEP 6: Restore scroll position for non-video cards
+      // Only restore if we're not going to a video card and had a previous position
+      const isVideoCard = allCards.value[targetIndex]?.category === 'Limited ⚠️';
+      if (!isVideoCard && currentScrollPosition > 0) {
+        nextTick(() => {
+          if (currentCardContainer.value?.$el) {
+            // Small delay to ensure DOM is fully updated
+            setTimeout(() => {
+              currentCardContainer.value.$el.scrollTop = currentScrollPosition;
+            }, 50);
+          }
+        });
+      }
 
       // Final cleanup
       isScrolling.value = false;
