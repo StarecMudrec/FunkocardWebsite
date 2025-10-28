@@ -1011,7 +1011,7 @@ export default {
   }
 
   .search-icon {
-    left: 5%;
+    left: 17px;
   }
 }
 </style>
