@@ -1504,7 +1504,7 @@ export default {
   grid-column: 1 / -1;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1500px) {
   .avatar-and-username {
     flex-direction: column;
     align-content: center;
