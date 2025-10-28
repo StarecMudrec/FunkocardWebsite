@@ -911,7 +911,6 @@ export default {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 15px; /* Add spacing */
   }
 
   .main-divider {
@@ -980,7 +979,7 @@ export default {
   }
 
   .card-detail-container {
-    padding: 27px;
+    padding: 20px;
   }
 
   .card-content-wrapper {
