@@ -1010,7 +1010,7 @@ export default {
   }
 
   .card-detail-container {
-    padding: 20px;
+    padding: 0px;
   }
 
   .card-content-wrapper {
