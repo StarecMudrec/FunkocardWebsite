@@ -1589,6 +1589,7 @@ export default {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     padding: 20px 15px;
     gap: 15px;
+    margin-top: 0;
   }
   
   .category-card__content {
