@@ -1634,11 +1634,11 @@ export default {
   }
   
   .stats-title {
-    font-size: 20px;
+    font-size: 50px;
   }
   
   .stat-item {
-    font-size: 14px;
+    font-size: 24px;
   }
   
   .username-container {
