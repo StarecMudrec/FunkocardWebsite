@@ -1613,7 +1613,7 @@ export default {
 
   .profile-container {
     padding: 30px 20px;
-    max-width: 350px;
+    width: 100vw;
   }
   
   .profile-header h1 {
