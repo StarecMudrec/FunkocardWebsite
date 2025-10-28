@@ -1196,11 +1196,11 @@ export default {
 }
 
 .stats-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   max-height: 30vh;
-  flex-wrap: wrap;
+  overflow-y: auto;
 }
 
 .stat-item {
@@ -1506,6 +1506,15 @@ export default {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .stats-list {
+    grid-template-columns: 1fr; /* Single column on mobile */
+    max-height: 40vh; /* Slightly taller on mobile */
+  }
+  
+  .stat-item {
+    font-size: 14px;
+  }
+  
   .categories-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     padding: 20px 15px;
@@ -1633,21 +1642,6 @@ export default {
     width: 20px;
     height: 20px;
     border-width: 2px;
-  }
-}
-
-@media (max-width: 480px) {
-  .categories-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .search-input {
-    padding: 10px 35px 10px 40px;
-    font-size: 0.9rem;
-  }
-
-  .search-icon {
-    left: 12px;
   }
 }
 </style>
