@@ -1011,6 +1011,7 @@ export default {
 
   .card-detail-container {
     padding: 0px;
+    padding-bottom: 50px;
   }
 
   .card-content-wrapper {
