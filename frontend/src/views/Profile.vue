@@ -1577,7 +1577,7 @@ export default {
   }
 
   .search-sort-container {
-    flex-direction: column;
+    /* flex-direction: column; */
     gap: 10px;
     max-width: 400px;
   }
