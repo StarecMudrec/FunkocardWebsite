@@ -238,6 +238,14 @@ export default {
           
           // Add scroll event listener to current card
           currentCardEl.addEventListener('scroll', handleScrollSync);
+          
+          // Ensure the container starts at the correct scroll position
+          const savedScrollPosition = sessionStorage.getItem('cardDetailScrollPosition');
+          if (savedScrollPosition && !isScrolling.value) {
+            setTimeout(() => {
+              currentCardEl.scrollTop = parseInt(savedScrollPosition);
+            }, 50);
+          }
         }
       });
     };
@@ -249,6 +257,9 @@ export default {
       const targets = [];
       if (previousCardContainer.value) targets.push(previousCardContainer.value);
       if (nextCardContainer.value) targets.push(nextCardContainer.value);
+      
+      // Save current scroll position for restoration
+      sessionStorage.setItem('cardDetailScrollPosition', currentCardEl.scrollTop.toString());
       
       syncScrollPositions(currentCardEl, targets);
     };
@@ -317,6 +328,7 @@ export default {
     onUnmounted(() => {
       // Clean up saved card order when leaving the detail view
       sessionStorage.removeItem('currentCardOrder')
+      sessionStorage.removeItem('cardDetailScrollPosition')
       cleanupScrollSync()
     })
 
@@ -359,10 +371,11 @@ export default {
         next: displayedCards.value.next?.name
       })
 
-      // Setup scroll sync after cards are updated
-      nextTick(() => {
-        setupScrollSync()
-      })
+      // Setup scroll sync after cards are updated with a delay
+      // to ensure DOM is fully rendered
+      setTimeout(() => {
+        setupScrollSync();
+      }, 100);
     }
 
     const loadAllCards = async () => {
@@ -509,8 +522,9 @@ export default {
       isScrolling.value = true;
       scrollDirection.value = direction;
 
-      // Store current scroll position before navigation
+      // Store current scroll position BEFORE any navigation happens
       const currentScrollPosition = currentCardContainer.value?.$el?.scrollTop || 0;
+      console.log('Storing scroll position:', currentScrollPosition);
 
       // Clean up existing scroll sync
       cleanupScrollSync();
@@ -552,19 +566,25 @@ export default {
       // STEP 5: Setup scroll sync for the new cards
       setupScrollSync();
 
-      // STEP 6: Restore scroll position for non-video cards
-      // Only restore if we're not going to a video card and had a previous position
-      const isVideoCard = allCards.value[targetIndex]?.category === 'Limited ⚠️';
-      if (!isVideoCard && currentScrollPosition > 0) {
-        nextTick(() => {
-          if (currentCardContainer.value?.$el) {
-            // Small delay to ensure DOM is fully updated
-            setTimeout(() => {
+      // STEP 6: RESTORE SCROLL POSITION - This is the critical fix
+      // Wait for everything to be fully rendered and settled
+      await nextTick();
+      
+      // Small delay to ensure DOM is completely updated and video cards are loaded
+      setTimeout(() => {
+        if (currentCardContainer.value?.$el && currentScrollPosition > 0) {
+          console.log('Restoring scroll position to:', currentScrollPosition);
+          currentCardContainer.value.$el.scrollTop = currentScrollPosition;
+          
+          // Double-check after a brief moment to ensure it stuck
+          setTimeout(() => {
+            if (currentCardContainer.value?.$el && currentCardContainer.value.$el.scrollTop !== currentScrollPosition) {
+              console.log('Scroll position was reset, restoring again');
               currentCardContainer.value.$el.scrollTop = currentScrollPosition;
-            }, 50);
-          }
-        });
-      }
+            }
+          }, 50);
+        }
+      }, 100);
 
       // Final cleanup
       isScrolling.value = false;
