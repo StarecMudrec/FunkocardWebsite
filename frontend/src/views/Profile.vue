@@ -1529,6 +1529,10 @@ export default {
   .stats-title {
     margin-top: -20px;
   }
+
+  .profile-header {
+    margin-top: calc(70vh);
+  }
 }
 
 @media (max-width: 768px) {
