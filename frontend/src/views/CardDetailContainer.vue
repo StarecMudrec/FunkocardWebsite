@@ -868,5 +868,9 @@ export default {
     display: flex;
     flex-direction: column-reverse;
   }
+
+  .card-detail-container {
+    align-items: flex-start;
+  }
 }
 </style>
