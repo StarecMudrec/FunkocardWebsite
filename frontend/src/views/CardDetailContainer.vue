@@ -257,104 +257,114 @@ export default {
       maxWidth = 350,
       maxHeight = 120
     }) => {
-      const tempParent = document.createElement('div')
-      tempParent.style.width = `${maxWidth}px`
-      tempParent.style.height = `${maxHeight}px`
-      tempParent.style.visibility = 'hidden'
-      tempParent.style.position = 'absolute'
-      tempParent.style.top = '0'
-      tempParent.style.left = '0'
-      tempParent.style.overflow = 'hidden'
+      // For mobile devices, use different dimensions
+      const isMobile = window.innerWidth <= 1050;
       
-      const tempElement = element.cloneNode(true)
-      tempElement.style.whiteSpace = 'nowrap'
-      tempElement.style.width = 'auto'
-      tempElement.style.height = 'auto'
-      tempElement.style.lineHeight = '1'
+      if (isMobile) {
+        maxWidth = window.innerWidth - 100; // Account for padding
+        maxHeight = 150; // Allow more height for wrapped text
+      }
+
+      const tempParent = document.createElement('div');
+      tempParent.style.width = `${maxWidth}px`;
+      tempParent.style.height = `${maxHeight}px`;
+      tempParent.style.visibility = 'hidden';
+      tempParent.style.position = 'absolute';
+      tempParent.style.top = '0';
+      tempParent.style.left = '0';
+      tempParent.style.overflow = 'hidden';
       
-      tempParent.appendChild(tempElement)
-      document.body.appendChild(tempParent)
+      const tempElement = element.cloneNode(true);
+      tempElement.style.whiteSpace = 'nowrap';
+      tempElement.style.width = 'auto';
+      tempElement.style.height = 'auto';
+      tempElement.style.lineHeight = '1';
       
-      let i = minSize
-      let overflow = false
-      let needsWrap = false
+      tempParent.appendChild(tempElement);
+      document.body.appendChild(tempParent);
+      
+      let i = minSize;
+      let overflow = false;
+      let needsWrap = false;
       
       while (!overflow && i < maxSize) {
-        tempElement.style.fontSize = `${i}px`
-        void tempElement.offsetWidth
+        tempElement.style.fontSize = `${i}px`;
+        void tempElement.offsetWidth;
         
         overflow = isOverflown({
           clientWidth: maxWidth,
           clientHeight: maxHeight,
           scrollWidth: tempElement.scrollWidth,
           scrollHeight: tempElement.scrollHeight
-        })
+        });
         
-        if (!overflow) i += step
+        if (!overflow) i += step;
       }
       
-      let optimalSize = overflow ? i - step : i
+      let optimalSize = overflow ? i - step : i;
       
-      if (optimalSize <= minSize && overflow) {
-        tempElement.style.whiteSpace = 'normal'
-        tempElement.style.lineHeight = '1.1'
-        tempElement.style.width = '100%'
+      // For mobile, be more aggressive about wrapping
+      if ((optimalSize <= minSize + 5 && overflow) || isMobile) {
+        tempElement.style.whiteSpace = 'normal';
+        tempElement.style.lineHeight = '1.2'; // Slightly more line height for mobile
+        tempElement.style.width = '100%';
         
-        i = minSize
-        overflow = false
+        i = minSize;
+        overflow = false;
         
         while (!overflow && i < maxSize) {
-          tempElement.style.fontSize = `${i}px`
-          void tempElement.offsetWidth
-          overflow = tempElement.scrollHeight > maxHeight
+          tempElement.style.fontSize = `${i}px`;
+          void tempElement.offsetWidth;
+          overflow = tempElement.scrollHeight > maxHeight;
           
-          if (!overflow) i += step
+          if (!overflow) i += step;
         }
         
-        optimalSize = overflow ? i - step : i
-        needsWrap = true
+        optimalSize = overflow ? i - step : i;
+        needsWrap = true;
       }
       
-      document.body.removeChild(tempParent)
+      document.body.removeChild(tempParent);
       
-      return { optimalSize, needsWrap }
+      return { optimalSize, needsWrap };
     }
 
     const adjustFontSize = () => {
       nextTick(() => {
-        if (!cardNameRef.value) return
+        if (!cardNameRef.value) return;
         
-        const element = cardNameRef.value
+        const element = cardNameRef.value;
+        const isMobile = window.innerWidth <= 1050;
         
-        element.style.fontSize = ''
-        element.style.whiteSpace = 'nowrap'
-        element.style.lineHeight = '1'
-        element.style.width = 'auto'
-        element.style.height = 'auto'
-        element.classList.remove('wrapped')
+        element.style.fontSize = '';
+        element.style.whiteSpace = 'nowrap';
+        element.style.lineHeight = '1';
+        element.style.width = 'auto';
+        element.style.height = 'auto';
+        element.classList.remove('wrapped');
         
         const { optimalSize, needsWrap } = resizeText({
           element: element,
-          minSize: 32,
-          maxSize: 60,
+          minSize: isMobile ? 28 : 32, // Smaller min size for mobile
+          maxSize: isMobile ? 48 : 60, // Smaller max size for mobile
           step: 1,
-          maxWidth: 350,
-          maxHeight: 120
-        })
+          maxWidth: isMobile ? window.innerWidth - 100 : 350,
+          maxHeight: isMobile ? 150 : 120
+        });
         
-        element.style.fontSize = `${optimalSize}px`
+        element.style.fontSize = `${optimalSize}px`;
         
         if (needsWrap) {
-          element.classList.add('wrapped')
-          element.style.whiteSpace = 'normal'
-          element.style.lineHeight = '1.1'
-          element.style.width = '100%'
+          element.classList.add('wrapped');
+          element.style.whiteSpace = 'normal';
+          element.style.lineHeight = isMobile ? '1.2' : '1.1'; // Better line height for mobile
+          element.style.width = '100%';
         } else {
-          element.style.whiteSpace = 'nowrap'
-          element.style.lineHeight = '1'
-          element.style.width = 'auto'
+          element.style.whiteSpace = 'nowrap';
+          element.style.lineHeight = '1';
+          element.style.width = 'auto';
         }
-      })
+      });
     }
 
     // Editing functions
@@ -493,6 +503,8 @@ export default {
         setTimeout(adjustFontSize, 100)
         setTimeout(adjustFontSize, 500)
       }
+
+      window.addEventListener('resize', adjustFontSize);
     })
 
     return {
