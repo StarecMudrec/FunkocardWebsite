@@ -1543,7 +1543,7 @@ export default {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 800px) {
   .stats-list {
     grid-template-columns: 1fr; /* Single column on mobile */
     max-height: 40vh; /* Slightly taller on mobile */
