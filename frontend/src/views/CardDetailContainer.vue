@@ -107,21 +107,29 @@
       </div>
       
       <div class="card-image-container">
-        <!-- Single media element that changes type -->
-        <component
-          :is="isLimitedCard ? 'video' : 'img'"
-          :src="`/api/card_image/${card.img}`"
-          :alt="card.name"
+        <!-- Video for Limited cards -->
+        <video 
+          v-if="isLimitedCard && card.img && !mediaError" 
+          :src="`/api/card_image/${card.img}`" 
           class="card-detail-media"
-          :autoplay="isLimitedCard"
-          :loop="isLimitedCard"
-          :muted="isLimitedCard"
-          :playsinline="isLimitedCard"
+          autoplay
+          loop
+          muted
+          playsinline
           @error="mediaError = true"
           @dblclick="$emit('media-double-click')"
-          :disablePictureInPicture="isLimitedCard"
-          v-if="card.img && !mediaError"
-        ></component>
+          disablePictureInPicture
+        ></video>
+        
+        <!-- Image for non-Limited cards -->
+        <img 
+          v-else-if="card.img && !mediaError" 
+          :src="`/api/card_image/${card.img}`" 
+          :alt="card.name" 
+          class="card-detail-media"
+          @error="mediaError = true"
+          @dblclick="$emit('media-double-click')"
+        />
         
         <div v-else class="image-placeholder">No media available</div>
       </div>
