@@ -119,6 +119,7 @@
           @error="mediaError = true"
           @dblclick="$emit('media-double-click')"
           @loadeddata="handleVideoLoad"
+          @loadstart="handleVideoLoadStart"
           disablePictureInPicture
         ></video>
         
@@ -183,13 +184,20 @@ export default {
       return description.replace(/Points:/g, '<strong>Points:</strong>')
     }
 
-    // Add this method to handle video load
+    const videoLoaded = ref(false)
+    const videoLoading = ref(false)
+
     const handleVideoLoad = () => {
       console.log('Video loaded for Limited card');
-      // Don't do anything with scroll here - let the scroll sync handle it
+      videoLoaded.value = true;
+      videoLoading.value = false;
     };
 
-    // Update the video element in the template:
+    const handleVideoLoadStart = () => {
+      console.log('Video loading started');
+      videoLoading.value = true;
+      videoLoaded.value = false;
+    };
 
     const formatShopInfo = (shopData) => {
       if (!shopData || shopData === '-' || shopData === 'null' || shopData === 'None') {
@@ -540,7 +548,9 @@ export default {
       cancelEdit,
       saveField,
       containerRef,
-      adjustFontSize
+      adjustFontSize,
+      handleVideoLoad,
+      handleVideoLoadStart
     }
   }
 }

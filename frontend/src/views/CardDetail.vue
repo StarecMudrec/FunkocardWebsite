@@ -240,14 +240,8 @@ export default {
             // Add scroll event listener to current card
             currentCardEl.addEventListener('scroll', handleScrollSync);
             
-            // Ensure the container starts at the correct scroll position
-            const savedScrollPosition = sessionStorage.getItem('cardDetailScrollPosition');
-            if (savedScrollPosition && !isScrolling.value) {
-              // Additional delay to ensure videos are fully loaded
-              setTimeout(() => {
-                currentCardEl.scrollTop = parseInt(savedScrollPosition);
-              }, 100);
-            }
+            // Don't automatically restore scroll position here - let navigateToCard handle it
+            // This prevents conflicts with the video loading process
           }
         }, 50);
       });
@@ -566,27 +560,52 @@ export default {
       // STEP 4: Preload adjacent cards for the new position
       await loadDetailedCardInfo();
 
-      // STEP 5: Setup scroll sync for the new cards - WITH DELAY to ensure videos are loaded
-      setTimeout(() => {
-        setupScrollSync();
+      // STEP 5: Setup scroll sync for the new cards
+      setupScrollSync();
+
+      // STEP 6: CRITICAL FIX - Wait for ALL content to load including videos
+      // This is the key change - we wait longer and check multiple times
+      const restoreScrollWithRetry = async (attempt = 0) => {
+        if (attempt > 5) {
+          console.log('Max retry attempts reached for scroll restoration');
+          return;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100 + (attempt * 50))); // Increasing delays
         
-        // STEP 6: RESTORE SCROLL POSITION - This is the critical fix
-        // Wait for everything to be fully rendered and settled, including videos
-        setTimeout(() => {
-          if (currentCardContainer.value?.$el && currentScrollPosition > 0) {
-            console.log('Restoring scroll position to:', currentScrollPosition);
-            currentCardContainer.value.$el.scrollTop = currentScrollPosition;
-            
-            // Double-check after videos have had time to load
-            setTimeout(() => {
-              if (currentCardContainer.value?.$el && currentCardContainer.value.$el.scrollTop !== currentScrollPosition) {
-                console.log('Scroll position was reset by video, restoring again');
-                currentCardContainer.value.$el.scrollTop = currentScrollPosition;
-              }
-            }, 200); // Increased delay for video loading
+        if (currentCardContainer.value?.$el) {
+          const container = currentCardContainer.value.$el;
+          
+          // Check if the container is stable (not changing height)
+          const currentHeight = container.scrollHeight;
+          
+          // Wait a bit more to see if height stabilizes
+          await new Promise(resolve => setTimeout(resolve, 50));
+          
+          if (container.scrollHeight !== currentHeight) {
+            // Height is still changing, try again
+            console.log(`Container height changed from ${currentHeight} to ${container.scrollHeight}, retrying...`);
+            return restoreScrollWithRetry(attempt + 1);
           }
-        }, 150);
-      }, 100);
+          
+          // Now restore the scroll position
+          console.log(`Restoring scroll to ${currentScrollPosition} (attempt ${attempt + 1})`);
+          container.scrollTop = currentScrollPosition;
+          
+          // Verify and retry if needed
+          setTimeout(() => {
+            if (container.scrollTop !== currentScrollPosition) {
+              console.log(`Scroll position didn't stick (got ${container.scrollTop}), retrying...`);
+              restoreScrollWithRetry(attempt + 1);
+            } else {
+              console.log('Scroll position successfully restored');
+            }
+          }, 50);
+        }
+      };
+
+      // Start the scroll restoration process
+      restoreScrollWithRetry();
 
       // Final cleanup
       isScrolling.value = false;
