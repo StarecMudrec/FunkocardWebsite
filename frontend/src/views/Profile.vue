@@ -1521,6 +1521,10 @@ export default {
   .profile-container {
     margin-top: 30vh;
   }
+
+  .stats-title {
+    margin-top: -50px;
+  }
 }
 
 @media (max-width: 768px) {
