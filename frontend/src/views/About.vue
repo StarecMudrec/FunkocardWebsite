@@ -268,11 +268,11 @@ p {
   }
   
   h1 {
-    font-size: 2rem;
+    font-size: 2.7rem;
   }
   
   p {
-    font-size: 1rem;
+    font-size: 1.4rem;
     flex-wrap: wrap;
     gap: 5px;
   }
