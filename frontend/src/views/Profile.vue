@@ -1654,7 +1654,7 @@ export default {
   
   .avatar-and-username {
     flex-direction: column;
-    gap: 30px;
+    gap: 20px;
     text-align: center;
     align-items: center;
     top: 35%;
