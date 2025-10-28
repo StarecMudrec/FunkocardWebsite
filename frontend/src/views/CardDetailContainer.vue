@@ -943,5 +943,9 @@ export default {
   .back-to-category-button {
     font-size: 17px;
   }
+
+  .card-detail-container {
+    padding: 27px;
+  }
 }
 </style>
