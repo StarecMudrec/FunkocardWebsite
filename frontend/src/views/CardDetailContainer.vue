@@ -870,6 +870,7 @@ export default {
     align-items: center;
     padding: 0;
     gap: 0;
+    border-radius: 30px;
   }
 
   .card-detail-container {
