@@ -50,17 +50,18 @@
       <div class="multi-card-viewport" ref="multiCardViewport">
         <div class="multi-card-container" ref="multiCardContainer" :style="containerStyle">
           <!-- Previous Card -->
-          <div class="card-page previous-card">
+          <div class="card-page previous-card" ref="previousCard">
             <CardDetailContainer 
               v-if="displayedCards.previous"
               :card="displayedCards.previous"
               :is-active="false"
+              ref="previousCardContainer"
             />
             <div v-else class="empty-card-placeholder"></div>
           </div>
 
           <!-- Current Card -->
-          <div class="card-page current-card">
+          <div class="card-page current-card" ref="currentCard">
             <CardDetailContainer 
               v-if="displayedCards.current"
               :card="displayedCards.current"
@@ -68,16 +69,18 @@
               @media-double-click="handleMediaDoubleClick"
               @go-back="goBackToCategory"
               @save-error="handleSaveError"
+              ref="currentCardContainer"
             />
             <div v-else class="empty-card-placeholder"></div>
           </div>
 
           <!-- Next Card -->
-          <div class="card-page next-card">
+          <div class="card-page next-card" ref="nextCard">
             <CardDetailContainer 
               v-if="displayedCards.next"
               :card="displayedCards.next"
               :is-active="false"
+              ref="nextCardContainer"
             />
             <div v-else class="empty-card-placeholder"></div>
           </div>
@@ -159,9 +162,74 @@ export default {
     // Track which cards have been preloaded
     const preloadedCards = ref(new Set())
 
+    // Refs for card containers
+    const previousCard = ref(null)
+    const currentCard = ref(null)
+    const nextCard = ref(null)
+    const previousCardContainer = ref(null)
+    const currentCardContainer = ref(null)
+    const nextCardContainer = ref(null)
+
+    // Scroll synchronization
+    const isSyncingScroll = ref(false)
+
+    const syncScrollPositions = (sourceElement, targetElements) => {
+      if (isSyncingScroll.value) return
+      
+      isSyncingScroll.value = true
+      
+      const scrollTop = sourceElement.scrollTop
+      const scrollHeight = sourceElement.scrollHeight
+      const clientHeight = sourceElement.clientHeight
+      
+      // Calculate scroll percentage
+      const scrollPercentage = scrollTop / (scrollHeight - clientHeight)
+      
+      // Apply same scroll percentage to target elements
+      targetElements.forEach(target => {
+        if (target && target.$el) {
+          const targetScrollHeight = target.$el.scrollHeight
+          const targetClientHeight = target.$el.clientHeight
+          const targetScrollTop = scrollPercentage * (targetScrollHeight - targetClientHeight)
+          target.$el.scrollTop = targetScrollTop
+        }
+      })
+      
+      // Use requestAnimationFrame to reset the flag
+      requestAnimationFrame(() => {
+        isSyncingScroll.value = false
+      })
+    }
+
+    const setupScrollSync = () => {
+      // Wait for next tick to ensure DOM is updated
+      nextTick(() => {
+        if (currentCardContainer.value && currentCardContainer.value.$el) {
+          const currentCardEl = currentCardContainer.value.$el
+          
+          // Add scroll event listener to current card
+          currentCardEl.addEventListener('scroll', () => {
+            const targets = []
+            if (previousCardContainer.value) targets.push(previousCardContainer.value)
+            if (nextCardContainer.value) targets.push(nextCardContainer.value)
+            
+            syncScrollPositions(currentCardEl, targets)
+          })
+        }
+      })
+    }
+
+    const cleanupScrollSync = () => {
+      if (currentCardContainer.value && currentCardContainer.value.$el) {
+        const currentCardEl = currentCardContainer.value.$el
+        currentCardEl.removeEventListener('scroll', () => {})
+      }
+    }
+
     onUnmounted(() => {
       // Clean up saved card order when leaving the detail view
       sessionStorage.removeItem('currentCardOrder')
+      cleanupScrollSync()
     })
 
     const isFirstCard = computed(() => currentCardIndex.value <= 0)
@@ -201,6 +269,11 @@ export default {
         previous: displayedCards.value.previous?.name,
         current: displayedCards.value.current?.name,
         next: displayedCards.value.next?.name
+      })
+
+      // Setup scroll sync after cards are updated
+      nextTick(() => {
+        setupScrollSync()
       })
     }
 
@@ -348,6 +421,9 @@ export default {
       isScrolling.value = true
       scrollDirection.value = direction
 
+      // Clean up existing scroll sync
+      cleanupScrollSync()
+
       // Update URL without triggering navigation
       const newCardId = allCards.value[targetIndex].id
       window.history.replaceState({}, '', `/card/${newCardId}`)
@@ -381,6 +457,9 @@ export default {
       
       // STEP 4: Preload adjacent cards for the new position
       await loadDetailedCardInfo()
+
+      // Setup scroll sync for the new cards
+      setupScrollSync()
 
       // Final cleanup
       isScrolling.value = false
@@ -538,6 +617,12 @@ export default {
       isFirstCard,
       isLastCard,
       containerStyle,
+      previousCard,
+      currentCard,
+      nextCard,
+      previousCardContainer,
+      currentCardContainer,
+      nextCardContainer,
       goToPreviousCard,
       goToNextCard,
       goBackToCategory,

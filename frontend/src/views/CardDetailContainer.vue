@@ -1,5 +1,5 @@
-<template>
-  <div class="card-detail-container" :class="{ 'active': isActive }">
+<template>  
+  <div class="card-detail-container" :class="{ 'active': isActive }" ref="containerRef">
     <div class="card-detail">
       <div class="card-content-wrapper">
         <!-- Card Name and Main Divider -->
@@ -159,6 +159,7 @@ export default {
     const nameInput = ref(null)
     const descriptionInput = ref(null)
     const categoryInput = ref(null)
+    const containerRef = ref(null)
 
     const editableCard = ref({})
     const saveError = ref(null)
@@ -517,6 +518,7 @@ export default {
       toggleEdit,
       cancelEdit,
       saveField,
+      containerRef,
       adjustFontSize
     }
   }
