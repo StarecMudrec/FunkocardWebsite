@@ -856,68 +856,15 @@ export default {
   text-align: center;
 }
 
-/* Mobile responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 1150px) {
   .card-detail {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    height: auto;
+    grid-template-columns: 300px 1fr;
   }
-  
-  .card-image-container {
-    height: auto;
-  }
-  
-  .card-header-section {
-    text-align: center;
-    margin-top: -10px;
-    min-height: 57px;
-  }
+}
 
-  .card-content-wrapper {
-    max-width: 100%;
-    width: 100%;
-    padding: 0 15px;
-  }
-  
-  .title-container {
-    max-width: 100%;
-    overflow: hidden;
-    position: relative;
-    bottom: auto;
-  }
-
-  .card-header-section h1 {
-    font-size: 36px;
-    line-height: 1.1;
-    margin: 0;
-    padding: 0;
-    white-space: nowrap;
-    transition: all 0.3s ease;
-    word-break: break-word;
-  }
-  
-  .card-header-section h1.wrapped {
-    line-height: 1.2;
-    word-break: break-word;
-  }
-
-  .main-divider {
-    margin-top: 15px;
-  }
-  
-  .edit-input {
-    width: 100%;
-  }
-  
-  .edit-input-select {
-    width: 80%;
-  }
-  
-  .back-to-category-button {
-    padding: 8px 0;
-    font-size: 16px;
+@media (max-width: 1000px) {
+  .card-detail {
+    grid-template-columns: 1fr;
   }
 }
 </style>
