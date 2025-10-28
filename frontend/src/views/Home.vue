@@ -146,6 +146,9 @@
   font-family: 'Afacad', sans-serif;
   /* Prevent horizontal scrolling */
   overflow-x: hidden;
+  overflow-y: auto;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .profile-background::before {
