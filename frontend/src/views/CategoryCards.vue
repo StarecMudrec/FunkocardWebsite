@@ -1013,5 +1013,9 @@ export default {
   .search-icon {
     left: 17px;
   }
+
+  .page-header {
+    margin-bottom: 0;
+  }
 }
 </style>
