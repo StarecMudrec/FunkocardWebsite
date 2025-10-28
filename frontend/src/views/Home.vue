@@ -132,6 +132,10 @@
 @import url('https://fonts.googleapis.com/css2?family=BIZ+UDPMincho&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&family=Noto+Serif:ital,wght@0,400;0,500;1,400&display=swap');
 
+#element::-webkit-scrollbar {
+    display: none;
+}
+
 /* Mobile-first approach */
 .profile-background {
   position: absolute;
