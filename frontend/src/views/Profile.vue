@@ -1661,7 +1661,7 @@ export default {
   }
   
   .avatar {
-    width: 200px;
+    width: 250px;
   }
   
   .avatar-loading {
