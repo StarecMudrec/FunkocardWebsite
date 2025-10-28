@@ -914,4 +914,34 @@ export default {
     font-size: 27px;
   }
 }
+
+@media (max-width: 800px) {
+  .shop-info p {
+    font-size: 20px;
+  }
+  
+  .shop-info h3 {
+    font-size: 25px;
+  }
+
+  .rarity {
+    font-size: 24px !important;
+  }
+
+  .points {
+    font-size: 24px !important;
+  }
+
+  .season-section h3 {
+    font-size: 24px !important;
+  }
+
+  .season-section p {
+    font-size: 18px !important;
+  }
+
+  .back-to-category-button {
+    font-size: 17px;
+  }
+}
 </style>
