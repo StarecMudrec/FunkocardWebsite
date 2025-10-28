@@ -989,7 +989,7 @@ export default {
 }
 
 /* Responsive design */
-@media (max-width: 768px) {
+@media (max-width: 800px) {
   
 }
 </style>
