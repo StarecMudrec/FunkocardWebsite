@@ -11,7 +11,7 @@ export default defineConfig({
   },
   server: {
     host: true,
-    allowedHosts: ['dahole.ru'],
+    allowedHosts: ['funkocard.ru'],
     proxy: {
       '/api': {
         target: 'http://web:8000',

@@ -23,7 +23,7 @@ export default {
       script.async = true
       script.src = 'https://telegram.org/js/telegram-widget.js?22'
       script.dataset.telegramLogin = 'funkocardwebbot'
-      script.dataset.authUrl = 'https://dahole.ru/auth/telegram-callback'
+      script.dataset.authUrl = 'https://funkocard.ru/auth/telegram-callback'
       script.dataset.requestAccess = 'write'
       
       // Add the script to our container div
