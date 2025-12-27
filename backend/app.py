@@ -229,7 +229,7 @@ def run_telegram_user_sync():
 def serve_placeholder():
     return send_from_directory('public', 'placeholder.jpg')
 
-@app.route('/stats')
+@app.route('/api/stats')
 def serve_stats():
     return send_from_directory('public', 'report.html')
 
