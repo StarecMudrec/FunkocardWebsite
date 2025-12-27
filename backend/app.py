@@ -229,6 +229,10 @@ def run_telegram_user_sync():
 def serve_placeholder():
     return send_from_directory('public', 'placeholder.jpg')
 
+@app.route('/stats')
+def serve_placeholder():
+    return send_from_directory('public', 'report.html')
+
 # Authentication Helper Function
 def is_authenticated(request, session):
     token = request.args.get("token") or request.cookies.get("token")
