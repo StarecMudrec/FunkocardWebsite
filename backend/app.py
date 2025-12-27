@@ -230,7 +230,7 @@ def serve_placeholder():
     return send_from_directory('public', 'placeholder.jpg')
 
 @app.route('/stats')
-def serve_placeholder():
+def serve_stats():
     return send_from_directory('public', 'report.html')
 
 # Authentication Helper Function
