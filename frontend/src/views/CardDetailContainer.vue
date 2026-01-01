@@ -107,28 +107,29 @@
       </div>
       
       <div class="card-image-container">
+        <!-- Video for Limited cards -->
         <video 
-          v-if="isVideoFile(card.img) && !mediaError" 
+          v-if="isLimitedCard && card.img && !mediaError" 
           :src="`/api/card_image/${card.img}`" 
           class="card-detail-media"
           autoplay
           loop
           muted
           playsinline
-          @error="handleVideoError"
+          @error="mediaError = true"
           @dblclick="$emit('media-double-click')"
           @loadeddata="handleVideoLoad"
           @loadstart="handleVideoLoadStart"
           disablePictureInPicture
         ></video>
         
-        <!-- Image for non-video files -->
+        <!-- Image for non-Limited cards -->
         <img 
           v-else-if="card.img && !mediaError" 
           :src="`/api/card_image/${card.img}`" 
           :alt="card.name" 
           class="card-detail-media"
-          @error="handleImageError"
+          @error="mediaError = true"
           @dblclick="$emit('media-double-click')"
         />
         
@@ -174,11 +175,20 @@ export default {
       category: false
     })
 
+    const isLimitedCard = computed(() => {
+      return props.card.category === 'Limited ⚠️'
+    })
+
+    const formatDescription = (description) => {
+      if (!description) return ''
+      return description.replace(/Points:/g, '<strong>Points:</strong>')
+    }
+
     const videoLoaded = ref(false)
     const videoLoading = ref(false)
 
     const handleVideoLoad = () => {
-      console.log('Video loaded successfully');
+      console.log('Video loaded for Limited card');
       videoLoaded.value = true;
       videoLoading.value = false;
     };
@@ -188,31 +198,6 @@ export default {
       videoLoading.value = true;
       videoLoaded.value = false;
     };
-
-    const handleVideoError = (e) => {
-      console.log('Video failed to load, trying image fallback');
-      mediaError.value = true;
-      videoLoading.value = false;
-      videoLoaded.value = false;
-    };
-
-    const handleImageError = () => {
-      console.log('Image failed to load');
-      mediaError.value = true;
-    };
-
-    // Check if file is a video based on extension
-    const isVideoFile = (filename) => {
-      if (!filename) return false;
-      const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.flv', '.mkv'];
-      const lowerFilename = filename.toLowerCase();
-      return videoExtensions.some(ext => lowerFilename.endsWith(ext));
-    };
-
-    const formatDescription = (description) => {
-      if (!description) return ''
-      return description.replace(/Points:/g, '<strong>Points:</strong>')
-    }
 
     const formatShopInfo = (shopData) => {
       if (!shopData || shopData === '-' || shopData === 'null' || shopData === 'None') {
@@ -274,6 +259,8 @@ export default {
         return props.card?.category || 'Category'
       }
     }
+
+    // ... rest of the existing functions remain the same (isOverflown, resizeText, adjustFontSize, etc.)
 
     // Font size adjustment functions
     const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
@@ -550,7 +537,7 @@ export default {
       categoryError,
       isUserAllowed,
       editing,
-      isVideoFile, // Export the new function
+      isLimitedCard,
       formatDescription,
       formatShopInfo,
       isShopAvailable,
@@ -563,9 +550,7 @@ export default {
       containerRef,
       adjustFontSize,
       handleVideoLoad,
-      handleVideoLoadStart,
-      handleVideoError,
-      handleImageError
+      handleVideoLoadStart
     }
   }
 }
