@@ -882,7 +882,7 @@ export default {
     getCategoryBackgroundStyle(category) {
       const name = category.name.toLowerCase();
       
-      // Special categories ALWAYS use static images, regardless of newest card
+      // Special categories ALWAYS use static images
       if (name.includes('all') || name.includes('general')) {
         return {
           backgroundImage: `url('/All.png')`
@@ -900,15 +900,10 @@ export default {
       
       // For all other rarity categories, use newest card image
       const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
-      
-      // Check if the newest card is a limited card
       if (newestCard && newestCard.photo) {
-        // Only use the image if the category is not "Limited ⚠️"
-        if (category.name !== 'Limited ⚠️') {
-          return {
-            backgroundImage: `url(/api/card_image/${newestCard.photo})`
-          };
-        }
+        return {
+          backgroundImage: `url(/api/card_image/${newestCard.photo})`
+        };
       }
       
       return {};
