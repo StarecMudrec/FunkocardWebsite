@@ -861,61 +861,28 @@ export default {
       }
     },
 
+    // Check if category should show a video
     shouldShowVideo(category) {
-      const newestCard = this.getNewestCardForCategory(category);
-      // Check if the newest card is a limited card (you might need to adjust this logic)
-      const isLimitedCard = newestCard && newestCard.rarity === 'Limited ⚠️'; // Adjust based on your data structure
-      
-      return isLimitedCard && this.getVideoSource(category) !== null;
-    },
-
-    getNewestCardForCategory(category) {
-      // First check if this is a rarity category
-      if (this.rarityNewestCards[category.name]) {
-        return this.rarityNewestCards[category.name];
-      }
-      
-      // Then check all categories
-      if (this.allCategoriesNewestCards[category.name]) {
-        return this.allCategoriesNewestCards[category.name];
-      }
-      
-      // Return null if no newest card found
-      return null;
+      return category.name === 'Limited ⚠️' && this.getVideoSource(category) !== null;
     },
 
 
     // Get video source for category
     getVideoSource(category) {
-      const newestCard = this.getNewestCardForCategory(category);
-      
-      // Check if the newest card is a limited card
-      // You might need to adjust this condition based on how you identify limited cards
-      const isLimitedCard = newestCard && (newestCard.rarity === 'Limited ⚠️' || newestCard.category === 'Limited ⚠️');
-      
-      if (isLimitedCard && newestCard.photo) {
-        return `/api/card_image/${newestCard.photo}`;
+      // Only Limited category gets videos
+      if (category.name === 'Limited ⚠️') {
+        const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
+        if (newestCard && newestCard.photo) {
+          return `/api/card_image/${newestCard.photo}`;
+        }
       }
       return null;
     },
 
     getCategoryBackgroundStyle(category) {
-      const newestCard = this.getNewestCardForCategory(category);
-      
-      // Check if this should show a video instead of image
-      if (this.shouldShowVideo(category)) {
-        return {}; // No background image for categories that will show video
-      }
-      
-      // For all categories, use newest card image
-      if (newestCard && newestCard.photo) {
-        return {
-          backgroundImage: `url(/api/card_image/${newestCard.photo})`
-        };
-      }
-      
-      // Fallback: For All Cards and Shop categories, use their static images if no newest card
       const name = category.name.toLowerCase();
+      
+      // Special categories ALWAYS use static images, regardless of newest card
       if (name.includes('all') || name.includes('general')) {
         return {
           backgroundImage: `url('/All.png')`
@@ -924,6 +891,24 @@ export default {
         return {
           backgroundImage: `url('/shop.png')`
         };
+      }
+      
+      // Limited category gets video (handled separately in template)
+      if (category.name === 'Limited ⚠️') {
+        return {}; // No background image for Limited category
+      }
+      
+      // For all other rarity categories, use newest card image
+      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
+      
+      // Check if the newest card is a limited card
+      if (newestCard && newestCard.photo) {
+        // Only use the image if the category is not "Limited ⚠️"
+        if (category.name !== 'Limited ⚠️') {
+          return {
+            backgroundImage: `url(/api/card_image/${newestCard.photo})`
+          };
+        }
       }
       
       return {};
