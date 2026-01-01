@@ -120,10 +120,6 @@
           @dblclick="$emit('media-double-click')"
           @loadeddata="handleVideoLoad"
           @loadstart="handleVideoLoadStart"
-          preload="metadata"
-          webkit-playsinline
-          x5-playsinline
-          x5-video-player-type="h5-page"
           disablePictureInPicture
         ></video>
         
