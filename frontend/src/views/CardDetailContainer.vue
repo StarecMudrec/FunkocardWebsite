@@ -107,31 +107,31 @@
       </div>
       
       <div class="card-image-container">
-        <div v-if="card.img && !mediaError" class="media-wrapper">
-          <video 
-            v-if="isLimitedCard && isVideoFile(card.img)" 
-            :src="`/api/card_image/${card.img}`" 
-            class="card-detail-media"
-            autoplay
-            loop
-            muted
-            playsinline
-            @error="handleVideoError"
-            @loadeddata="handleVideoLoad"
-            @loadstart="handleVideoLoadStart"
-            disablePictureInPicture
-            @dblclick="$emit('media-double-click')"
-          ></video>
-          <img 
-            v-else-if="!isLimitedCard || (isLimitedCard && !isVideoFile(card.img))"
-            :src="`/api/card_image/${card.img}`" 
-            :alt="card.name" 
-            class="card-detail-media"
-            @error="handleImageError"
-            @load="handleImageLoad"
-            @dblclick="$emit('media-double-click')"
-          />
-        </div>
+        <!-- Video for Limited cards -->
+        <video 
+          v-if="isLimitedCard && card.img && !mediaError" 
+          :src="`/api/card_image/${card.img}`" 
+          class="card-detail-media"
+          autoplay
+          loop
+          muted
+          playsinline
+          @error="mediaError = true"
+          @dblclick="$emit('media-double-click')"
+          @loadeddata="handleVideoLoad"
+          @loadstart="handleVideoLoadStart"
+          disablePictureInPicture
+        ></video>
+        
+        <!-- Image for non-Limited cards -->
+        <img 
+          v-else-if="card.img && !mediaError" 
+          :src="`/api/card_image/${card.img}`" 
+          :alt="card.name" 
+          class="card-detail-media"
+          @error="mediaError = true"
+          @dblclick="$emit('media-double-click')"
+        />
         
         <div v-else class="image-placeholder">No media available</div>
       </div>
@@ -179,14 +179,6 @@ export default {
       return props.card.category === 'Limited ⚠️'
     })
 
-    // Helper function to check if a file is a video based on extension
-    const isVideoFile = (fileName) => {
-      if (!fileName) return false
-      const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv']
-      const lowerFileName = fileName.toLowerCase()
-      return videoExtensions.some(ext => lowerFileName.endsWith(ext))
-    }
-
     const formatDescription = (description) => {
       if (!description) return ''
       return description.replace(/Points:/g, '<strong>Points:</strong>')
@@ -194,8 +186,6 @@ export default {
 
     const videoLoaded = ref(false)
     const videoLoading = ref(false)
-    const imageLoaded = ref(false)
-    const imageLoading = ref(false)
 
     const handleVideoLoad = () => {
       console.log('Video loaded for Limited card');
@@ -208,26 +198,6 @@ export default {
       videoLoading.value = true;
       videoLoaded.value = false;
     };
-
-    const handleVideoError = () => {
-      console.log('Video failed to load, trying image instead');
-      videoLoading.value = false;
-      videoLoaded.value = false;
-      mediaError.value = true;
-    }
-
-    const handleImageLoad = () => {
-      console.log('Image loaded successfully');
-      imageLoaded.value = true;
-      imageLoading.value = false;
-    };
-
-    const handleImageError = () => {
-      console.log('Image failed to load');
-      imageLoading.value = false;
-      imageLoaded.value = false;
-      mediaError.value = true;
-    }
 
     const formatShopInfo = (shopData) => {
       if (!shopData || shopData === '-' || shopData === 'null' || shopData === 'None') {
@@ -289,6 +259,8 @@ export default {
         return props.card?.category || 'Category'
       }
     }
+
+    // ... rest of the existing functions remain the same (isOverflown, resizeText, adjustFontSize, etc.)
 
     // Font size adjustment functions
     const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => 
@@ -566,7 +538,6 @@ export default {
       isUserAllowed,
       editing,
       isLimitedCard,
-      isVideoFile, // Added this
       formatDescription,
       formatShopInfo,
       isShopAvailable,
@@ -579,10 +550,7 @@ export default {
       containerRef,
       adjustFontSize,
       handleVideoLoad,
-      handleVideoLoadStart,
-      handleVideoError,
-      handleImageLoad,
-      handleImageError
+      handleVideoLoadStart
     }
   }
 }
@@ -919,14 +887,6 @@ export default {
   font-size: 14px;
   margin-top: 5px;
   text-align: center;
-}
-
-.media-wrapper {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 @media (max-width: 1150px) {
