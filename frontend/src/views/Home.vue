@@ -842,6 +842,12 @@ export default {
       }
     },
     
+    // Check if category has a background image
+    hasBackgroundImage(category) {
+      const style = this.getCategoryBackgroundStyle(category);
+      return style && style.backgroundImage;
+    },
+
     async fetchAllCategoriesNewestCards() {
       try {
         const response = await fetch('/api/all_categories_newest_cards');
@@ -911,19 +917,31 @@ export default {
         };
       }
       
-      // For rarity categories without videos, use newest card image
+      // For rarity categories, check if we should use video instead
+      // (This is handled by the shouldShowVideo check in template)
       const videoSource = this.getVideoSource(category);
       if (videoSource) {
-        // This category has a video, so no background image
+        // This category has a video, return empty style
         return {};
       }
       
-      // No video, so try to get image background
+      // For rarity categories without videos, try to get image background
       const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
       if (newestCard && newestCard.photo) {
-        return {
-          backgroundImage: `url(/api/card_image/${newestCard.photo})`
-        };
+        // IMPORTANT: Check if it's actually an image, not a video
+        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(photoExt);
+        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
+        
+        if (isImage) {
+          return {
+            backgroundImage: `url(/api/card_image/${newestCard.photo})`
+          };
+        } else if (isVideo) {
+          // It's a video file, don't use it as background image
+          console.warn(`Category ${category.name} has video file as newest card: ${newestCard.photo}`);
+          return {};
+        }
       }
       
       return {};
