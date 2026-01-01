@@ -100,20 +100,26 @@
             :class="getCategoryBackgroundClass(category, index)"
             @click="navigateToCategory(category)"
           >
-            <video 
-              v-if="shouldShowVideo(category)"
+            <div
+              v-if="!shouldShowVideo(category)"
+              class="category-card__background"
+              :style="getCategoryBackgroundStyle(category)"
+            ></div>
+
+            <video
+              v-else
               class="category-card__video"
-              :src="getVideoSource(category)"
               autoplay
               muted
               loop
               playsinline
-            ></video>
-            <div 
-              v-else-if="hasBackgroundImage(category)"
-              class="category-card__background" 
-              :style="getCategoryBackgroundStyle(category)"
-            ></div>
+            >
+              <source
+                :src="`/api/card_image/${getNewestCardForCategory(category).photo}`"
+                type="video/mp4"
+              />
+            </video>
+
             <div class="category-card__content">
               <div class="category-card__header">
                 <h3 class="category-card__title">{{ category.name }}</h3>
