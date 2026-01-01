@@ -100,24 +100,25 @@
             :class="getCategoryBackgroundClass(category, index)"
             @click="navigateToCategory(category)"
           >
-            <!-- Video background for video files -->
+            <!-- Video background for Limited category -->
             <video 
-              v-if="getVideoSource(category)"
+              v-if="category.name === 'Limited ⚠️' && getLimitedVideoSource(category)"
               class="category-card__video"
-              :src="getVideoSource(category)"
+              :src="getLimitedVideoSource(category)"
               autoplay
               muted
               loop
               playsinline
             ></video>
             <div 
-              v-else-if="getCategoryBackgroundStyle(category).backgroundImage"
+              v-else-if="category.name !== 'Limited ⚠️'"
               class="category-card__background" 
               :style="getCategoryBackgroundStyle(category)"
             ></div>
             <div class="category-card__content">
               <div class="category-card__header">
                 <h3 class="category-card__title">{{ category.name }}</h3>
+                <!-- <span class="category-card__count">{{ category.count || 0 }}</span> -->
               </div>
             </div>
           </div>
@@ -938,16 +939,6 @@ export default {
       
       if (newestCard && newestCard.photo) {
         console.log(`Found newest card for ${category.name}:`, newestCard);
-        
-        // Check if it's a video file
-        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
-        const isVideo = ['mp4', 'webm', 'ogg'].includes(photoExt);
-        
-        if (isVideo) {
-          console.log(`Video file detected for ${category.name}, skipping background image`);
-          return {}; // Return empty for video files
-        }
-        
         const imageUrl = `/api/card_image/${newestCard.photo}`;
         console.log(`Image URL: ${imageUrl}`);
         
