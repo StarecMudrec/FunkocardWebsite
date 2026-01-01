@@ -813,6 +813,29 @@ export default {
       scrollToContent,
       showScrollArrow, // Add this to the return object
     }
+  },
+  async mounted() {
+    const videos = document.querySelectorAll('.category-card__video');
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const video = entry.target;
+        
+        if (entry.isIntersecting) {
+          // Load video when it's in viewport
+          video.load();
+          video.play().catch(e => {
+            console.log('Autoplay prevented:', e);
+            // Show play button or handle error
+          });
+        } else {
+          // Pause when out of viewport
+          video.pause();
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    videos.forEach(video => observer.observe(video));
   }
 }
 </script>
