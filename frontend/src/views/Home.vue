@@ -100,6 +100,7 @@
             :class="getCategoryBackgroundClass(category, index)"
             @click="navigateToCategory(category)"
           >
+            <!-- Video background for categories with video files -->
             <video 
               v-if="shouldShowVideo(category)"
               class="category-card__video"
@@ -863,26 +864,48 @@ export default {
 
     // Check if category should show a video
     shouldShowVideo(category) {
-      return category.name === 'Limited ⚠️' && this.getVideoSource(category) !== null;
+      // Don't show videos for special categories
+      const name = category.name.toLowerCase();
+      if (name.includes('all') || name.includes('general') || name.includes('shop')) {
+        return false;
+      }
+      
+      const videoSource = this.getVideoSource(category);
+      return videoSource !== null && videoSource !== undefined;
     },
-
 
     // Get video source for category
     getVideoSource(category) {
-      // Only Limited category gets videos
-      if (category.name === 'Limited ⚠️') {
-        const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
-        if (newestCard && newestCard.photo) {
+      // Don't get video sources for special categories
+      const name = category.name.toLowerCase();
+      if (name.includes('all') || name.includes('general') || name.includes('shop')) {
+        return null;
+      }
+      
+      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
+      if (newestCard && newestCard.photo) {
+        // Check if it's a video file
+        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
+        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
+        
+        if (isVideo) {
           return `/api/card_image/${newestCard.photo}`;
         }
       }
+      
       return null;
+    },
+
+    // Check if category has a background image
+    hasBackgroundImage(category) {
+      const style = this.getCategoryBackgroundStyle(category);
+      return style && style.backgroundImage;
     },
 
     getCategoryBackgroundStyle(category) {
       const name = category.name.toLowerCase();
       
-      // Special categories ALWAYS use static images
+      // Special categories always use static images
       if (name.includes('all') || name.includes('general')) {
         return {
           backgroundImage: `url('/All.png')`
@@ -893,17 +916,30 @@ export default {
         };
       }
       
-      // Limited category gets video (handled separately in template)
-      if (category.name === 'Limited ⚠️') {
-        return {}; // No background image for Limited category
+      // For rarity categories, check if we should use video instead
+      // (This is handled by the shouldShowVideo check in template)
+      const videoSource = this.getVideoSource(category);
+      if (videoSource) {
+        // This category has a video, return empty style
+        return {};
       }
       
-      // For all other rarity categories, use newest card image
+      // For rarity categories without videos, try to get image background
       const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
       if (newestCard && newestCard.photo) {
-        return {
-          backgroundImage: `url(/api/card_image/${newestCard.photo})`
-        };
+        // IMPORTANT: Check if it's actually an image, not a video
+        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(photoExt);
+        
+        if (isImage) {
+          return {
+            backgroundImage: `url(/api/card_image/${newestCard.photo})`
+          };
+        } else {
+          // It's NOT an image file (could be video or other), don't use it as background image
+          console.warn(`Category ${category.name} has non-image file as newest card: ${newestCard.photo}`);
+          return {};
+        }
       }
       
       return {};
