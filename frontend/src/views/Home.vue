@@ -99,10 +99,11 @@
             class="category-card"
             :class="getCategoryBackgroundClass(category, index)"
             @click="navigateToCategory(category)"
+            :style="getCardStyle(category)"
           >
             <!-- Video background for video files -->
             <video 
-              v-if="getVideoSource(category)"
+              v-if="hasVideo(category)"
               class="category-card__video"
               :src="getVideoSource(category)"
               autoplay
@@ -111,9 +112,9 @@
               playsinline
             ></video>
             <div 
-              v-else-if="getCategoryBackgroundStyle(category).backgroundImage"
+              v-else-if="hasBackgroundImage(category)"
               class="category-card__background" 
-              :style="getCategoryBackgroundStyle(category)"
+              :style="getBackgroundImageStyle(category)"
             ></div>
             <div class="category-card__content">
               <div class="category-card__header">
@@ -788,6 +789,10 @@ export default {
       },
       rarityNewestCards: {}, // Store newest card images for each category
       allCategoriesNewestCards: {}, // Store newest cards for all categories
+      defaultBackgrounds: {
+        'All Cards': '/All.png',
+        'Available at Shop': '/shop.png'
+      },
       searchQuery: '',
       filteredCategories: [],
       debouncedSearch: null,
@@ -842,28 +847,6 @@ export default {
       }
     },
     
-    getVideoSource(category) {
-      // Check both sources for newest card
-      const newestCardFromRarity = this.rarityNewestCards[category.name];
-      const newestCardFromAll = this.allCategoriesNewestCards[category.name];
-      
-      // Try rarityNewestCards first, then allCategoriesNewestCards
-      const newestCard = newestCardFromRarity || newestCardFromAll;
-      
-      if (newestCard && newestCard.photo) {
-        // Check if it's a video file
-        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
-        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
-        
-        if (isVideo) {
-          console.log(`Video source found for ${category.name}: ${newestCard.photo}`);
-          return `/api/card_image/${newestCard.photo}`;
-        }
-      }
-      
-      return null;
-    },
-    
     async fetchAllCategoriesNewestCards() {
       try {
         console.log('Fetching newest cards for all categories...');
@@ -893,6 +876,101 @@ export default {
       } catch (error) {
         console.error('Error fetching newest cards for all categories:', error);
       }
+    },
+    
+    // Check if category has a video
+    hasVideo(category) {
+      return this.getVideoSource(category) !== null;
+    },
+    
+    // Check if category has a background image
+    hasBackgroundImage(category) {
+      const style = this.getBackgroundImageStyle(category);
+      return style && style.backgroundImage;
+    },
+    
+    // Get video source for category
+    getVideoSource(category) {
+      // Check both sources for newest card
+      const newestCardFromRarity = this.rarityNewestCards[category.name];
+      const newestCardFromAll = this.allCategoriesNewestCards[category.name];
+      
+      // Try rarityNewestCards first, then allCategoriesNewestCards
+      const newestCard = newestCardFromRarity || newestCardFromAll;
+      
+      if (newestCard && newestCard.photo) {
+        // Check if it's a video file
+        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
+        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
+        
+        if (isVideo) {
+          console.log(`Video source found for ${category.name}: ${newestCard.photo}`);
+          return `/api/card_image/${newestCard.photo}`;
+        }
+      }
+      
+      return null;
+    },
+    
+    // Get background image style for category
+    getBackgroundImageStyle(category) {
+      console.log(`Getting background image for: ${category.name}`);
+      
+      // 1. First check if it should have a video (skip if yes)
+      if (this.hasVideo(category)) {
+        console.log(`Skipping background image for ${category.name} - has video`);
+        return {};
+      }
+      
+      // 2. Check for newest card image
+      const newestCardFromRarity = this.rarityNewestCards[category.name];
+      const newestCardFromAll = this.allCategoriesNewestCards[category.name];
+      const newestCard = newestCardFromRarity || newestCardFromAll;
+      
+      if (newestCard && newestCard.photo) {
+        // Make sure it's not a video (double-check)
+        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
+        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
+        
+        if (!isVideo) {
+          console.log(`Using newest card image for ${category.name}: ${newestCard.photo}`);
+          return {
+            backgroundImage: `url(/api/card_image/${newestCard.photo})`
+          };
+        }
+      }
+      
+      // 3. Check for default backgrounds
+      const name = category.name.toLowerCase();
+      if (name.includes('all') || name.includes('general')) {
+        console.log(`Using default All.png for ${category.name}`);
+        return {
+          backgroundImage: `url('/All.png')`
+        };
+      } else if (name.includes('shop')) {
+        console.log(`Using default shop.png for ${category.name}`);
+        return {
+          backgroundImage: `url('/shop.png')`
+        };
+      }
+      
+      // 4. Check for specific category name matches
+      for (const [catName, bgPath] of Object.entries(this.defaultBackgrounds)) {
+        if (category.name === catName) {
+          console.log(`Using specific default for ${category.name}: ${bgPath}`);
+          return {
+            backgroundImage: `url('${bgPath}')`
+          };
+        }
+      }
+      
+      console.log(`No background found for ${category.name}`);
+      return {};
+    },
+    
+    // Legacy method for compatibility
+    getCategoryBackgroundStyle(category) {
+      return this.getBackgroundImageStyle(category);
     },
     
     navigateToCategory(category) {
@@ -929,72 +1007,9 @@ export default {
       }
     },
     
+    // Legacy method for Limited category video
     getLimitedVideoSource(category) {
-      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
-      if (newestCard && newestCard.photo) {
-        return `/api/card_image/${newestCard.photo}`;
-      }
-      return null;
-    },
-    
-    getCategoryBackgroundStyle(category) {
-      const name = category.name.toLowerCase();
-      console.log(`Getting background for category: ${category.name}`);
-      
-      // Skip if this is the Limited category (it uses video) or if there's a video source
-      if (category.name === 'Limited ⚠️' || this.getVideoSource(category)) {
-        console.log(`${category.name} uses video, skipping background image`);
-        return {}; // Return empty for video categories
-      }
-      
-      // Check both sources for newest card
-      const newestCardFromRarity = this.rarityNewestCards[category.name];
-      const newestCardFromAll = this.allCategoriesNewestCards[category.name];
-      
-      console.log('Category name:', category.name);
-      console.log('From rarityNewestCards:', newestCardFromRarity);
-      console.log('From allCategoriesNewestCards:', newestCardFromAll);
-      
-      // Try rarityNewestCards first, then allCategoriesNewestCards
-      const newestCard = newestCardFromRarity || newestCardFromAll;
-      
-      if (newestCard && newestCard.photo) {
-        console.log(`Found newest card for ${category.name}:`, newestCard);
-        
-        // Check if it's a video file (additional safety check)
-        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
-        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
-        
-        if (isVideo) {
-          console.log(`Video file detected for ${category.name}, skipping background image`);
-          return {}; // Return empty for video files
-        }
-        
-        const imageUrl = `/api/card_image/${newestCard.photo}`;
-        console.log(`Image URL: ${imageUrl}`);
-        
-        return {
-          backgroundImage: `url(${imageUrl})`
-        };
-      } else {
-        console.log(`No newest card found for ${category.name}, using fallback`);
-      }
-      
-      // Fallback to static images if no newest card found
-      if (name.includes('all') || name.includes('general')) {
-        console.log('Using All.png fallback');
-        return {
-          backgroundImage: `url('/All.png')`
-        };
-      } else if (name.includes('shop')) {
-        console.log('Using shop.png fallback');
-        return {
-          backgroundImage: `url('/shop.png')`
-        };
-      }
-      
-      console.log('No background found');
-      return {};
+      return this.getVideoSource(category);
     },
     
     scrollToContent() {
@@ -1096,6 +1111,22 @@ export default {
       }
       
       this.filteredCategories = sortedCategories;
+    },
+    
+    // Debug method to see all category information
+    debugAllCategories() {
+      console.log('=== DEBUG ALL CATEGORIES ===');
+      this.filteredCategories.forEach(category => {
+        console.log(`Category: "${category.name}"`);
+        console.log(`  ID: ${category.id}`);
+        console.log(`  Has video: ${this.hasVideo(category)}`);
+        console.log(`  Video source: ${this.getVideoSource(category)}`);
+        console.log(`  Background style:`, this.getBackgroundImageStyle(category));
+        console.log(`  From rarity API:`, this.rarityNewestCards[category.name]);
+        console.log(`  From all API:`, this.allCategoriesNewestCards[category.name]);
+        console.log('---');
+      });
+      console.log('=== END DEBUG ===');
     }
   },
   async mounted() {
@@ -1104,18 +1135,24 @@ export default {
     
     try {
       await this.fetchCategories();
-      await this.fetchRarityNewestCards(); // Fetch newest cards for rarity categories
-      await this.fetchAllCategoriesNewestCards(); // Fetch newest cards for all categories
+      await this.fetchRarityNewestCards();
+      await this.fetchAllCategoriesNewestCards();
       
       // Initialize filtered categories with all sorted categories
       this.filteredCategories = [...this.sortedCategories];
       
-      console.log('Categories after fetch:', this.categories);
-      console.log('Sorted categories:', this.sortedCategories);
-      console.log('Rarity categories:', this.rarityCategories);
+      console.log('=== INITIAL DEBUG ===');
+      console.log('Categories:', this.categories);
+      console.log('Rarity newest cards:', this.rarityNewestCards);
+      console.log('All categories newest cards:', this.allCategoriesNewestCards);
+      
+      // Debug each category
+      setTimeout(() => {
+        this.debugAllCategories();
+      }, 1000);
+      
     } catch (error) {
       console.error('Failed to fetch categories:', error);
-      // Continue even if one of the API calls fails
     }
   },
 }
