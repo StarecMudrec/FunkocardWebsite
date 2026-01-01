@@ -870,7 +870,8 @@ export default {
 
     shouldShowVideo(category) {
       const card = this.getNewestCardForCategory(category);
-      return card?.rarity === 'Limited ⚠️';
+      return card?.rarity === 'Limited ⚠️'; 
+      console.log("AIJKFBYUIPEHJN")
     },
 
 
