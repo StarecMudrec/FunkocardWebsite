@@ -109,6 +109,11 @@
               muted
               loop
               playsinline
+              preload="metadata"
+              webkit-playsinline
+              x5-playsinline
+              x5-video-player-type="h5-page"
+              disablePictureInPicture
             ></video>
             <div 
               v-else
