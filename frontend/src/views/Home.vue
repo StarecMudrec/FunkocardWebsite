@@ -100,24 +100,25 @@
             :class="getCategoryBackgroundClass(category, index)"
             @click="navigateToCategory(category)"
           >
-            <!-- Video background for categories with video files -->
+            <!-- Video background for Limited category -->
             <video 
-              v-if="shouldShowVideo(category)"
+              v-if="category.name === 'Limited ⚠️' && getLimitedVideoSource(category)"
               class="category-card__video"
-              :src="getVideoSource(category)"
+              :src="getLimitedVideoSource(category)"
               autoplay
               muted
               loop
               playsinline
             ></video>
             <div 
-              v-else-if="hasBackgroundImage(category)"
+              v-else
               class="category-card__background" 
               :style="getCategoryBackgroundStyle(category)"
             ></div>
             <div class="category-card__content">
               <div class="category-card__header">
                 <h3 class="category-card__title">{{ category.name }}</h3>
+                <!-- <span class="category-card__count">{{ category.count || 0 }}</span> -->
               </div>
             </div>
           </div>
@@ -855,79 +856,6 @@ export default {
         console.error('Error fetching newest cards for all categories:', error);
       }
     },
-
-    // Check if category should show a video
-    shouldShowVideo(category) {
-      // Don't show videos for special categories
-      const name = category.name.toLowerCase();
-      if (name.includes('all') || name.includes('general') || name.includes('shop')) {
-        return false;
-      }
-      
-      const videoSource = this.getVideoSource(category);
-      return videoSource !== null && videoSource !== undefined;
-    },
-
-    // Get video source for category
-    getVideoSource(category) {
-      // Don't get video sources for special categories
-      const name = category.name.toLowerCase();
-      if (name.includes('all') || name.includes('general') || name.includes('shop')) {
-        return null;
-      }
-      
-      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
-      if (newestCard && newestCard.photo) {
-        // Check if it's a video file
-        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
-        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
-        
-        if (isVideo) {
-          return `/api/card_image/${newestCard.photo}`;
-        }
-      }
-      
-      return null;
-    },
-
-    // Check if category has a background image
-    hasBackgroundImage(category) {
-      const style = this.getCategoryBackgroundStyle(category);
-      return style && style.backgroundImage;
-    },
-
-    // Update getCategoryBackgroundStyle to be simpler
-    getCategoryBackgroundStyle(category) {
-      const name = category.name.toLowerCase();
-      
-      // Special categories always use static images
-      if (name.includes('all') || name.includes('general')) {
-        return {
-          backgroundImage: `url('/All.png')`
-        };
-      } else if (name.includes('shop')) {
-        return {
-          backgroundImage: `url('/shop.png')`
-        };
-      }
-      
-      // For rarity categories without videos, use newest card image
-      const videoSource = this.getVideoSource(category);
-      if (videoSource) {
-        // This category has a video, so no background image
-        return {};
-      }
-      
-      // No video, so try to get image background
-      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
-      if (newestCard && newestCard.photo) {
-        return {
-          backgroundImage: `url(/api/card_image/${newestCard.photo})`
-        };
-      }
-      
-      return {};
-    },
     
     navigateToCategory(category) {
       console.log('Navigating to category:', category)
@@ -974,7 +902,15 @@ export default {
     getCategoryBackgroundStyle(category) {
       const name = category.name.toLowerCase();
       
-      // For special categories (All Cards and Shop), always use static images
+      // For all categories, use the newest card image
+      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
+      if (newestCard && newestCard.photo) {
+        return {
+          backgroundImage: `url(/api/card_image/${newestCard.photo})`
+        };
+      }
+      
+      // Fallback to static images if no newest card found
       if (name.includes('all') || name.includes('general')) {
         return {
           backgroundImage: `url('/All.png')`
@@ -983,31 +919,6 @@ export default {
         return {
           backgroundImage: `url('/shop.png')`
         };
-      }
-      
-      // For Limited category, we handle video separately in the template
-      if (category.name === 'Limited ⚠️') {
-        // Check if we have a video source
-        const videoSource = this.getLimitedVideoSource(category);
-        if (videoSource) {
-          // For Limited category with video, return empty (video will be shown by template)
-          return {};
-        }
-      }
-      
-      // For other categories (rarity categories that aren't Limited)
-      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
-      if (newestCard && newestCard.photo) {
-        // Check if it's a video file
-        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
-        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
-        
-        if (!isVideo) {
-          // Only use image files for background
-          return {
-            backgroundImage: `url(/api/card_image/${newestCard.photo})`
-          };
-        }
       }
       
       return {};
