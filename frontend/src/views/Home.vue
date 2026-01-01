@@ -941,10 +941,10 @@ export default {
       const name = category.name.toLowerCase();
       console.log(`Getting background for category: ${category.name}`);
       
-      // Skip if this is the Limited category (it uses video) or if there's a video source
-      if (category.name === 'Limited ⚠️' || this.getVideoSource(category)) {
-        console.log(`${category.name} uses video, skipping background image`);
-        return {}; // Return empty for video categories
+      // Skip if this is the Limited category (it uses video)
+      if (category.name === 'Limited ⚠️') {
+        console.log('Skipping Limited category (uses video)');
+        return {}; // Return empty for Limited category
       }
       
       // Check both sources for newest card
@@ -961,9 +961,9 @@ export default {
       if (newestCard && newestCard.photo) {
         console.log(`Found newest card for ${category.name}:`, newestCard);
         
-        // Check if it's a video file (additional safety check)
+        // Check if it's a video file
         const photoExt = newestCard.photo.split('.').pop().toLowerCase();
-        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
+        const isVideo = ['mp4', 'webm', 'ogg'].includes(photoExt);
         
         if (isVideo) {
           console.log(`Video file detected for ${category.name}, skipping background image`);
