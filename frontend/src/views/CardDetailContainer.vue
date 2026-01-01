@@ -121,7 +121,12 @@
           @loadeddata="handleVideoLoad"
           @loadstart="handleVideoLoadStart"
           disablePictureInPicture
-        ></video>
+          preload="metadata"
+        >
+          <source :src="`/api/card_image/${card.img}`" type="video/mp4">
+          <source :src="`/api/card_image/${card.img}`" type="video/webm">
+          Your browser does not support the video tag.
+        </video>
         
         <!-- Image for non-Limited cards -->
         <img 
