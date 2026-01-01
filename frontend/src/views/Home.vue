@@ -1087,19 +1087,31 @@ export default {
     
     try {
       await this.fetchCategories();
-      await this.fetchRarityNewestCards(); // Fetch newest cards for rarity categories
-      await this.fetchAllCategoriesNewestCards(); // Fetch newest cards for all categories
+      await this.fetchRarityNewestCards();
+      await this.fetchAllCategoriesNewestCards();
       
       // Initialize filtered categories with all sorted categories
       this.filteredCategories = [...this.sortedCategories];
       
-      console.log('Categories after fetch:', this.categories);
-      console.log('Sorted categories:', this.sortedCategories);
-      console.log('Rarity categories:', this.rarityCategories);
+      // Debug: Check what cards we have for each category
+      console.log('All categories newest cards:', this.allCategoriesNewestCards);
+      console.log('Rarity newest cards:', this.rarityNewestCards);
+      
+      // Debug: Check specific categories
+      this.filteredCategories.forEach(category => {
+        const card = this.getNewestCardForCategory(category);
+        console.log(`Category: ${category.name}`, {
+          hasCard: !!card,
+          card: card,
+          isLimited: card?.rarity === 'Limited ⚠️',
+          shouldShowVideo: this.shouldShowVideo(category),
+          hasVideoSource: this.getVideoSource(category)
+        });
+      });
+      
     } catch (error) {
       console.error('Failed to fetch categories:', error);
-      // Continue even if one of the API calls fails
     }
-  },
+  }
 }
 </script>
