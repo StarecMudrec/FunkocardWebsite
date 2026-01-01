@@ -842,28 +842,6 @@ export default {
       }
     },
     
-    getVideoSource(category) {
-      // Check both sources for newest card
-      const newestCardFromRarity = this.rarityNewestCards[category.name];
-      const newestCardFromAll = this.allCategoriesNewestCards[category.name];
-      
-      // Try rarityNewestCards first, then allCategoriesNewestCards
-      const newestCard = newestCardFromRarity || newestCardFromAll;
-      
-      if (newestCard && newestCard.photo) {
-        // Check if it's a video file
-        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
-        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
-        
-        if (isVideo) {
-          console.log(`Video source found for ${category.name}: ${newestCard.photo}`);
-          return `/api/card_image/${newestCard.photo}`;
-        }
-      }
-      
-      return null;
-    },
-    
     async fetchAllCategoriesNewestCards() {
       try {
         console.log('Fetching newest cards for all categories...');
