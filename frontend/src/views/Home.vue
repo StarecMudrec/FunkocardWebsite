@@ -880,12 +880,6 @@ export default {
     
     // Check if category has a video
     hasVideo(category) {
-      const name = category.name.toLowerCase();
-      // Only check for videos in rarity categories, not in "All Cards" or "Shop"
-      if (name.includes('all') || name.includes('general') || name.includes('shop')) {
-        return false;
-      }
-      
       return this.getVideoSource(category) !== null;
     },
     
@@ -897,12 +891,6 @@ export default {
     
     // Get video source for category
     getVideoSource(category) {
-      const name = category.name.toLowerCase();
-      // Don't get video sources for "All Cards" or "Shop" categories
-      if (name.includes('all') || name.includes('general') || name.includes('shop')) {
-        return null;
-      }
-      
       // Check both sources for newest card
       const newestCardFromRarity = this.rarityNewestCards[category.name];
       const newestCardFromAll = this.allCategoriesNewestCards[category.name];
@@ -928,31 +916,13 @@ export default {
     getBackgroundImageStyle(category) {
       console.log(`Getting background image for: ${category.name}`);
       
-      const name = category.name.toLowerCase();
-      const isSpecialCategory = name.includes('all') || name.includes('general') || name.includes('shop');
-      
-      // 1. For special categories ("All Cards" and "Shop"), always use default backgrounds
-      if (isSpecialCategory) {
-        if (name.includes('all') || name.includes('general')) {
-          console.log(`Using default All.png for ${category.name}`);
-          return {
-            backgroundImage: `url('/All.png')`
-          };
-        } else if (name.includes('shop')) {
-          console.log(`Using default shop.png for ${category.name}`);
-          return {
-            backgroundImage: `url('/shop.png')`
-          };
-        }
-      }
-      
-      // 2. For rarity categories, check for video first
-      if (this.getVideoSource(category)) {
+      // 1. First check if it should have a video (skip if yes)
+      if (this.hasVideo(category)) {
         console.log(`Skipping background image for ${category.name} - has video`);
         return {};
       }
       
-      // 3. Check for newest card image
+      // 2. Check for newest card image
       const newestCardFromRarity = this.rarityNewestCards[category.name];
       const newestCardFromAll = this.allCategoriesNewestCards[category.name];
       const newestCard = newestCardFromRarity || newestCardFromAll;
@@ -970,7 +940,21 @@ export default {
         }
       }
       
-      // 4. Check for specific category name matches (for backward compatibility)
+      // 3. Check for default backgrounds
+      const name = category.name.toLowerCase();
+      if (name.includes('all') || name.includes('general')) {
+        console.log(`Using default All.png for ${category.name}`);
+        return {
+          backgroundImage: `url('/All.png')`
+        };
+      } else if (name.includes('shop')) {
+        console.log(`Using default shop.png for ${category.name}`);
+        return {
+          backgroundImage: `url('/shop.png')`
+        };
+      }
+      
+      // 4. Check for specific category name matches
       for (const [catName, bgPath] of Object.entries(this.defaultBackgrounds)) {
         if (category.name === catName) {
           console.log(`Using specific default for ${category.name}: ${bgPath}`);
