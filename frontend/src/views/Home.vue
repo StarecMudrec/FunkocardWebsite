@@ -100,26 +100,27 @@
             :class="getCategoryBackgroundClass(category, index)"
             @click="navigateToCategory(category)"
           >
-            <video
-              v-if="shouldShowVideo(category) && getVideoSource(category)"
-              class="category-card__video"
-              autoplay
-              muted
-              loop
-              playsinline
-              :poster="getCategoryBackgroundStyle(category).backgroundImage"
-            >
-              <source
-                :src="getVideoSource(category)"
-                type="video/mp4"
-              />
-              Your browser does not support the video tag.
-            </video>
-            <div
-              v-else-if="shouldShowVideo(category) && !getVideoSource(category)"
-              class="category-card__background"
-              :style="getCategoryBackgroundStyle(category)"
-            ></div>
+            <template v-if="shouldShowVideo(category) && getVideoSource(category)">
+              <video
+                class="category-card__video"
+                autoplay
+                muted
+                loop
+                playsinline
+                :poster="getVideoPoster(category)"
+              >
+                <source
+                  :src="getVideoSource(category)"
+                  type="video/mp4"
+                />
+              </video>
+            </template>
+            <template v-else>
+              <div
+                class="category-card__background"
+                :style="getCategoryBackgroundStyle(category)"
+              ></div>
+            </template>
 
             <div class="category-card__content">
               <div class="category-card__header">
@@ -847,6 +848,14 @@ export default {
         console.error('Error fetching newest rarity cards:', error);
       }
     },
+
+    getVideoPoster(category) {
+      const card = this.getNewestCardForCategory(category);
+      if (card && card.photo) {
+        return `/api/card_image/${card.photo}`;
+      }
+      return '/placeholder.jpg';
+    },
     
     // Check if category has a background image
     hasBackgroundImage(category) {
@@ -870,8 +879,11 @@ export default {
 
     shouldShowVideo(category) {
       const card = this.getNewestCardForCategory(category);
-      return card?.rarity === 'Limited \u26a0\ufe0f'; 
-      console.log("AIJKFBYUIPEHJN")
+      
+      // Check if card exists and is Limited rarity
+      if (!card) return false;
+      
+      return card.rarity === 'Limited ⚠️';
     },
 
 
@@ -886,6 +898,7 @@ export default {
     getVideoSource(category) {
       const newestCard = this.getNewestCardForCategory(category);
       
+      // Check if we have a valid card with photo and it's Limited rarity
       if (newestCard && newestCard.photo && newestCard.rarity === 'Limited ⚠️') {
         return `/api/card_image/${newestCard.photo}`;
       }
@@ -909,12 +922,7 @@ export default {
     getCategoryBackgroundStyle(category) {
       const card = this.getNewestCardForCategory(category);
 
-      if (!card) {
-        return {};
-      }
-
-      // Limited → use placeholder poster
-      if (card.rarity === 'Limited ⚠️') {
+      if (!card || !card.photo) {
         return {
           backgroundImage: `url('/placeholder.jpg')`,
           backgroundSize: 'cover',
