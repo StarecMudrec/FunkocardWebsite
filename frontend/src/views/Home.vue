@@ -100,25 +100,26 @@
             :class="getCategoryBackgroundClass(category, index)"
             @click="navigateToCategory(category)"
           >
-            <div
-              v-if="!shouldShowVideo(category)"
-              class="category-card__background"
-              :style="getCategoryBackgroundStyle(category)"
-            ></div>
-
             <video
-              v-else
+              v-if="shouldShowVideo(category) && getVideoSource(category)"
               class="category-card__video"
               autoplay
               muted
               loop
               playsinline
+              :poster="getCategoryBackgroundStyle(category).backgroundImage"
             >
               <source
-                :src="`/api/card_image/${getNewestCardForCategory(category).photo}`"
+                :src="getVideoSource(category)"
                 type="video/mp4"
               />
+              Your browser does not support the video tag.
             </video>
+            <div
+              v-else-if="shouldShowVideo(category) && !getVideoSource(category)"
+              class="category-card__background"
+              :style="getCategoryBackgroundStyle(category)"
+            ></div>
 
             <div class="category-card__content">
               <div class="category-card__header">
@@ -881,7 +882,6 @@ export default {
     },
 
 
-    // Get video source for category
     getVideoSource(category) {
       const newestCard = this.getNewestCardForCategory(category);
       
