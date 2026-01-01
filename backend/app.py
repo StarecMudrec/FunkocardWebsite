@@ -938,7 +938,7 @@ def get_all_categories_newest_cards():
             
             # Get newest card for "All Cards" category (overall newest card), excluding hidden card names
             cursor.execute("""
-                SELECT tg_id as photo, name, rare as rarity
+                SELECT id, tg_id as photo, name, rare as rarity
                 FROM files 
                 WHERE rare NOT IN (%s)
                 AND name NOT IN (%s, %s, %s)
@@ -949,13 +949,15 @@ def get_all_categories_newest_cards():
             all_cards_newest = cursor.fetchone()
             if all_cards_newest:
                 result['All Cards'] = {
+                    'id': all_cards_newest['id'],  # ADD THIS
                     'photo': all_cards_newest['photo'],
-                    'name': all_cards_newest['name']
+                    'name': all_cards_newest['name'],
+                    'rarity': all_cards_newest['rarity']  # ADD THIS
                 }
             
             # Get newest card for "Shop" category (newest card available in shop), excluding hidden card names
             cursor.execute("""
-                SELECT tg_id as photo, name, rare as rarity
+                SELECT id, tg_id as photo, name, rare as rarity
                 FROM files 
                 WHERE shop != '-' AND shop IS NOT NULL
                 AND rare NOT IN (%s)
@@ -967,13 +969,15 @@ def get_all_categories_newest_cards():
             shop_newest = cursor.fetchone()
             if shop_newest:
                 result['Available at Shop'] = {
+                    'id': shop_newest['id'],  # ADD THIS
                     'photo': shop_newest['photo'],
-                    'name': shop_newest['name']
+                    'name': shop_newest['name'],
+                    'rarity': shop_newest['rarity']  # ADD THIS
                 }
             
             # Also include all rarity categories for consistency, excluding hidden card names
             cursor.execute("""
-                SELECT f1.rare, f1.tg_id as photo, f1.name
+                SELECT f1.id, f1.rare, f1.tg_id as photo, f1.name
                 FROM files f1
                 INNER JOIN (
                     SELECT rare, MAX(id) as max_id
@@ -988,8 +992,10 @@ def get_all_categories_newest_cards():
             rarity_newest_cards = cursor.fetchall()
             for card in rarity_newest_cards:
                 result[card['rare']] = {
+                    'id': card['id'],  # ADD THIS
                     'photo': card['photo'],
-                    'name': card['name']
+                    'name': card['name'],
+                    'rarity': card['rare']  # ADD THIS
                 }
             
             return jsonify(result), 200
@@ -999,7 +1005,7 @@ def get_all_categories_newest_cards():
         return jsonify({'error': 'Failed to fetch newest cards'}), 500
     finally:
         connection.close()
-
+        
 
 @app.route('/api/check_permission', methods=['GET'])
 def check_permission():
