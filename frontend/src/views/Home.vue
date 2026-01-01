@@ -864,9 +864,13 @@ export default {
     shouldShowVideo(category) {
       const newestCard = this.getNewestCardForCategory(category);
       
-      // Check if the newest card exists and is a limited card
-      if (newestCard && newestCard.rarity === 'Limited ⚠️') {
-        return true;
+      // If there's a newest card, check if it's from the "Limited ⚠️" category
+      // We check the rarity of the card by looking at which category it belongs to
+      // Since the API doesn't include card rarity in the response, we need to fetch it
+      if (newestCard && newestCard.photo) {
+        // For now, we'll show video if the category itself is "Limited ⚠️"
+        // OR if we need to determine from the card data, we'd need additional API call
+        return category.name === 'Limited ⚠️';
       }
       
       return false;
@@ -884,35 +888,21 @@ export default {
     getVideoSource(category) {
       const newestCard = this.getNewestCardForCategory(category);
       
-      if (newestCard && newestCard.photo && newestCard.rarity === 'Limited ⚠️') {
+      if (newestCard && newestCard.photo && category.name === 'Limited ⚠️') {
         return `/api/card_image/${newestCard.photo}`;
       }
       return null;
     },
 
-    async isLimitedCard(cardId) {
-      try {
-        const response = await fetch(`/api/card_info/${cardId}`);
-        if (response.ok) {
-          const cardInfo = await response.json();
-          return cardInfo.rarity === 'Limited ⚠️';
-        }
-        return false;
-      } catch (error) {
-        console.error('Error checking card rarity:', error);
-        return false;
-      }
-    },
-
     getCategoryBackgroundStyle(category) {
       const newestCard = this.getNewestCardForCategory(category);
       
-      // If the newest card is limited, return empty (will show video)
-      if (newestCard && newestCard.rarity === 'Limited ⚠️') {
-        return {}; // No background image for limited cards
+      // If this is the Limited category and has a newest card, return empty (will show video)
+      if (category.name === 'Limited ⚠️' && newestCard && newestCard.photo) {
+        return {}; // No background image for Limited category
       }
       
-      // For all other cards, use the image
+      // For all other categories, use newest card image if available
       if (newestCard && newestCard.photo) {
         return {
           backgroundImage: `url(/api/card_image/${newestCard.photo})`
