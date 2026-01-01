@@ -906,33 +906,33 @@ export default {
 
     getCategoryBackgroundStyle(category) {
       const newestCard = this.getNewestCardForCategory(category);
-      
-      // If the newest card is limited, return empty (will show video)
+
+      // Limited cards → keep background valid, video will overlay it
       if (newestCard && newestCard.rarity === 'Limited ⚠️') {
-        return {}; // No background image for limited cards
+        return {
+          backgroundImage: 'none'
+        };
       }
-      
-      // For all other cards, use the image
+
+      // Normal cards → image background
       if (newestCard && newestCard.photo) {
         return {
           backgroundImage: `url(/api/card_image/${newestCard.photo})`
         };
       }
-      
-      // Fallback for categories without newest cards
+
+      // Fallbacks
       const name = category.name.toLowerCase();
       if (name.includes('all') || name.includes('general')) {
-        return {
-          backgroundImage: `url('/All.png')`
-        };
-      } else if (name.includes('shop')) {
-        return {
-          backgroundImage: `url('/shop.png')`
-        };
+        return { backgroundImage: `url('/All.png')` };
       }
-      
-      return {};
+      if (name.includes('shop')) {
+        return { backgroundImage: `url('/shop.png')` };
+      }
+
+      return { backgroundImage: 'none' };
     },
+
     
     navigateToCategory(category) {
       console.log('Navigating to category:', category)
