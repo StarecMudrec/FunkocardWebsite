@@ -862,15 +862,10 @@ export default {
     },
 
     shouldShowVideo(category) {
-      const newestCard = this.getNewestCardForCategory(category);
-      
-      // Check if the newest card exists and is a limited card
-      if (newestCard && newestCard.rarity === 'Limited ⚠️') {
-        return true;
-      }
-      
-      return false;
+      const card = this.getNewestCardForCategory(category);
+      return card?.rarity === 'Limited ⚠️';
     },
+
 
     getNewestCardForCategory(category) {
       const name = category.name;
@@ -907,31 +902,23 @@ export default {
     getCategoryBackgroundStyle(category) {
       const newestCard = this.getNewestCardForCategory(category);
 
-      // Limited cards → keep background valid, video will overlay it
-      if (newestCard && newestCard.rarity === 'Limited ⚠️') {
+      if (!newestCard) {
+        return { backgroundImage: 'none' };
+      }
+
+      // Limited → background disabled, video will render
+      if (newestCard.rarity === 'Limited ⚠️') {
         return {
           backgroundImage: 'none'
         };
       }
 
-      // Normal cards → image background
-      if (newestCard && newestCard.photo) {
-        return {
-          backgroundImage: `url(/api/card_image/${newestCard.photo})`
-        };
-      }
-
-      // Fallbacks
-      const name = category.name.toLowerCase();
-      if (name.includes('all') || name.includes('general')) {
-        return { backgroundImage: `url('/All.png')` };
-      }
-      if (name.includes('shop')) {
-        return { backgroundImage: `url('/shop.png')` };
-      }
-
-      return { backgroundImage: 'none' };
-    },
+      // Normal image
+      return {
+        backgroundImage: `url(/api/card_image/${newestCard.photo})`
+      };
+    }
+,
 
     
     navigateToCategory(category) {
