@@ -902,7 +902,6 @@ export default {
       return style && style.backgroundImage;
     },
 
-    // Update getCategoryBackgroundStyle to be simpler
     getCategoryBackgroundStyle(category) {
       const name = category.name.toLowerCase();
       
@@ -931,15 +930,14 @@ export default {
         // IMPORTANT: Check if it's actually an image, not a video
         const photoExt = newestCard.photo.split('.').pop().toLowerCase();
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(photoExt);
-        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
         
         if (isImage) {
           return {
             backgroundImage: `url(/api/card_image/${newestCard.photo})`
           };
-        } else if (isVideo) {
-          // It's a video file, don't use it as background image
-          console.warn(`Category ${category.name} has video file as newest card: ${newestCard.photo}`);
+        } else {
+          // It's NOT an image file (could be video or other), don't use it as background image
+          console.warn(`Category ${category.name} has non-image file as newest card: ${newestCard.photo}`);
           return {};
         }
       }
@@ -987,48 +985,6 @@ export default {
         return `/api/card_image/${newestCard.photo}`;
       }
       return null;
-    },
-    
-    getCategoryBackgroundStyle(category) {
-      const name = category.name.toLowerCase();
-      
-      // For special categories (All Cards and Shop), always use static images
-      if (name.includes('all') || name.includes('general')) {
-        return {
-          backgroundImage: `url('/All.png')`
-        };
-      } else if (name.includes('shop')) {
-        return {
-          backgroundImage: `url('/shop.png')`
-        };
-      }
-      
-      // For Limited category, we handle video separately in the template
-      if (category.name === 'Limited ⚠️') {
-        // Check if we have a video source
-        const videoSource = this.getLimitedVideoSource(category);
-        if (videoSource) {
-          // For Limited category with video, return empty (video will be shown by template)
-          return {};
-        }
-      }
-      
-      // For other categories (rarity categories that aren't Limited)
-      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
-      if (newestCard && newestCard.photo) {
-        // Check if it's a video file
-        const photoExt = newestCard.photo.split('.').pop().toLowerCase();
-        const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(photoExt);
-        
-        if (!isVideo) {
-          // Only use image files for background
-          return {
-            backgroundImage: `url(/api/card_image/${newestCard.photo})`
-          };
-        }
-      }
-      
-      return {};
     },
     
     scrollToContent() {
