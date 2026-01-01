@@ -554,9 +554,25 @@ export default {
     }
     
     const getLimitedVideoSource = (category) => {
-      const newestCard = rarityNewestCards.value[category.name] || allCategoriesNewestCards.value[category.name];
+      const newestCard = this.rarityNewestCards[category.name] || 
+                     this.allCategoriesNewestCards[category.name];
+  
       if (newestCard && newestCard.photo) {
-        return `/api/card_image/${newestCard.photo}`;
+        // Check browser support and return appropriate format
+        const video = document.createElement('video');
+        const supportsWebM = video.canPlayType('video/webm') !== '';
+        const supportsMP4 = video.canPlayType('video/mp4; codecs="avc1.42E01E,mp4a.40.2"') !== '';
+        
+        const photoName = newestCard.photo;
+        
+        // If server provides different formats, use browser detection
+        if (supportsWebM) {
+          return `/api/card_image/${photoName.replace('.mp4', '.webm')}`;
+        } else if (supportsMP4) {
+          return `/api/card_image/${photoName.replace('.webm', '.mp4')}`;
+        }
+        
+        return `/api/card_image/${photoName}`;
       }
       return null;
     }
