@@ -900,25 +900,27 @@ export default {
     },
 
     getCategoryBackgroundStyle(category) {
-      const newestCard = this.getNewestCardForCategory(category);
+      const card = this.getNewestCardForCategory(category);
 
-      if (!newestCard) {
-        return { backgroundImage: 'none' };
+      if (!card) {
+        return {};
       }
 
-      // Limited → background disabled, video will render
-      if (newestCard.rarity === 'Limited ⚠️') {
+      // Limited → use placeholder poster
+      if (card.rarity === 'Limited ⚠️') {
         return {
-          backgroundImage: 'none'
+          backgroundImage: `url('/placeholder.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
         };
       }
 
-      // Normal image
       return {
-        backgroundImage: `url(/api/card_image/${newestCard.photo})`
+        backgroundImage: `url(/api/card_image/${card.photo})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
       };
-    }
-,
+    },
 
     
     navigateToCategory(category) {
