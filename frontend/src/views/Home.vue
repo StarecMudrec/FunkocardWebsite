@@ -111,7 +111,7 @@
               playsinline
             ></video>
             <div 
-              v-else
+              v-else-if="category.name !== 'Limited ⚠️'"
               class="category-card__background" 
               :style="getCategoryBackgroundStyle(category)"
             ></div>
@@ -902,7 +902,12 @@ export default {
     getCategoryBackgroundStyle(category) {
       const name = category.name.toLowerCase();
       
-      // For all categories, use the newest card image
+      // Skip if this is the Limited category (it uses video)
+      if (category.name === 'Limited ⚠️') {
+        return {}; // Return empty for Limited category
+      }
+      
+      // For all other categories, use the newest card image
       const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
       if (newestCard && newestCard.photo) {
         return {
