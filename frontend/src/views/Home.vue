@@ -845,27 +845,10 @@ export default {
     
     async fetchAllCategoriesNewestCards() {
       try {
-        console.log('Fetching newest cards for all categories...');
         const response = await fetch('/api/all_categories_newest_cards');
-        console.log('Response status:', response.status);
-        
         if (response.ok) {
-          const data = await response.json();
-          console.log('Newest cards data:', data);
-          console.log('Keys in data:', Object.keys(data));
-          
-          // Check specifically for "All Cards" and "Available at Shop"
-          const allCardsKey = Object.keys(data).find(key => 
-            key.toLowerCase().includes('all') || key.toLowerCase().includes('general')
-          );
-          const shopKey = Object.keys(data).find(key => 
-            key.toLowerCase().includes('shop')
-          );
-          
-          console.log('All cards key:', allCardsKey, 'Value:', allCardsKey ? data[allCardsKey] : 'Not found');
-          console.log('Shop key:', shopKey, 'Value:', shopKey ? data[shopKey] : 'Not found');
-          
-          this.allCategoriesNewestCards = data;
+          this.allCategoriesNewestCards = await response.json();
+          console.log('Newest cards for all categories:', this.allCategoriesNewestCards);
         } else {
           console.error('Failed to fetch newest cards for all categories');
         }
@@ -918,51 +901,31 @@ export default {
     
     getCategoryBackgroundStyle(category) {
       const name = category.name.toLowerCase();
-      console.log(`Getting background for category: ${category.name}`);
       
       // Skip if this is the Limited category (it uses video)
       if (category.name === 'Limited ⚠️') {
-        console.log('Skipping Limited category (uses video)');
         return {}; // Return empty for Limited category
       }
       
-      // Check both sources for newest card
-      const newestCardFromRarity = this.rarityNewestCards[category.name];
-      const newestCardFromAll = this.allCategoriesNewestCards[category.name];
-      
-      console.log('Category name:', category.name);
-      console.log('From rarityNewestCards:', newestCardFromRarity);
-      console.log('From allCategoriesNewestCards:', newestCardFromAll);
-      
-      // Try rarityNewestCards first, then allCategoriesNewestCards
-      const newestCard = newestCardFromRarity || newestCardFromAll;
-      
+      // For all other categories, use the newest card image
+      const newestCard = this.rarityNewestCards[category.name] || this.allCategoriesNewestCards[category.name];
       if (newestCard && newestCard.photo) {
-        console.log(`Found newest card for ${category.name}:`, newestCard);
-        const imageUrl = `/api/card_image/${newestCard.photo}`;
-        console.log(`Image URL: ${imageUrl}`);
-        
         return {
-          backgroundImage: `url(${imageUrl})`
+          backgroundImage: `url(/api/card_image/${newestCard.photo})`
         };
-      } else {
-        console.log(`No newest card found for ${category.name}, using fallback`);
       }
       
       // Fallback to static images if no newest card found
       if (name.includes('all') || name.includes('general')) {
-        console.log('Using All.png fallback');
         return {
           backgroundImage: `url('/All.png')`
         };
       } else if (name.includes('shop')) {
-        console.log('Using shop.png fallback');
         return {
           backgroundImage: `url('/shop.png')`
         };
       }
       
-      console.log('No background found');
       return {};
     },
     
